@@ -15,6 +15,7 @@
 
 // Project includes
 #include "utilities/mortar_utilities.h"
+#include "utilities/variable_utils.h"
 
 /* Custom utilities */
 #include "custom_utilities/contact_utilities.h"
@@ -343,7 +344,19 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
     }
 
     // We map the Coordinates to the slave side from the master
-    if (mCheckGap == MappingCheck) CheckPairing(computing_rcontact_model_part, condition_id);
+    if (mCheckGap == MappingCheck) 
+        CheckPairing(computing_rcontact_model_part, condition_id);
+    
+    // Auxiliar gap
+    VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes());
+    ModelPart& r_computing_contact_model_part = mrMainModelPart.GetSubModelPart("ComputingContact");
+    ConditionsArrayType& computing_conditions_array = r_computing_contact_model_part.Conditions();
+    auto process_info = mrMainModelPart.GetProcessInfo();
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(computing_conditions_array.size()); ++i) {  
+        auto it_cond = computing_conditions_array.begin() + i;
+        it_cond->AddExplicitContribution(process_info);
+    }
 }
 
 /***********************************************************************************/
