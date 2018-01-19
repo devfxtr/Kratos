@@ -285,8 +285,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     MortarConditionMatrices rThisMortarConditionMatrices;
     
     // We call the exact integration utility
-    // TODO: Think about the limit
-    const double distance_threshold = 1.0 * this->GetGeometry().Length();
+    const double distance_threshold = rCurrentProcessInfo[DISTANCE_THRESHOLD];
     IntegrationUtility integration_utility = IntegrationUtility (mIntegrationOrder, distance_threshold);
     
     // If we consider the normal variation
@@ -453,8 +452,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
     MortarConditionMatrices rThisMortarConditionMatrices;
     
     // We call the exact integration utility
-    // TODO: Think about the limit
-    const double distance_threshold = 1.0 * this->GetGeometry().Length();
+    const double distance_threshold = rCurrentProcessInfo[DISTANCE_THRESHOLD];
     IntegrationUtility integration_utility = IntegrationUtility (mIntegrationOrder, distance_threshold);
     
     // The master geometry
