@@ -98,6 +98,9 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     
     mIntegrationOrder = GetProperties().Has(INTEGRATION_ORDER_CONTACT) ? GetProperties().GetValue(INTEGRATION_ORDER_CONTACT) : 2;
     
+    // We reset the ISOLATED flag
+    this->Set(ISOLATED, false);
+    
     KRATOS_CATCH( "" );
 }
 
@@ -121,9 +124,6 @@ template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNor
 void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::InitializeNonLinearIteration( ProcessInfo& rCurrentProcessInfo )
 {
     KRATOS_TRY;
-    
-    // We reset the flag
-    this->Set(ISOLATED, false); // We set the corresponding flag
         
     KRATOS_CATCH( "" );
 }
@@ -300,7 +300,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     
     // Reading integration points
     ConditionArrayListType conditions_points_slave;
-    const bool is_inside = CheckIsolatedElement(rCurrentProcessInfo[DELTA_TIME]) ? false : integration_utility.GetExactIntegration(slave_geometry, normal_slave, master_geometry, normal_master, conditions_points_slave);
+    const bool is_inside = integration_utility.GetExactIntegration(slave_geometry, normal_slave, master_geometry, normal_master, conditions_points_slave);
     
     double integration_area;
     integration_utility.GetTotalArea(slave_geometry, conditions_points_slave, integration_area);
@@ -408,6 +408,14 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
                 weighted_slip += inner_prod(aux_array, tangent); 
             }
         }
+        
+        // We reset the flag
+        this->Set(ISOLATED, false);
+    }
+    else
+    {
+        // We set the flag
+        this->Set(ISOLATED, true);
     }
 
     KRATOS_CATCH( "" );
