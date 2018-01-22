@@ -275,12 +275,14 @@ protected:
 
     /**
      * Calculates the local contibution of the LHS
+     * @param rLocalLHS The local LHS to compute
      * @param rMortarConditionMatrices The mortar operators to be considered
      * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
      * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
-    bounded_matrix<double, MatrixSize, MatrixSize> CalculateLocalLHS(
+    void CalculateLocalLHS(
+        Matrix& rLocalLHS,
         const MortarConditionMatrices& rMortarConditionMatrices,
         const DerivativeDataType& rDerivativeData,
         const unsigned int rActiveInactive
@@ -288,12 +290,14 @@ protected:
     
     /**
      * Calculates the local contibution of the RHS
+     * @param rLocalRHS The local RHS to compute
      * @param rMortarConditionMatrices The mortar operators to be considered
      * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
      * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
-    array_1d<double, MatrixSize> CalculateLocalRHS(
+    void CalculateLocalRHS(
+        Vector& rLocalRHS,
         const MortarConditionMatrices& rMortarConditionMatrices,
         const DerivativeDataType& rDerivativeData,
         const unsigned int rActiveInactive
@@ -312,10 +316,8 @@ protected:
     unsigned int GetActiveInactiveValue(GeometryType& CurrentGeometry) const override
     {
         unsigned int value = 0;
-        for (unsigned int i_node = 0; i_node < TNumNodes; ++i_node)
-        {
-            if (CurrentGeometry[i_node].Is(ACTIVE) == true)
-            {
+        for (unsigned int i_node = 0; i_node < TNumNodes; ++i_node) {
+            if (CurrentGeometry[i_node].Is(ACTIVE) == true) {
                 if (CurrentGeometry[i_node].Is(SLIP) == true)
                     value += std::pow(3, i_node);
                 else

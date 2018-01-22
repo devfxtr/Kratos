@@ -531,16 +531,13 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
         const unsigned int active_inactive = GetActiveInactiveValue(slave_geometry);
         
         // Assemble of the matrix is required
-        if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_LHS_MATRIX ) ) {
-            const bounded_matrix<double, MatrixSize, MatrixSize>& LHS_contact_pair = this->CalculateLocalLHS( rThisMortarConditionMatrices, rDerivativeData, active_inactive);
-            rLeftHandSideMatrix = LHS_contact_pair;
-        }
+        if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_LHS_MATRIX ) )
+            this->CalculateLocalLHS( rLeftHandSideMatrix, rThisMortarConditionMatrices, rDerivativeData, active_inactive);
         
         // Assemble of the vector is required
-        if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_RHS_VECTOR )) {
-            const array_1d<double, MatrixSize>& RHS_contact_pair = this->CalculateLocalRHS( rThisMortarConditionMatrices, rDerivativeData, active_inactive);
-            rRightHandSideVector = RHS_contact_pair;
-        }
+        if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_RHS_VECTOR ))
+            this->CalculateLocalRHS(rRightHandSideVector, rThisMortarConditionMatrices, rDerivativeData, active_inactive);
+        
     } else { //If not inside we fill we zero the local matrices
         this->Set(ISOLATED, true); // We set the corresponding flag
         
@@ -582,7 +579,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     rVariables.jSlave = GeometryDecomp.Jacobian( rVariables.jSlave, LocalPointDecomp.Coordinates());
     rVariables.DetjSlave = GeometryDecomp.DeterminantOfJacobian( LocalPointDecomp );
     
-    KRATOS_ERROR_IF(rVariables.DetjSlave < 0.0) << "WARNING:: CONDITION ID: " << this->Id() << " INVERTED. DETJ: " << rVariables.DetjSlave << std::endl;
+    KRATOS_ERROR_IF(rVariables.DetjSlave < 0.0) << "ERROR:: CONDITION ID: " << this->Id() << " INVERTED. DETJ: " << rVariables.DetjSlave << std::endl;
     
     /// MASTER CONDITION ///
     this->MasterShapeFunctionValue( rVariables, NormalMaster, LocalPointParent);
@@ -722,360 +719,336 @@ bool AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 10, 10> AugmentedLagrangianMethodMortarContactCondition<2,2, false, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2,2, false, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(10, 10);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 21, 21> AugmentedLagrangianMethodMortarContactCondition<3,3, false, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3,3, false, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(21, 21);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 28, 28> AugmentedLagrangianMethodMortarContactCondition<3,4, false, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3,4, false, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(28, 28);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 12, 12> AugmentedLagrangianMethodMortarContactCondition<2,2, true, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2,2, true, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(12, 12);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 27, 27> AugmentedLagrangianMethodMortarContactCondition<3, 3, true, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, true, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(27, 27);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 36, 36> AugmentedLagrangianMethodMortarContactCondition<3, 4, true, false>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, true, false>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(36, 36);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 10, 10> AugmentedLagrangianMethodMortarContactCondition<2,2, false, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2,2, false, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(10, 10);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 21, 21> AugmentedLagrangianMethodMortarContactCondition<3,3, false, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3,3, false, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(21, 21);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 28, 28> AugmentedLagrangianMethodMortarContactCondition<3,4, false, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3,4, false, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(28, 28);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 12, 12> AugmentedLagrangianMethodMortarContactCondition<2,2, true, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2,2, true, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(12, 12);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 27, 27> AugmentedLagrangianMethodMortarContactCondition<3, 3, true, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, true, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(27, 27);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-bounded_matrix<double, 36, 36> AugmentedLagrangianMethodMortarContactCondition<3, 4, true, true>::CalculateLocalLHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, true, true>::CalculateLocalLHS(
+    Matrix& rLocalLHS, 
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalLHS, check your condition definition" << std::endl;
-    
-    return ZeroMatrix(36, 36);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,10> AugmentedLagrangianMethodMortarContactCondition<2, 2, false, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2, 2, false, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(10);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,21> AugmentedLagrangianMethodMortarContactCondition<3, 3, false, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, false, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(21);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,28> AugmentedLagrangianMethodMortarContactCondition<3, 4, false, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, false, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(28);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,12> AugmentedLagrangianMethodMortarContactCondition<2, 2, true, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2, 2, true, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(12);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,27> AugmentedLagrangianMethodMortarContactCondition<3, 3, true, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, true, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(27);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,36> AugmentedLagrangianMethodMortarContactCondition<3, 4, true, false>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, true, false>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(36);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,10> AugmentedLagrangianMethodMortarContactCondition<2, 2, false, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2, 2, false, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(10);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,21> AugmentedLagrangianMethodMortarContactCondition<3, 3, false, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, false, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(21);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,28> AugmentedLagrangianMethodMortarContactCondition<3, 4, false, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, false, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(28);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,12> AugmentedLagrangianMethodMortarContactCondition<2, 2, true, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<2, 2, true, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(12);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,27> AugmentedLagrangianMethodMortarContactCondition<3, 3, true, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 3, true, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(27);
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
 template<>
-array_1d<double,36> AugmentedLagrangianMethodMortarContactCondition<3, 4, true, true>::CalculateLocalRHS(
-        const MortarConditionMatrices& rMortarConditionMatrices,
-        const DerivativeDataType& rDerivativeData,
-        const unsigned int rActiveInactive
-        )
+void AugmentedLagrangianMethodMortarContactCondition<3, 4, true, true>::CalculateLocalRHS(
+    Vector& rLocalRHS,
+    const MortarConditionMatrices& rMortarConditionMatrices,
+    const DerivativeDataType& rDerivativeData,
+    const unsigned int rActiveInactive
+    )
 {
     KRATOS_ERROR << "You are calling to the base class method CalculateLocalRHS, check your condition definition" << std::endl;
-    
-    return ZeroVector(36);
 }
 
 /***********************************************************************************/
@@ -1159,9 +1132,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
         rOutput.resize( integration_points.size() );
     
     for (unsigned int point_number = 0; point_number < integration_points.size(); ++point_number)
-    {
         rOutput[point_number] = 0.0;
-    }
     
     KRATOS_CATCH( "" );
 }
@@ -1184,9 +1155,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
         rOutput.resize( integration_points.size() );
     
     for (unsigned int point_number = 0; point_number < integration_points.size(); ++point_number)
-    {
         rOutput[point_number] = ZeroVector(3);
-    }
     
     KRATOS_CATCH( "" );
 }
