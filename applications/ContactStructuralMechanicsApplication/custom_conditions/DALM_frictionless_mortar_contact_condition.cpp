@@ -79,29 +79,23 @@ void DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition<TDim,TNum
     constexpr std::size_t initial_index = TDim * (TNumNodes + TNumNodes);
     
     // Initialize the zero values
-    for (std::size_t i = 0; i < initial_index; ++i) {
+    for (std::size_t i = 0; i < TDim * (TNumNodes + TNumNodes) + TNumNodes; ++i) {
         for (std::size_t i_node = 0; i_node < TNumNodes; ++i_node) {
-            rLocalLHS(i, initial_index + i_node) = 0.0;
             rLocalLHS(i, initial_index + TNumNodes + i_node) = 0.0;
-            rLocalLHS(initial_index + i_node, i) = 0.0;
             rLocalLHS(initial_index + TNumNodes + i_node, i) = 0.0;
         }
     }
-    // The master components will be filled in the opposite condition 
-    for (std::size_t i = initial_index; i < initial_index + 2 * TNumNodes; ++i) {
-        for (std::size_t i_node = 0; i_node < TNumNodes; ++i_node) {
-            rLocalLHS(i, initial_index + i_node) = 0.0;
-            rLocalLHS(i, initial_index + TNumNodes + i_node) = 0.0;
-        }
-    }
+    for (std::size_t i = TDim * (TNumNodes + TNumNodes) + TNumNodes; i < TDim * (TNumNodes + TNumNodes) + 2 * TNumNodes; ++i)
+        for (std::size_t j = TDim * (TNumNodes + TNumNodes) + TNumNodes; j < TDim * (TNumNodes + TNumNodes) + 2 * TNumNodes; ++j)
+            rLocalLHS(j, j) = 0.0;
     
     // We iterate over the nodes // TODO: Add derivatives
     GeometryType& slave_geometry = this->GetGeometry();
     for (std::size_t i_node = 0; i_node < TNumNodes; ++i_node) { 
         const bool is_active = slave_geometry[i_node].Is(ACTIVE);
         for (std::size_t j_node = 0; j_node < TNumNodes; ++j_node) {  // TODO: Check the sign
-            rLocalLHS(initial_index + i_node, initial_index + j_node) = is_active ? rMortarConditionMatrices.DOperator(i_node, j_node) : 0.0;
-            rLocalLHS(initial_index + i_node, initial_index + TNumNodes + j_node) = is_active ? - rMortarConditionMatrices.MOperator(i_node, j_node) : 0.0;
+            rLocalLHS(initial_index + i_node, initial_index + j_node) += is_active ? rMortarConditionMatrices.DOperator(i_node, j_node) : 0.0;
+            rLocalLHS(initial_index + i_node, initial_index + TNumNodes + j_node) += is_active ? - rMortarConditionMatrices.MOperator(i_node, j_node) : 0.0;
         }
     }
 }
@@ -133,7 +127,7 @@ void DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition<TDim,TNum
     // We iterate over the nodes
     for (std::size_t i_node = 0; i_node < TNumNodes; ++i_node) {
         // The augmented nornal contact pressure has been computed in the last non-linear iteration
-        rLocalRHS[initial_index + i_node] = slave_geometry[i_node].Is(ACTIVE) ? residual_matrix(i_node, 0) : 0.0;
+        rLocalRHS[initial_index + i_node] += slave_geometry[i_node].Is(ACTIVE) ? residual_matrix(i_node, 0) : 0.0;
         rLocalRHS[initial_index + TNumNodes + i_node] = 0.0; // The master components will be filled in the opposite condition 
     }
 }
