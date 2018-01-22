@@ -41,7 +41,8 @@ TreeContactSearch<TDim, TNumNodes>::TreeContactSearch(
         "check_gap"                            : "MappingCheck", 
         "condition_name"                       : "",  
         "final_string"                         : "",  
-        "inverted_search"                      : false
+        "inverted_search"                      : false,
+        "double_formulation"                   : false
     })" );
     
     mThisParameters.ValidateAndAssignDefaults(DefaultParameters);

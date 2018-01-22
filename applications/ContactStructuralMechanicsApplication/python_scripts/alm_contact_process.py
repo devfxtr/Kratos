@@ -45,6 +45,7 @@ class ALMContactProcess(python_process.PythonProcess):
             "database_step_update"        : 1,
             "integration_order"           : 3,
             "max_gap_factor"              : 1.0e-3,
+            "double_formulation"          : false,
             "debug_mode"                  : false,
             "remeshing_with_contact_bc"   : false
         }
@@ -61,8 +62,7 @@ class ALMContactProcess(python_process.PythonProcess):
 
         self.contact_model_part = model_part[self.params["contact_model_part"].GetString()]
         
-        self.axisymmetric  = self.params["axisymmetric"].GetBool()
-        if (self.axisymmetric == True) and (self.dimension == 3):
+        if (self.params["axisymmetric"].GetBool() == True) and (self.dimension == 3):
             raise NameError("3D and axisymmetric makes no sense")
         if (self.params["normal_variation"].GetString() == "NO_DERIVATIVES_COMPUTATION"):
             self.normal_variation = 0
@@ -72,13 +72,11 @@ class ALMContactProcess(python_process.PythonProcess):
             self.normal_variation = 2
         else:
             raise NameError("The options to normal derivatives are: NO_DERIVATIVES_COMPUTATION, ELEMENTAL_DERIVATIVES, NODAL_ELEMENTAL_DERIVATIVES")
-        self.database_step_update = self.params["database_step_update"].GetInt() 
         self.database_step = 0
         self.frictional_law = self.params["frictional_law"].GetString()
-        self.debug_mode = self.params["debug_mode"].GetBool()
         
         # Debug
-        if (self.debug_mode == True):
+        if (self.params["debug_mode"].GetBool() == True):
             self.output_file = "POSTSEARCH"
 
             self.gid_mode = KratosMultiphysics.GiDPostMode.GiD_PostBinary
@@ -176,7 +174,7 @@ class ALMContactProcess(python_process.PythonProcess):
         self.database_step += 1
         self.global_step = self.main_model_part.ProcessInfo[KratosMultiphysics.STEP]
         
-        if (self.database_step >= self.database_step_update or self.global_step == 1):
+        if (self.database_step >= self.params["database_step_update"].GetInt() or self.global_step == 1):
             # We solve one linear step with a linear strategy if needed
             # Clear current pairs
             self._clear_sets(self.contact_search)
@@ -185,7 +183,7 @@ class ALMContactProcess(python_process.PythonProcess):
             #self.contact_search.CheckMortarConditions()
                 
             # Debug
-            if (self.debug_mode == True):
+            if (self.params["debug_mode"].GetBool() == True):
                self._debug_output(self.global_step, "")
         
     def ExecuteFinalizeSolutionStep(self):
@@ -197,7 +195,7 @@ class ALMContactProcess(python_process.PythonProcess):
 
     def ExecuteAfterOutputStep(self):
         modified = self.main_model_part.Is(KratosMultiphysics.MODIFIED)
-        if (modified == False and (self.database_step >= self.database_step_update or self.global_step == 1)):
+        if (modified == False and (self.database_step >= self.params["database_step_update"].GetInt() or self.global_step == 1)):
             self._clear_sets(self.contact_search)
             self.database_step = 0
             
@@ -289,23 +287,27 @@ class ALMContactProcess(python_process.PythonProcess):
     def _create_main_search(self, computing_model_part):
         if self.params["contact_type"].GetString() == "Frictionless":
             if self.normal_variation == 2:
-                if self.axisymmetric == True:
+                if self.params["axisymmetric"].GetBool() == True:
                     condition_name = "ALMNVFrictionlessAxisymMortarContact"
                 else:
                     condition_name = "ALMNVFrictionlessMortarContact"
+                    if self.params["double_formulation"].GetBool():
+                        condition_name = "D" + condition_name
             else:
-                if self.axisymmetric == True:
+                if self.params["axisymmetric"].GetBool() == True:
                     condition_name = "ALMFrictionlessAxisymMortarContact"
                 else:
                     condition_name = "ALMFrictionlessMortarContact"
+                    if self.params["double_formulation"].GetBool():
+                        condition_name = "D" + condition_name
         elif self.params["contact_type"].GetString() == "Frictional":
             if self.normal_variation == 2:
-                if self.axisymmetric == True:
+                if self.params["axisymmetric"].GetBool() == True:
                     condition_name = "ALMNVFrictionalAxisymMortarContact"
                 else:
                     condition_name = "ALMNVFrictionalMortarContact"
             else:
-                if self.axisymmetric == True:
+                if self.params["axisymmetric"].GetBool() == True:
                     condition_name = "ALMFrictionalAxisymMortarContact"
                 else:
                     condition_name = "ALMFrictionalMortarContact"
@@ -315,6 +317,7 @@ class ALMContactProcess(python_process.PythonProcess):
         search_parameters.AddValue("allocation_size",self.params["max_number_results"])
         search_parameters.AddValue("bucket_size",self.params["bucket_size"])
         search_parameters.AddValue("search_factor",self.params["search_factor"])
+        search_parameters.AddValue("double_formulation",self.params["double_formulation"])
         search_parameters["condition_name"].SetString(condition_name)
         for cond in computing_model_part.Conditions:
             number_nodes = len(cond.GetNodes())
