@@ -111,10 +111,6 @@ public:
     
     static constexpr unsigned int MatrixSize = TFrictional == true ? TDim * (TNumNodes + TNumNodes + TNumNodes) : TDim * (TNumNodes + TNumNodes) + TNumNodes;
     
-    typedef bounded_matrix<double, MatrixSize, MatrixSize>                                        LocalMatrixType;
-    
-    typedef array_1d<double, MatrixSize>                                                          LocalVectorType;
-    
     typedef MortarKinematicVariablesWithDerivatives<TDim, TNumNodes>                             GeneralVariables;
     
     typedef DualLagrangeMultiplierOperatorsWithDerivatives<TDim, TNumNodes, TFrictional, TNormalVariation> AeData;
@@ -610,6 +606,30 @@ protected:
      */
     
     virtual double GetAxisymmetricCoefficient(const GeneralVariables& rVariables) const;
+    
+    /**
+     * This method just resizes the LHS matrix
+     * @param rLeftHandSideMatrix The LHS matrix
+     */
+    virtual void ResizeLHS(MatrixType& rLeftHandSideMatrix);
+    
+    /**
+     * This method just resizes the RHS vector
+     * @param rRightHandSideVector The RHS vector
+     */
+    virtual void ResizeRHS(VectorType& rRightHandSideVector);
+    
+    /**
+     * This method just sets as zero the LHS matrix
+     * @param rLeftHandSideMatrix The LHS matrix
+     */
+    virtual void ZeroLHS(MatrixType& rLeftHandSideMatrix);
+    
+    /**
+     *This method just sets as zero the RHS vector
+     * @param rRightHandSideVector The RHS vector
+     */
+    virtual void ZeroRHS(VectorType& rRightHandSideVector);
     
     ///@}
     ///@name Protected  Access

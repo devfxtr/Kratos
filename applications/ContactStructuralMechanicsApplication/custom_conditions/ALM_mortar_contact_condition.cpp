@@ -168,13 +168,9 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     mCalculationFlags.Set( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_LHS_MATRIX, true );
     mCalculationFlags.Set( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_RHS_VECTOR, true );
     
-    // Resizing as needed the LHS
-    if ( rLeftHandSideMatrix.size1() != MatrixSize || rLeftHandSideMatrix.size2() != MatrixSize )
-            rLeftHandSideMatrix.resize( MatrixSize, MatrixSize, false );
-    
-    // Resizing as needed the RHS
-    if ( rRightHandSideVector.size() != MatrixSize )
-        rRightHandSideVector.resize( MatrixSize, false );
+    // Resizing as needed 
+    ResizeLHS(rLeftHandSideMatrix);
+    ResizeRHS(rRightHandSideVector);
     
     // Calculate condition system
     CalculateConditionSystem(rLeftHandSideMatrix, rRightHandSideVector, rCurrentProcessInfo );
@@ -195,9 +191,8 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     mCalculationFlags.Set( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_LHS_MATRIX, true );
     mCalculationFlags.Set( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_RHS_VECTOR, false);
 
-    // Resizing as needed the LHS
-    if ( rLeftHandSideMatrix.size1() != MatrixSize || rLeftHandSideMatrix.size2() != MatrixSize )
-        rLeftHandSideMatrix.resize( MatrixSize, MatrixSize, false );
+    // Resizing as needed 
+    ResizeLHS(rLeftHandSideMatrix);
     
     // Creating an auxiliar vector
     VectorType aux_right_hand_side_vector = Vector();
@@ -222,9 +217,8 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
     // Creating an auxiliar matrix
     MatrixType aux_left_hand_side_matrix = Matrix();
     
-    // Resizing as needed the RHS
-    if ( rRightHandSideVector.size() != MatrixSize )
-        rRightHandSideVector.resize( MatrixSize, false );
+    // Resizing as needed 
+    ResizeRHS(rRightHandSideVector);
 
     // Calculate condition system
     CalculateConditionSystem(aux_left_hand_side_matrix, rRightHandSideVector, rCurrentProcessInfo );
@@ -543,11 +537,11 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
         
         // Assemble of the matrix is required
         if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_LHS_MATRIX ) )
-            rLeftHandSideMatrix = ZeroMatrix(MatrixSize, MatrixSize);
+            ZeroLHS(rLeftHandSideMatrix);
         
         // Assemble of the vector is required
         if ( mCalculationFlags.Is( AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional, TNormalVariation>::COMPUTE_RHS_VECTOR ))
-            rRightHandSideVector = ZeroVector(MatrixSize);
+            ZeroRHS(rRightHandSideVector);
     }
     
     KRATOS_CATCH( "" );
@@ -1226,6 +1220,46 @@ template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNor
 double AugmentedLagrangianMethodMortarContactCondition< TDim, TNumNodes, TFrictional, TNormalVariation>::GetAxisymmetricCoefficient(const GeneralVariables& rVariables) const
 {
     return 1.0;
+}
+    
+/***********************************************************************************/
+/***********************************************************************************/
+
+template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNormalVariation>
+void AugmentedLagrangianMethodMortarContactCondition< TDim, TNumNodes, TFrictional, TNormalVariation>::ResizeLHS(MatrixType& rLeftHandSideMatrix)
+{
+    // Resizing as needed the LHS
+    if ( rLeftHandSideMatrix.size1() != MatrixSize || rLeftHandSideMatrix.size2() != MatrixSize )
+            rLeftHandSideMatrix.resize( MatrixSize, MatrixSize, false );
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNormalVariation>
+void AugmentedLagrangianMethodMortarContactCondition< TDim, TNumNodes, TFrictional, TNormalVariation>::ResizeRHS(VectorType& rRightHandSideVector)
+{
+    // Resizing as needed the RHS
+    if ( rRightHandSideVector.size() != MatrixSize )
+        rRightHandSideVector.resize( MatrixSize, false );
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNormalVariation>
+void AugmentedLagrangianMethodMortarContactCondition< TDim, TNumNodes, TFrictional, TNormalVariation>::ZeroLHS(MatrixType& rLeftHandSideMatrix)
+{
+    rLeftHandSideMatrix = ZeroMatrix( MatrixSize, MatrixSize );
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNormalVariation>
+void AugmentedLagrangianMethodMortarContactCondition< TDim, TNumNodes, TFrictional, TNormalVariation>::ZeroRHS(VectorType& rRightHandSideVector)
+{
+    rRightHandSideVector = ZeroVector( MatrixSize );
 }
     
 /***********************************************************************************/
