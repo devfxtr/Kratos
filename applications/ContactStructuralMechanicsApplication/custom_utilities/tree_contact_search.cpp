@@ -652,9 +652,34 @@ inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
                         at_least_one_node_potential_contact = true;
                         geom_slave[i_node].Set(ACTIVE, true);
                     }
-                }
-                else
+                } else
                     at_least_one_node_potential_contact = true;
+            }
+            if (mThisParameters["double_formulation"].GetBool() == true) {
+                for (unsigned int i_node = 0; i_node < TNumNodes; ++i_node) {
+                    if (geom_master[i_node].Is(ACTIVE) == false) {
+                        Point projected_point;
+                        double aux_distance = 0.0;
+                        const array_1d<double, 3> normal = geom_master[i_node].GetValue(NORMAL);
+                        if (norm_2(normal) < tolerance)
+                            aux_distance = MortarUtilities::FastProjectDirection(geom_slave, geom_master[i_node], projected_point, normal_master, normal_master);
+                        else
+                            aux_distance = MortarUtilities::FastProjectDirection(geom_slave, geom_master[i_node], projected_point, normal_master, normal);
+                        
+                        array_1d<double, 3> result;
+                        if (aux_distance <= geom_master[i_node].FastGetSolutionStepValue(NODAL_H) * active_check_factor &&  geom_slave.IsInside(projected_point, result, tolerance)) { // NOTE: This can be problematic (It depends the way IsInside() and the local_pointCoordinates() are implemented)
+                            at_least_one_node_potential_contact = true;
+                            geom_master[i_node].Set(ACTIVE, true);
+                        }
+                        
+                        aux_distance = MortarUtilities::FastProjectDirection(geom_slave, geom_master[i_node], projected_point, normal_master, -normal_master);
+                        if (aux_distance <= geom_master[i_node].FastGetSolutionStepValue(NODAL_H) * active_check_factor &&  geom_slave.IsInside(projected_point, result, tolerance)) { // NOTE: This can be problematic (It depends the way IsInside() and the local_pointCoordinates() are implemented)
+                            at_least_one_node_potential_contact = true;
+                            geom_master[i_node].Set(ACTIVE, true);
+                        }
+                    } else
+                        at_least_one_node_potential_contact = true;
+                }
             }
         } else {
             at_least_one_node_potential_contact = true;
@@ -662,7 +687,8 @@ inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
                 geom_slave[i_node].Set(ACTIVE, true);
         }
     
-        if (at_least_one_node_potential_contact) AddPairing(rComputingModelPart, ConditionId, pCondSlave, p_cond_master, IndexesSet);
+        if (at_least_one_node_potential_contact) 
+            AddPairing(rComputingModelPart, ConditionId, pCondSlave, p_cond_master, IndexesSet);
     }
 }
 
@@ -730,13 +756,21 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
             it_node->SetValue(AUXILIAR_COORDINATES, ZeroVector(3));
     }
     
+    // Switch MASTER/SLAVE
+    if (!SearchOrientation) 
+        SwitchFlagNodes(nodes_array);
+    
     // We set the mapper parameters
     Parameters mapping_parameters = Parameters(R"({"inverted_master_slave_pairing": false, "distance_threshold" : 1.0e24})" );
-    mapping_parameters["inverted_master_slave_pairing"].SetBool(mThisParameters["inverted_search"].GetBool());
+    mapping_parameters["inverted_master_slave_pairing"].SetBool(!SearchOrientation);
     mapping_parameters["distance_threshold"].SetDouble(distance_threshold);
     typedef SimpleMortarMapperProcess<TDim, TNumNodes, Variable<array_1d<double, 3>>, NonHistorical> MapperType;
     MapperType mapper = MapperType(rcontact_model_part, AUXILIAR_COORDINATES, mapping_parameters);
     mapper.Execute();
+    
+    // Switch again MASTER/SLAVE
+    if (!SearchOrientation)
+        SwitchFlagNodes(nodes_array);
     
     // We compute now the normal gap and set the nodes under certain threshold as active
     #pragma omp parallel for 

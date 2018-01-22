@@ -364,9 +364,32 @@ private:
         );
     
     /**
-     * 
+     * This method computes the gap using a mapper 
+     * @param SearchOrientation The orientation of the search (inverted or not)
      */
     inline void ComputeMappedGap(const bool SearchOrientation);
+    
+    /**
+     * This method switchs the flag of an array of nodes
+     * @param rNodes The set of nodes where the flags are reset
+     */
+    static inline void SwitchFlagNodes(NodesArrayType& rNodes)
+    {
+        #pragma omp parallel for
+        for(int i = 0; i < static_cast<int>(rNodes.size()); ++i) {
+            auto it_node = rNodes.begin() + i;
+        
+            if (it_node->Is(SLAVE) == true)
+                it_node->Set(SLAVE, false);
+            else
+                it_node->Set(SLAVE, true);
+            
+            if (it_node->Is(MASTER) == true)
+                it_node->Set(MASTER, false);
+            else
+                it_node->Set(MASTER, true);
+        }
+    }
     
     /**
      * This method creates the auxiliar the pairing
