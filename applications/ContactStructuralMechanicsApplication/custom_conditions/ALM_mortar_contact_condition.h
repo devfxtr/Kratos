@@ -129,7 +129,7 @@ public:
     ///@name Life Cycle
     ///@{
 
- /// Default constructor
+    /// Default constructor
     AugmentedLagrangianMethodMortarContactCondition()
         : PairedCondition(),
           mIntegrationOrder(2)
@@ -192,26 +192,32 @@ public:
 
    /**
     * Called at the beginning of each solution step
+    * @param rCurrentProcessInfo the current process info instance
     */
     void InitializeSolutionStep(ProcessInfo& rCurrentProcessInfo) override;
 
    /**
     * Called at the beginning of each iteration
+    * @param rCurrentProcessInfo the current process info instance
     */
     void InitializeNonLinearIteration(ProcessInfo& rCurrentProcessInfo) override;
 
     /**
     * Called at the ending of each solution step
+    * @param rCurrentProcessInfo the current process info instance
     */
     void FinalizeSolutionStep(ProcessInfo& rCurrentProcessInfo) override;
     
    /**
     * Called at the end of each iteration
+    * @param rCurrentProcessInfo the current process info instance
     */
     void FinalizeNonLinearIteration(ProcessInfo& rCurrentProcessInfo) override;
 
     /**
-    * Initialize Mass Matrix
+    * This method computes the mass matrix
+    * @param rMassMatrix The mass matrix to be computed
+    * @param rCurrentProcessInfo the current process info instance
     */
     
     void CalculateMassMatrix( 
@@ -221,6 +227,8 @@ public:
     
     /**
      * Initialize Damping Matrix
+     * @param rDampingMatrix The damping matrix to be computed
+     * @param rCurrentProcessInfo the current process info instance
      */
     
     void CalculateDampingMatrix( 
@@ -279,7 +287,7 @@ public:
      * IS ALLOWED TO WRITE ON ITS NODES.
      * the caller is expected to ensure thread safety hence
      * SET/UNSETLOCK MUST BE PERFORMED IN THE STRATEGY BEFORE CALLING THIS FUNCTION
-      * @param rCurrentProcessInfo the current process info instance
+     * @param rCurrentProcessInfo the current process info instance
      */
     void AddExplicitContribution(ProcessInfo& rCurrentProcessInfo) override;
         
@@ -490,7 +498,7 @@ protected:
         );
     
     /**
-     * Calculate condition kinematics
+     * Calculate condition kinematics (shape functions, jacobians, ...)
      */
     
     void CalculateKinematics( 
@@ -509,6 +517,9 @@ protected:
 
     /**
      * Calculates the local contibution of the LHS
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
     virtual bounded_matrix<double, MatrixSize, MatrixSize> CalculateLocalLHS(
@@ -519,6 +530,9 @@ protected:
     
     /**
      * Calculates the local contibution of the LHS
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
     virtual array_1d<double, MatrixSize> CalculateLocalRHS(
@@ -547,6 +561,8 @@ protected:
     
     /**
      * Returns a value depending of the active/inactive set
+     * @param CurrentGeometry The geometry containing the nodes that are needed to be checked as active or inactive
+     * @return The integer that can be used to identify the case to compute 
      */
     
     virtual unsigned int GetActiveInactiveValue(GeometryType& CurrentGeometry) const
@@ -559,6 +575,7 @@ protected:
     /**
      * It checks if the element is isolated or not
      * @param DeltaTime The increment of time in each time step
+     * @param HalfJump If the increment of time considered is just half or the whole time step
      */
     
     bool CheckIsolatedElement(
@@ -637,12 +654,16 @@ private:
     
     void save(Serializer& rSerializer) const override
     {
-        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, PairedCondition );
+        rSerializer.save("CalculationFlags", mCalculationFlags);
+        rSerializer.save("IntegrationOrder", mIntegrationOrder);
     }
 
     void load(Serializer& rSerializer) override
     {
-        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, PairedCondition );
+        rSerializer.load("CalculationFlags", mCalculationFlags);
+        rSerializer.load("IntegrationOrder", mIntegrationOrder);
     }
 
     ///@}

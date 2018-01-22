@@ -175,21 +175,25 @@ public:
 
    /**
     * Called at the beginning of each solution step
+    * @param rCurrentProcessInfo The current process info instance
     */
     void InitializeSolutionStep(ProcessInfo& rCurrentProcessInfo) override;
 
    /**
     * Called at the beginning of each iteration
+    * @param rCurrentProcessInfo The current process info instance
     */
     void InitializeNonLinearIteration(ProcessInfo& rCurrentProcessInfo) override;
 
     /**
     * Called at the ending of each solution step
+    * @param rCurrentProcessInfo The current process info instance
     */
     void FinalizeSolutionStep(ProcessInfo& rCurrentProcessInfo) override;
     
    /**
     * Called at the end of each iteration
+    * @param rCurrentProcessInfo The current process info instance
     */
     void FinalizeNonLinearIteration(ProcessInfo& rCurrentProcessInfo) override;
 
@@ -266,7 +270,7 @@ public:
 
     /**
      * Sets on ConditionalDofList the degrees of freedom of the considered element geometry
-     * @param rConditionalDofList
+     * @param rConditionalDofList The list of DOFs
      * @param rCurrentProcessInfo the current process info instance
      */
     void GetDofList( 
@@ -625,12 +629,12 @@ private:
     
     void save(Serializer& rSerializer) const override
     {
-        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, PairedCondition );
     }
 
     void load(Serializer& rSerializer) override
     {
-        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, PairedCondition );
     }
 
     ///@}

@@ -158,7 +158,7 @@ public:
     /**
      * Creates a new element pointer from an arry of nodes
      * @param NewId the ID of the new element
-     * @param ThisNodes the nodes of the new element
+     * @param rThisNodes the nodes of the new element
      * @param pProperties the properties assigned to the new element
      * @return a Pointer to the new element
      */
@@ -204,7 +204,7 @@ public:
 
     /**
      * Sets on rResult the ID's of the element degrees of freedom
-     * @return rResult The result vector with the ID's of the DOF
+     * @param rResult The result vector with the ID's of the DOF
      * @param rCurrentProcessInfo the current process info instance
      */
     
@@ -215,8 +215,8 @@ public:
 
     /**
      * Sets on ConditionalDofList the degrees of freedom of the considered element geometry
-     * @return rConditionalDofList
-     * @param rCurrentProcessInfo the current process info instance
+     * @param rConditionalDofList The list of DOFs
+     * @param rCurrentProcessInfo The current process info instance
      */
     
     void GetDofList( 
@@ -229,7 +229,7 @@ public:
      * It is designed to be called only once (or anyway, not often) typically at the beginning
      * of the calculations, so to verify that nothing is missing from the input
      * or that no common error is found.
-     * @param rCurrentProcessInfo
+     * @param rCurrentProcessInfo The current process information
      */
     int Check( const ProcessInfo& rCurrentProcessInfo ) override;
         
@@ -273,8 +273,11 @@ protected:
     /**************** METHODS TO CALCULATE MORTAR CONDITION MATRICES ****************/
     /********************************************************************************/
 
-    /*
+    /**
      * Calculates the local contibution of the LHS
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
     bounded_matrix<double, MatrixSize, MatrixSize> CalculateLocalLHS(
@@ -283,8 +286,11 @@ protected:
         const unsigned int rActiveInactive
         ) override;
     
-    /*
-     * Calculates the local contibution of the LHS
+    /**
+     * Calculates the local contibution of the RHS
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
      */
     
     array_1d<double, MatrixSize> CalculateLocalRHS(
@@ -297,8 +303,10 @@ protected:
     /********** AUXILLIARY METHODS FOR GENERAL CALCULATIONS ***********/
     /******************************************************************/
     
-    /*
+    /**
      * Returns a value depending of the active/inactive set
+     * @param CurrentGeometry The geometry containing the nodes that are needed to be checked as active or inactive
+     * @return The integer that can be used to identify the case to compute 
      */
     
     unsigned int GetActiveInactiveValue(GeometryType& CurrentGeometry) const override
@@ -318,7 +326,7 @@ protected:
         return value;
     }
     
-    /*
+    /**
      * Returns a value depending of the active/inactive set
      */
     
@@ -381,12 +389,12 @@ private:
     
     void save(Serializer& rSerializer) const override
     {
-        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, BaseType );
     }
 
     void load(Serializer& rSerializer) override
     {
-        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, Condition );
+        KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, BaseType );
     }
 
     ///@}
