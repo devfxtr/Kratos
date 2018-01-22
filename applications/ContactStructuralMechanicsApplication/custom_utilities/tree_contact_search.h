@@ -364,6 +364,11 @@ private:
         );
     
     /**
+     * 
+     */
+    inline void ComputeMappedGap(const bool SearchOrientation);
+    
+    /**
      * This method creates the auxiliar the pairing
      * @param rContactModelPart The modelpart  used in the assemble of the system
      * @param rComputingModelPart The modelpart  used in the assemble of the system

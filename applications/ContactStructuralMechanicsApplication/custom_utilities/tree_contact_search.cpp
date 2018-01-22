@@ -347,6 +347,15 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
     // We map the Coordinates to the slave side from the master
     if (mCheckGap == MappingCheck) 
         CheckPairing(computing_rcontact_model_part, condition_id);
+    else {
+        // We revert the nodes to the original position    
+        if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
+            NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
+            #pragma omp parallel for
+            for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
+                noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+        }
+    }
     
     // Auxiliar gap
     VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes());
@@ -381,6 +390,17 @@ void TreeContactSearch<TDim, TNumNodes>::AddPairing(
         // We activate the condition and initialize it
         p_auxiliar_condition->Set(ACTIVE, true);
         p_auxiliar_condition->Initialize();
+        if (mThisParameters["double_formulation"].GetBool() == true) {
+            ++ConditionId;
+            Condition::Pointer p_auxiliar_condition = rComputingModelPart.CreateNewCondition(mConditionName, ConditionId, pCondMaster->GetGeometry(), pCondMaster->pGetProperties());
+            // We set the geometrical values
+            p_auxiliar_condition->SetValue(PAIRED_GEOMETRY, pCondSlave->pGetGeometry());
+            p_auxiliar_condition->SetValue(NORMAL, pCondMaster->GetValue(NORMAL));
+            p_auxiliar_condition->SetValue(PAIRED_NORMAL, pCondSlave->GetValue(NORMAL));
+            // We activate the condition and initialize it
+            p_auxiliar_condition->Set(ACTIVE, true);
+            p_auxiliar_condition->Initialize();
+        }
     }
 }
 
@@ -655,8 +675,45 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     std::size_t& ConditionId
     )
 {
+    // We compute the maximal nodal h and some auxiliar values  // TODO: Think about this criteria
+    const double distance_threshold = GetMeanNodalH(); 
+//     const double distance_threshold = GetMaxNodalH(); 
+//     const double distance_threshold = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR] * GetMaxNodalH();
+    
+    // Updating the distance distance threshold
+    mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD] = distance_threshold;
+    
+    // We compute the gap in the slave
+    ComputeMappedGap(!mInvertedSearch);
+    if (mThisParameters["double_formulation"].GetBool() == true)
+        ComputeMappedGap(mInvertedSearch);
+    
+    // We revert the nodes to the original position    
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
+    NodesArrayType& nodes_array = rcontact_model_part.Nodes();
+    if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
+        #pragma omp parallel for
+        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
+            noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+    }
+    
+    // Calculate the mean of the normal in all the nodes
+    MortarUtilities::ComputeNodesMeanNormalModelPart(rcontact_model_part); 
+    
+    // Iterate in the conditions and create the new ones
+    CreateAuxiliarConditions(rcontact_model_part, rComputingModelPart, ConditionId);
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool SearchOrientation)
+{
     // Some auxiliar values
     const double tolerance = std::numeric_limits<double>::epsilon();
+    const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
+    const double distance_threshold = mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD];
     
     // Iterate over the nodes
     ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
@@ -667,21 +724,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
         
-        if (it_node->Is(MASTER) == !mInvertedSearch)
+        if (it_node->Is(MASTER) == SearchOrientation)
             it_node->SetValue(AUXILIAR_COORDINATES, it_node->Coordinates());
         else
             it_node->SetValue(AUXILIAR_COORDINATES, ZeroVector(3));
     }
-    
-    // We compute the maximal nodal h and some auxiliar values
-    const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
-    // TODO: Think about this criteria
-    const double distance_threshold = GetMeanNodalH(); 
-//     const double distance_threshold = GetMaxNodalH(); 
-//     const double distance_threshold = active_check_factor * GetMaxNodalH();
-    
-    // Updating the distance distance threshold
-    mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD] = distance_threshold;
     
     // We set the mapper parameters
     Parameters mapping_parameters = Parameters(R"({"inverted_master_slave_pairing": false, "distance_threshold" : 1.0e24})" );
@@ -696,7 +743,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
         auto it_node = nodes_array.begin() + i;
 
-        if (it_node->Is(SLAVE) == !mInvertedSearch) {
+        if (it_node->Is(SLAVE) == SearchOrientation) {
             // We compute the gap
             const array_1d<double, 3>& normal = it_node->FastGetSolutionStepValue(NORMAL);
             const array_1d<double, 3>& auxiliar_coordinates = it_node->GetValue(AUXILIAR_COORDINATES);
@@ -718,21 +765,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
         else
             it_node->SetValue(NORMAL_GAP, 0.0);
     }
-    
-    // We revert the nodes to the original position    
-    if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
-        #pragma omp parallel for
-        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-            noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
-    }
-    
-    // Calculate the mean of the normal in all the nodes
-    MortarUtilities::ComputeNodesMeanNormalModelPart(rcontact_model_part); 
-    
-    // Iterate in the conditions and create the new ones
-    CreateAuxiliarConditions(rcontact_model_part, rComputingModelPart, ConditionId);
 }
-
 /***********************************************************************************/
 /***********************************************************************************/
 

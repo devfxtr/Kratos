@@ -211,6 +211,10 @@ class ALMContactProcess(python_process.PythonProcess):
     def _assign_slave_conditions(self):
         if (self.params["assume_master_slave"].GetString() == ""):
             KratosMultiphysics.VariableUtils().SetFlag(KratosMultiphysics.SLAVE, True, self.contact_model_part.Conditions)
+            
+        # We set all the nodes as SLAVE if double double formulation
+        if (self.params["double_formulation"].GetBool() == True):
+            KratosMultiphysics.VariableUtils().SetFlag(KratosMultiphysics.SLAVE, True, self.contact_model_part.Nodes)
 
     def _assign_slave_nodes(self):
         if (self.params["assume_master_slave"].GetString() != ""):

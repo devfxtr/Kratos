@@ -98,9 +98,10 @@ void DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition<TDim,TNum
     // We iterate over the nodes // TODO: Add derivatives
     GeometryType& slave_geometry = this->GetGeometry();
     for (std::size_t i_node = 0; i_node < TNumNodes; ++i_node) { 
+        const bool is_active = slave_geometry[i_node].Is(ACTIVE);
         for (std::size_t j_node = 0; j_node < TNumNodes; ++j_node) {  // TODO: Check the sign
-            rLocalLHS(initial_index + i_node, initial_index + j_node) = slave_geometry[i_node].Is(ACTIVE) ? rMortarConditionMatrices.DOperator(i_node, j_node) : 0.0;
-            rLocalLHS(initial_index + i_node, initial_index + TNumNodes + j_node) = slave_geometry[i_node].Is(ACTIVE) ? - rMortarConditionMatrices.MOperator(i_node, j_node) : 0.0;
+            rLocalLHS(initial_index + i_node, initial_index + j_node) = is_active ? rMortarConditionMatrices.DOperator(i_node, j_node) : 0.0;
+            rLocalLHS(initial_index + i_node, initial_index + TNumNodes + j_node) = is_active ? - rMortarConditionMatrices.MOperator(i_node, j_node) : 0.0;
         }
     }
 }
