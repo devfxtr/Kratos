@@ -55,8 +55,8 @@ namespace Kratos {
 ///@name Kratos Classes
 ///@{
     
-/** \brief  Short class definition.
-This class 
+/** \brief  Contact Newton Raphson class
+ * This class is a specialization of the Newton Raphson strategy with some custom modifications for contact problems
 */
 
 template<class TSparseSpace,
@@ -111,7 +111,7 @@ public:
      * @param pScheme The integration scheme
      * @param pNewLinearSolver The linear solver employed
      * @param pNewConvergenceCriteria The convergence criteria employed
-     * @param MaxIterationNumber The maximum number of iterations
+     * @param MaxIterations The maximum number of iterations
      * @param CalculateReactions The flag for the reaction calculation
      * @param ReformDofSetAtEachStep The flag that allows to compute the modification of the DOF
      * @param MoveMeshFlag The flag that allows to move the mesh
@@ -158,7 +158,7 @@ public:
      * @param pScheme The integration scheme
      * @param pNewLinearSolver The linear solver employed
      * @param pNewConvergenceCriteria The convergence criteria employed
-     * @param MaxIterationNumber The maximum number of iterations
+     * @param MaxIterations The maximum number of iterations
      * @param CalculateReactions The flag for the reaction calculation
      * @param ReformDofSetAtEachStep The flag that allows to compute the modification of the DOF
      * @param MoveMeshFlag The flag that allows to move the mesh
