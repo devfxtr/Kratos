@@ -128,8 +128,11 @@ void TreeContactSearch<TDim, TNumNodes>::ClearScalarMortarConditions()
     NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
     
     #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-        (nodes_array.begin() + i)->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;
+    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+        auto it_node = nodes_array.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            it_node->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;
+    }
 }
 
 /***********************************************************************************/
@@ -143,8 +146,11 @@ void TreeContactSearch<TDim, TNumNodes>::ClearComponentsMortarConditions()
     NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
     
     #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-        noalias((nodes_array.begin() + i)->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3);
+    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+        auto it_node = nodes_array.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            noalias((nodes_array.begin() + i)->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3);
+    }
 }
 
 /***********************************************************************************/
@@ -158,8 +164,11 @@ void TreeContactSearch<TDim, TNumNodes>::ClearALMFrictionlessMortarConditions()
     NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
     
     #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-        (nodes_array.begin() + i)->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0;
+    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+        auto it_node = nodes_array.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            (nodes_array.begin() + i)->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0;
+    }
 }
     
 /***********************************************************************************/
