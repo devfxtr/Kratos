@@ -850,13 +850,24 @@ template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::iterator ItNode)
 {
     if (ItNode->Is(ACTIVE) == true ) {
-//         const double old_weighted_value = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP, 1);
-//         const double current_weighted_value = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP);
-        ItNode->Set(ACTIVE, true); 
-        // TODO: Add LM correction
+        switch(mTypeSolution) {
+            case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
+                                                CorrectALMFrictionalMortarLM(ItNode);
+                                            else
+                                                CorrectComponentsMortarLM(ItNode);
+            case ScalarLagrangeMultiplier : CorrectScalarMortarLM(ItNode); 
+            case NormalContactStress : CorrectALMFrictionlessMortarLM(ItNode); 
+        }
     } else {
         ItNode->Set(ACTIVE, true); 
-        // TODO: Add LM prediction
+        switch(mTypeSolution) {
+            case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
+                                                PredictALMFrictionalMortarLM(ItNode);
+                                            else
+                                                PredictComponentsMortarLM(ItNode);
+            case ScalarLagrangeMultiplier : PredictScalarMortarLM(ItNode); 
+            case NormalContactStress : PredictALMFrictionlessMortarLM(ItNode); 
+        }
     }
 }
     
@@ -877,6 +888,78 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::
     
     // We set the gap to zero (in order to have something "visible" to post process)
     ItNode->SetValue(NORMAL_GAP, 0.0);
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectScalarMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectComponentsMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionalMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::PredictScalarMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::PredictComponentsMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionalMortarLM(NodesArrayType::iterator ItNode)
+{
+    // TODO: Add correction
 }
 
 /***********************************************************************************/

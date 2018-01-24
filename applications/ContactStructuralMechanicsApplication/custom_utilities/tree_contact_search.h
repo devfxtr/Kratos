@@ -399,6 +399,62 @@ private:
     inline void SetInactiveNode(NodesArrayType::iterator ItNode);
     
     /**
+     * This function predicts the scalar LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void CorrectScalarMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the vector LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void CorrectComponentsMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the ALM frictionless LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void CorrectALMFrictionlessMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the ALM frictional LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void CorrectALMFrictionalMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the scalar LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void PredictScalarMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the vector LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void PredictComponentsMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the ALM frictionless LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void PredictALMFrictionlessMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This function predicts the ALM frictional LM
+     * @param ItNode The node iterator to set
+     */
+    
+    inline void PredictALMFrictionalMortarLM(NodesArrayType::iterator ItNode);
+    
+    /**
      * This method sets as inactive a node and it sets to zero its LM
      */
     inline void ComputeWeightedReaction();
