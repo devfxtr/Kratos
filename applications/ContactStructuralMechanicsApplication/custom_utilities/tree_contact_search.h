@@ -49,6 +49,8 @@ namespace Kratos
     
     enum CheckGap {NoCheck = 0, DirectCheck = 1, MappingCheck = 2};
     
+    enum TypeSolution {NormalContactStress = 0, ScalarLagrangeMultiplier = 1, VectorLagrangeMultiplier = 2};
+    
 ///@}
 ///@name  Functions
 ///@{
@@ -136,19 +138,7 @@ public:
      * This function clears the mortar conditions already created 
      */
     
-    void ClearScalarMortarConditions();
-    
-    /**
-     * This function clears the mortar conditions already created 
-     */
-    
-    void ClearComponentsMortarConditions();
-    
-    /**
-     * This function clears the ALM frictionless mortar conditions already created 
-     */
-    
-    void ClearALMFrictionlessMortarConditions();
+    void ClearMortarConditions();
       
     /**
      * This function creates a lists  points ready for the Mortar method
@@ -262,6 +252,7 @@ private:
     ModelPart& mrMainModelPart;                      // The main model part
     Parameters mThisParameters;                      // The configuration parameters
     CheckGap mCheckGap;                              // If the gap is checked during the search
+    TypeSolution mTypeSolution;                      // The solution type 
     bool mInvertedSearch;                            // The search will be done inverting the way master and slave/master is assigned
     std::string mConditionName;                      // The name of the condition to be created
     bool mCreateAuxiliarConditions;                  // If the auxiliar conditions are created or not
@@ -274,6 +265,27 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
+       
+    /**
+     * This function clears the mortar conditions already created 
+     * @param NodesArray The array of nodes to clear
+     */
+    
+    void ClearScalarMortarConditions(NodesArrayType& NodesArray);
+    
+    /**
+     * This function clears the mortar conditions already created 
+     * @param NodesArray The array of nodes to clear
+     */
+    
+    void ClearComponentsMortarConditions(NodesArrayType& NodesArray);
+    
+    /**
+     * This function clears the ALM frictionless mortar conditions already created 
+     * @param NodesArray The array of nodes to clear
+     */
+    
+    void ClearALMFrictionlessMortarConditions(NodesArrayType& NodesArray);
        
     /**
      * This method computes the maximal nodal H
@@ -368,6 +380,18 @@ private:
      * @param SearchOrientation The orientation of the search (inverted or not)
      */
     inline void ComputeMappedGap(const bool SearchOrientation);
+    
+    /**
+     * This method sets as active a node and it predicts the value of its LM
+     * @param ItNode The node iterator to set
+     */
+    inline void SetActiveNode(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This method sets as inactive a node and it sets to zero its LM
+     * @param ItNode The node iterator to set
+     */
+    inline void SetInactiveNode(NodesArrayType::iterator ItNode);
     
     /**
      * This method switchs the flag of an array of nodes

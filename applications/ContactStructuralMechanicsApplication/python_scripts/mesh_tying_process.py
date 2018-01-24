@@ -159,10 +159,7 @@ class MeshTyingProcess(python_process.PythonProcess):
         self.contact_search.InitializeMortarConditions()
         
     def ExecuteBeforeSolutionLoop(self):
-        if (self.type_variable == "Scalar"):
-            self.contact_search.ClearScalarMortarConditions()
-        else:
-            self.contact_search.ClearComponentsMortarConditions()
+        self.contact_search.ClearMortarConditions()
             
         self.contact_search.UpdateMortarConditions()
         #self.contact_search.CheckMortarConditions()

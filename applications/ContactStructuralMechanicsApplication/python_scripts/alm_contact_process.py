@@ -177,7 +177,7 @@ class ALMContactProcess(python_process.PythonProcess):
         if (self.database_step >= self.params["database_step_update"].GetInt() or self.global_step == 1):
             # We solve one linear step with a linear strategy if needed
             # Clear current pairs
-            self._clear_sets(self.contact_search)
+            self.contact_search.ClearMortarConditions()
             # Update database
             self.contact_search.UpdateMortarConditions()
             #self.contact_search.CheckMortarConditions()
@@ -196,17 +196,11 @@ class ALMContactProcess(python_process.PythonProcess):
     def ExecuteAfterOutputStep(self):
         modified = self.main_model_part.Is(KratosMultiphysics.MODIFIED)
         if (modified == False and (self.database_step >= self.params["database_step_update"].GetInt() or self.global_step == 1)):
-            self._clear_sets(self.contact_search)
+            self.contact_search.ClearMortarConditions()
             self.database_step = 0
             
     def ExecuteFinalize(self):
         pass
-
-    def _clear_sets(self, contact_search):
-        if self.params["contact_type"].GetString() == "Frictionless":  
-            contact_search.ClearALMFrictionlessMortarConditions()
-        else:
-            contact_search.ClearComponentsMortarConditions()
 
     def _assign_slave_conditions(self):
         if (self.params["assume_master_slave"].GetString() == ""):

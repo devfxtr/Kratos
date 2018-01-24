@@ -96,6 +96,15 @@ TreeContactSearch<TDim, TNumNodes>::TreeContactSearch(
     #pragma omp parallel for 
     for(int i = 0; i < num_conditions; ++i) 
         (conditions_array.begin() + i)->Set(ACTIVE, false);
+    
+    // We identify the type of solution
+    mTypeSolution =  VectorLagrangeMultiplier;
+    if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VECTOR_LAGRANGE_MULTIPLIER) == false) {
+        if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(NORMAL_CONTACT_STRESS) == true)
+            mTypeSolution = NormalContactStress;
+        else
+            mTypeSolution = ScalarLagrangeMultiplier;
+    }
 }   
     
 /***********************************************************************************/
@@ -121,53 +130,16 @@ void TreeContactSearch<TDim, TNumNodes>::InitializeMortarConditions()
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-void TreeContactSearch<TDim, TNumNodes>::ClearScalarMortarConditions()
+void TreeContactSearch<TDim, TNumNodes>::ClearMortarConditions()
 {
     ResetContactOperators();
     
     NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
-    
-    #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-        auto it_node = nodes_array.begin() + i;
-        if (it_node->Is(ACTIVE) == false)
-            it_node->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;
-    }
-}
-
-/***********************************************************************************/
-/***********************************************************************************/
-
-template<unsigned int TDim, unsigned int TNumNodes>
-void TreeContactSearch<TDim, TNumNodes>::ClearComponentsMortarConditions()
-{
-    ResetContactOperators();
-    
-    NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
-    
-    #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-        auto it_node = nodes_array.begin() + i;
-        if (it_node->Is(ACTIVE) == false)
-            noalias((nodes_array.begin() + i)->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3);
-    }
-}
-
-/***********************************************************************************/
-/***********************************************************************************/
-
-template<unsigned int TDim, unsigned int TNumNodes>
-void TreeContactSearch<TDim, TNumNodes>::ClearALMFrictionlessMortarConditions()
-{        
-    ResetContactOperators();
-    
-    NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
-    
-    #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-        auto it_node = nodes_array.begin() + i;
-        if (it_node->Is(ACTIVE) == false)
-            (nodes_array.begin() + i)->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0;
+        
+    switch(mTypeSolution) {
+        case VectorLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
+        case ScalarLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
+        case NormalContactStress : ClearScalarMortarConditions(nodes_array); 
     }
 }
     
@@ -455,7 +427,8 @@ void TreeContactSearch<TDim, TNumNodes>::CheckMortarConditions()
     
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
-        if (it_node->Is(ACTIVE) == true) std::cout << "Node: " << it_node->Id() << " is active" << std::endl;
+        if (it_node->Is(ACTIVE) == true) 
+            std::cout << "Node: " << it_node->Id() << " is active" << std::endl;
     }
 }
 
@@ -466,6 +439,48 @@ template<unsigned int TDim, unsigned int TNumNodes>
 void TreeContactSearch<TDim, TNumNodes>::InvertSearch()
 {
     mInvertedSearch = !mInvertedSearch;
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+void TreeContactSearch<TDim, TNumNodes>::ClearScalarMortarConditions(NodesArrayType& NodesArray)
+{    
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(NodesArray.size()); ++i) {
+        auto it_node = NodesArray.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            it_node->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;
+    }
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+void TreeContactSearch<TDim, TNumNodes>::ClearComponentsMortarConditions(NodesArrayType& NodesArray)
+{
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(NodesArray.size()); ++i) {
+        auto it_node = NodesArray.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            noalias((NodesArray.begin() + i)->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3);
+    }
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+void TreeContactSearch<TDim, TNumNodes>::ClearALMFrictionlessMortarConditions(NodesArrayType& NodesArray)
+{            
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(NodesArray.size()); ++i) {
+        auto it_node = NodesArray.begin() + i;
+        if (it_node->Is(ACTIVE) == false)
+            (NodesArray.begin() + i)->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0;
+    }
 }
 
 /***********************************************************************************/
@@ -800,7 +815,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
                 KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "WARNING:: NODAL_H not added" << std::endl; 
             #endif
                 const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
-                if (gap < auxiliar_length) it_node->Set(ACTIVE);
+                if (gap < auxiliar_length) {
+                    SetActiveNode(it_node);
+                } else {
+                    SetInactiveNode(it_node);
+                }
             }
             else
                 it_node->SetValue(NORMAL_GAP, 0.0);
@@ -809,6 +828,30 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
             it_node->SetValue(NORMAL_GAP, 0.0);
     }
 }
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::iterator ItNode)
+{
+    ItNode->Set(ACTIVE, true); // TODO: Add prediction of the contact pressure
+}
+    
+/***********************************************************************************/
+/***********************************************************************************/
+    
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::iterator ItNode)
+{
+    ItNode->Set(ACTIVE, false);
+    switch(mTypeSolution) {
+        case VectorLagrangeMultiplier : noalias(ItNode->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3); 
+        case ScalarLagrangeMultiplier : ItNode->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;  
+        case NormalContactStress : ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+    }
+}
+
 /***********************************************************************************/
 /***********************************************************************************/
 
