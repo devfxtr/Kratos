@@ -79,18 +79,15 @@ TreeContactSearch<TDim, TNumNodes>::TreeContactSearch(
         mConditionName.append(mThisParameters["final_string"].GetString());
     }
     
-    // We iterate over the nodes
-    NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
+    // We get the contact model part
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
     
-    #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-        auto it_node = nodes_array.begin() + i;
-        it_node->Set(ACTIVE, false);
-        if (mCheckGap == MappingCheck) it_node->SetValue(NORMAL_GAP, 0.0);
-    }
+    // We set to zero the NORMAL_GAP
+    if (mCheckGap == MappingCheck)
+        VariableUtils().SetScalarVarNonHistorical<Variable<double>>(NORMAL_GAP, 0.0, rcontact_model_part.Nodes()); 
     
     // Iterate in the conditions
-    ConditionsArrayType& conditions_array = mrMainModelPart.GetSubModelPart("Contact").Conditions();
+    ConditionsArrayType& conditions_array = rcontact_model_part.Conditions();
     const int num_conditions = static_cast<int>(conditions_array.size());
 
     #pragma omp parallel for 
@@ -336,9 +333,9 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
             for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
                 noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
         }
+        // We compute the weighted reaction
+        ComputeWeightedReaction();
     }
-    
-    ComputeWeightedReaction();
 }
 
 /***********************************************************************************/
@@ -724,13 +721,18 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     // Updating the distance distance threshold
     mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD] = distance_threshold;
     
+    // We get the contact model part
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
+    
+    // We set the gap to an enormous value in order to initialize it
+    VariableUtils().SetScalarVarNonHistorical<Variable<double>>(NORMAL_GAP, 1.0e12, rcontact_model_part.Nodes()); 
+    
     // We compute the gap in the slave
     ComputeMappedGap(!mInvertedSearch);
     if (mThisParameters["double_formulation"].GetBool() == true)
         ComputeMappedGap(mInvertedSearch);
     
     // We revert the nodes to the original position    
-    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
     NodesArrayType& nodes_array = rcontact_model_part.Nodes();
     if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
         #pragma omp parallel for
@@ -743,6 +745,12 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     
     // Iterate in the conditions and create the new ones
     CreateAuxiliarConditions(rcontact_model_part, rComputingModelPart, ConditionId);
+    
+    // We compute the weighted reaction
+    ComputeWeightedReaction();
+    
+    // Finally we compute the active/inactive nodes
+    ComputeActiveInactiveNodes();
 }
 
 /***********************************************************************************/
@@ -753,7 +761,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
 {
     // Some auxiliar values
     const double tolerance = std::numeric_limits<double>::epsilon();
-    const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
+//     const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
     const double distance_threshold = mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD];
     
     // Iterate over the nodes
@@ -798,25 +806,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
             const array_1d<double, 3>& auxiliar_coordinates = it_node->GetValue(AUXILIAR_COORDINATES);
             const array_1d<double, 3>& components_gap = ( it_node->Coordinates() - auxiliar_coordinates);
             const double gap = inner_prod(components_gap, - normal);
-            it_node->SetValue(NORMAL_GAP, gap);
             
             // We activate if the node is close enough
-            if (norm_2(auxiliar_coordinates) > tolerance) {
-            #ifdef KRATOS_DEBUG
-                KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "WARNING:: NODAL_H not added" << std::endl; 
-            #endif
-                const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
-                if (gap < auxiliar_length) {
-                    SetActiveNode(it_node);
-                } else {
-                    SetInactiveNode(it_node);
-                }
-            }
-            else
-                it_node->SetValue(NORMAL_GAP, 0.0);
-        }
-        else
-            it_node->SetValue(NORMAL_GAP, 0.0);
+            if (norm_2(auxiliar_coordinates) > tolerance)
+                it_node->SetValue(NORMAL_GAP, gap);
+        } 
     }
 }
 
@@ -838,18 +832,14 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
         auto it_node = nodes_array.begin() + i;
 
-        if (it_node->Has(NORMAL_GAP) == true) {
-        #ifdef KRATOS_DEBUG
-            KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "WARNING:: NODAL_H not added" << std::endl; 
-        #endif
-            const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
-            if (it_node->GetValue(NORMAL_GAP) < auxiliar_length) {
-                SetActiveNode(it_node);
-            } else {
-                SetInactiveNode(it_node);
-            }
-        } else
-            it_node->SetValue(NORMAL_GAP, 0.0);
+    #ifdef KRATOS_DEBUG
+        KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "ERROR:: NODAL_H not added" << std::endl; 
+    #endif
+        const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
+        if (it_node->GetValue(NORMAL_GAP) < auxiliar_length)
+            SetActiveNode(it_node);
+        else 
+            SetInactiveNode(it_node);
     }
 }
 
@@ -859,7 +849,15 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::iterator ItNode)
 {
-    ItNode->Set(ACTIVE, true); // TODO: Add prediction of the contact pressure
+    if (ItNode->Is(ACTIVE) == true ) {
+//         const double old_weighted_value = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP, 1);
+//         const double current_weighted_value = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP);
+        ItNode->Set(ACTIVE, true); 
+        // TODO: Add LM correction
+    } else {
+        ItNode->Set(ACTIVE, true); 
+        // TODO: Add LM prediction
+    }
 }
     
 /***********************************************************************************/
@@ -868,12 +866,17 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::it
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::iterator ItNode)
 {
-    ItNode->Set(ACTIVE, false);
-    switch(mTypeSolution) {
-        case VectorLagrangeMultiplier : noalias(ItNode->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3); 
-        case ScalarLagrangeMultiplier : ItNode->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;  
-        case NormalContactStress : ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+    if (ItNode->Is(ACTIVE) == true ) {
+        ItNode->Set(ACTIVE, false);
+        switch(mTypeSolution) {
+            case VectorLagrangeMultiplier : noalias(ItNode->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3); 
+            case ScalarLagrangeMultiplier : ItNode->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;  
+            case NormalContactStress : ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+        }
     }
+    
+    // We set the gap to zero (in order to have something "visible" to post process)
+    ItNode->SetValue(NORMAL_GAP, 0.0);
 }
 
 /***********************************************************************************/
