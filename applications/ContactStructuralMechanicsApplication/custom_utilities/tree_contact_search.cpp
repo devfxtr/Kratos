@@ -139,7 +139,7 @@ void TreeContactSearch<TDim, TNumNodes>::ClearMortarConditions()
     switch(mTypeSolution) {
         case VectorLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
         case ScalarLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
-        case NormalContactStress : ClearScalarMortarConditions(nodes_array); 
+        case NormalContactStress : ClearALMFrictionlessMortarConditions(nodes_array); 
     }
 }
     
@@ -338,16 +338,7 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
         }
     }
     
-    // Auxiliar gap
-    VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes());
-    ModelPart& r_computing_contact_model_part = mrMainModelPart.GetSubModelPart("ComputingContact");
-    ConditionsArrayType& computing_conditions_array = r_computing_contact_model_part.Conditions();
-    auto process_info = mrMainModelPart.GetProcessInfo();
-    #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(computing_conditions_array.size()); ++i) {  
-        auto it_cond = computing_conditions_array.begin() + i;
-        it_cond->AddExplicitContribution(process_info);
-    }
+    ComputeWeightedReaction();
 }
 
 /***********************************************************************************/
@@ -833,6 +824,39 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
+{
+    // Some auxiliar values
+    const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
+    
+    // Iterate over the nodes
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
+    NodesArrayType& nodes_array = rcontact_model_part.Nodes();
+    
+    // We compute now the normal gap and set the nodes under certain threshold as active
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
+        auto it_node = nodes_array.begin() + i;
+
+        if (it_node->Has(NORMAL_GAP) == true) {
+        #ifdef KRATOS_DEBUG
+            KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "WARNING:: NODAL_H not added" << std::endl; 
+        #endif
+            const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
+            if (it_node->GetValue(NORMAL_GAP) < auxiliar_length) {
+                SetActiveNode(it_node);
+            } else {
+                SetInactiveNode(it_node);
+            }
+        } else
+            it_node->SetValue(NORMAL_GAP, 0.0);
+    }
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::iterator ItNode)
 {
     ItNode->Set(ACTIVE, true); // TODO: Add prediction of the contact pressure
@@ -849,6 +873,33 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::
         case VectorLagrangeMultiplier : noalias(ItNode->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3); 
         case ScalarLagrangeMultiplier : ItNode->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;  
         case NormalContactStress : ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+    }
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+    
+template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::ComputeWeightedReaction()
+{
+    // Auxiliar gap
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
+    switch(mTypeSolution) {
+        case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) {
+                                             VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
+                                             VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SLIP, 0.0, rcontact_model_part.Nodes()); 
+                                        } else
+                                            VariableUtils().SetVectorVar(WEIGHTED_VECTOR_RESIDUAL, ZeroVector(3), rcontact_model_part.Nodes());
+        case ScalarLagrangeMultiplier : VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SCALAR_RESIDUAL, 0.0, rcontact_model_part.Nodes()); 
+        case NormalContactStress : VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
+    }
+    ModelPart& r_computing_contact_model_part = mrMainModelPart.GetSubModelPart("ComputingContact");
+    ConditionsArrayType& computing_conditions_array = r_computing_contact_model_part.Conditions();
+    auto process_info = mrMainModelPart.GetProcessInfo();
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(computing_conditions_array.size()); ++i) {  
+        auto it_cond = computing_conditions_array.begin() + i;
+        it_cond->AddExplicitContribution(process_info);
     }
 }
 
@@ -904,15 +955,12 @@ void TreeContactSearch<TDim, TNumNodes>::ResetContactOperators()
     ConditionsArrayType& conditions_array = mrMainModelPart.GetSubModelPart("Contact").Conditions();
     
     #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i) 
-    {
+    for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i) {
         auto it_cond = conditions_array.begin() + i;
-        if (it_cond->Is(SLAVE) == !mInvertedSearch)
-        {            
+        if (it_cond->Is(SLAVE) == !mInvertedSearch) {            
             auto& condition_pointers = it_cond->GetValue(INDEX_SET);
             
-            if (condition_pointers != nullptr)
-            {
+            if (condition_pointers != nullptr) {
                 condition_pointers->clear();
 //                     condition_pointers->reserve(mAllocationSize); 
             }

@@ -382,6 +382,11 @@ private:
     inline void ComputeMappedGap(const bool SearchOrientation);
     
     /**
+     *  This method computes which nodes are active or inactive after after mapping the coordinates
+     */
+    inline void ComputeActiveInactiveNodes();
+    
+    /**
      * This method sets as active a node and it predicts the value of its LM
      * @param ItNode The node iterator to set
      */
@@ -392,6 +397,11 @@ private:
      * @param ItNode The node iterator to set
      */
     inline void SetInactiveNode(NodesArrayType::iterator ItNode);
+    
+    /**
+     * This method sets as inactive a node and it sets to zero its LM
+     */
+    inline void ComputeWeightedReaction();
     
     /**
      * This method switchs the flag of an array of nodes
