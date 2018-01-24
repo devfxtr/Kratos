@@ -914,7 +914,40 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectComponentsMortarLM(NodesA
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
 {
-    // TODO: Add correction
+//     const double old_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP, 1); 
+//     const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
+//     
+//     double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
+//     
+//     const bool old_penetration = (old_weighted_gap < 0.0) ? true : false;
+//     const bool current_penetration = (current_weighted_gap < 0.0) ? true : false;
+//     
+//     // If both are positive or negative we just interpolate the current values
+//     if (old_penetration == current_penetration) {
+//         if (old_penetration == true) { // Penetrating
+//             if (std::abs(old_weighted_gap) > std::numeric_limits<double>::epsilon())
+//                 current_contact_stress *= current_weighted_gap/old_weighted_gap;
+//         } else { // Not penetrating
+//             if (old_weighted_gap > std::numeric_limits<double>::epsilon())
+//                 current_contact_stress /= current_weighted_gap/old_weighted_gap;
+//         }
+//     } else if (old_penetration && !current_penetration) { // We had penenetration and we don't have it anymore
+//         const double gap_variation = (current_weighted_gap + old_weighted_gap);
+//         if (std::abs(gap_variation) > std::numeric_limits<double>::epsilon()) {
+//             if (gap_variation > 0.0)
+//                 current_contact_stress *= - old_weighted_gap/gap_variation;
+//             else
+//                 current_contact_stress *= - current_weighted_gap/gap_variation;
+//         }
+//     } else { // We have penetration and we haven't before
+//         const double gap_variation = (old_weighted_gap - current_weighted_gap);
+//         if (std::abs(gap_variation) > std::numeric_limits<double>::epsilon()) {
+//             if (gap_variation > 0.0)
+//                 current_contact_stress /= - current_weighted_gap/gap_variation;
+//             else
+//                 current_contact_stress /= - old_weighted_gap/gap_variation;
+//         }
+//     }
 }
 
 /***********************************************************************************/
@@ -950,7 +983,25 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictComponentsMortarLM(NodesA
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
 {
-    // TODO: Add correction
+//     // The penalty to be use (TODO: think about use the nodal penalty)
+//     ProcessInfo& current_process_info = mrMainModelPart.GetProcessInfo(); // TODO: Avoid call the process info each time
+//     const double initial_penalty = current_process_info[INITIAL_PENALTY]; 
+//     const double distance_threshold = current_process_info[DISTANCE_THRESHOLD]; 
+//     
+//     // If we have penetration
+//     const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
+//     const double nodal_area = ItNode->GetValue(NODAL_AREA); 
+//     const bool current_penetration = (current_weighted_gap < 0.0) ? true : false;
+//     
+//     double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
+//     
+//     // We have penetration so we just basically approximate the solution with the traditional 
+//     if (current_penetration) {
+//         current_contact_stress = initial_penalty * current_weighted_gap;
+//     } else { // We don't have penetration, we do a simpler approach
+//         const double relative_gap = (current_weighted_gap - distance_threshold * nodal_area);
+//         current_contact_stress = (relative_gap < 0.0) ? initial_penalty * relative_gap : 0.0;
+//     }
 }
 
 /***********************************************************************************/
