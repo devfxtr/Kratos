@@ -47,11 +47,11 @@ ComputeLevelSetSolMetricProcess<TDim>::ComputeLevelSetSolMetricProcess(
     if (ThisParameters["anisotropy_remeshing"].GetBool() == false) {
         mAnisotropicRatio = default_parameters["anisotropy_parameters"]["hmin_over_hmax_anisotropic_ratio"].GetDouble();
         mBoundLayer = default_parameters["anisotropy_parameters"]["boundary_layer_max_distance"].GetDouble();
-        mInterpolation = ConvertInter(default_parameters["anisotropy_parameters"]["interpolation"].GetString());
+        mSizeInterpolation = ConvertInter(default_parameters["anisotropy_parameters"]["interpolation"].GetString());
     } else {
         mAnisotropicRatio = ThisParameters["anisotropy_parameters"]["hmin_over_hmax_anisotropic_ratio"].GetDouble();
         mBoundLayer = ThisParameters["anisotropy_parameters"]["boundary_layer_max_distance"].GetDouble();
-        mInterpolation = ConvertInter(ThisParameters["anisotropy_parameters"]["interpolation"].GetString());
+        mSizeInterpolation = ConvertInter(ThisParameters["anisotropy_parameters"]["interpolation"].GetString());
     }
 }
 
@@ -76,7 +76,7 @@ void ComputeLevelSetSolMetricProcess<TDim>::Execute()
         const double distance = it_node->FastGetSolutionStepValue(DISTANCE);
         array_1d<double, 3>& gradient_value = it_node->FastGetSolutionStepValue(mVariableGradient);
         
-        const double ratio = CalculateAnisotropicRatio(distance, mAnisotropicRatio, mBoundLayer, mInterpolation);
+        const double ratio = CalculateAnisotropicRatio(distance, mAnisotropicRatio, mBoundLayer, mSizeInterpolation);
         
         // For postprocess pourposes
         it_node->SetValue(ANISOTROPIC_RATIO, ratio); 
@@ -177,7 +177,7 @@ Vector ComputeLevelSetSolMetricProcess<3>::ComputeLevelSetMetricTensor(
 /***********************************************************************************/
 
 template<unsigned int TDim>  
-Interpolation ComputeLevelSetSolMetricProcess<TDim>::ConvertInter(const std::string& str)
+SizeInterpolation ComputeLevelSetSolMetricProcess<TDim>::ConvertInter(const std::string& str)
 {
     if(str == "Constant") 
         return Constant;
@@ -197,18 +197,18 @@ double ComputeLevelSetSolMetricProcess<TDim>::CalculateAnisotropicRatio(
     const double Distance,
     const double AnisotropicRatio,
     const double BoundLayer,
-    const Interpolation& rInterpolation
+    const SizeInterpolation& rSizeInterpolation
     )
 {
     const double tolerance = 1.0e-12;
     double ratio = 1.0; // NOTE: Isotropic mesh
     if (AnisotropicRatio < 1.0) {                           
         if (std::abs(Distance) <= BoundLayer) {
-            if (rInterpolation == Constant)
+            if (rSizeInterpolation == Constant)
                 ratio = AnisotropicRatio;
-            else if (rInterpolation == Linear)
+            else if (rSizeInterpolation == Linear)
                 ratio = AnisotropicRatio + (std::abs(Distance)/BoundLayer) * (1.0 - AnisotropicRatio);
-            else if (rInterpolation == Exponential) {
+            else if (rSizeInterpolation == Exponential) {
                 ratio = - std::log(std::abs(Distance)/BoundLayer) * AnisotropicRatio + tolerance;
                 if (ratio > 1.0) ratio = 1.0;
             }
