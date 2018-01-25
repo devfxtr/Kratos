@@ -301,7 +301,36 @@ protected:
         const DerivativeDataType& rDerivativeData,
         const unsigned int rActiveInactive
         ) override;
-        
+
+    /**
+     * Calculates the local DALM contibution of the LHS
+     * @param rLocalLHS The local LHS to compute
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
+     */
+    
+    void CalculateLocalLHSDALM(
+        Matrix& rLocalLHS,
+        const MortarConditionMatrices& rMortarConditionMatrices,
+        const DerivativeDataType& rDerivativeData,
+        const unsigned int rActiveInactive
+        );
+    
+    /**
+     * Calculates the local DALM contibution of the RHS
+     * @param rLocalRHS The local RHS to compute
+     * @param rMortarConditionMatrices The mortar operators to be considered
+     * @param rDerivativeData The class containing all the derivatives uses to compute the jacobian 
+     * @param rActiveInactive The integer that is used to identify which case is the currectly computed
+     */
+    
+    void CalculateLocalRHSDALM(
+        Vector& rLocalRHS, 
+        const MortarConditionMatrices& rMortarConditionMatrices,
+        const DerivativeDataType& rDerivativeData,
+        const unsigned int rActiveInactive
+        );
         
     /**
      * This method just resizes the LHS matrix
