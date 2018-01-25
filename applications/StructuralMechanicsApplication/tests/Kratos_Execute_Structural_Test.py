@@ -8,7 +8,46 @@ import process_factory
 
 class Kratos_Execute_Test:
 
-    def __init__(self, ProjectParameters):
+    def __init__(self, project_parameters_file_name):
+        self.project_parameters_file_name = project_parameters_file_name
+
+    #### These functions should be in the base class to provide a consistent Interface
+    #### This base-class should be in the core such that the applicatins can derive from it
+
+    def Run(self):
+        self.Initialize()
+        self.RunMainTemporalLoop()
+        self.Finalize()
+
+
+    def Initialize(self):
+        self.ImportAndCreateSolver()
+        self.InitializeIO()
+        self.ExecuteInitialize()
+        self.ExecuteBeforeSolutionLoop()
+
+    def SolveSolutionStep(self):
+        self.ExecuteInitializeSolutionStep()
+        self.ExecuteBeforeSolve()
+        self.Solve()
+        self.ExecuteAfterSolve()
+        self.ExecuteFinalizeSolutionStep()
+        self.ExecuteBeforeOutputStep()
+        self.PrintOutput()
+        self.ExecuteAfterOutputStep()
+
+    def RunMainTemporalLoop(self):
+        while time < end_time:
+            self.SolveSolutionStep()
+            
+    def Finalize(self):
+        self.ExecuteFinalize()
+
+    ###########################################################################
+
+    def ImportAndCreateSolver(self):
+        parameter_file = open(self.project_parameters_file_name,'r')
+        self.ProjectParameters = KratosMultiphysics.Parameters( parameter_file.read())
 
         self.ProjectParameters = ProjectParameters
 
@@ -33,6 +72,18 @@ class Kratos_Execute_Test:
         self.Model = KratosMultiphysics.Model()
         self.Model.AddModelPart(self.main_model_part)
 
+    def InitializeIO(self):
+        # ### Output settings start ####
+        self.output_post = ProjectParameters.Has("output_configuration")
+        if (self.output_post == True):
+            from gid_output_process import GiDOutputProcess
+            output_settings = ProjectParameters["output_configuration"]
+            self.gid_output = GiDOutputProcess(self.solver.GetComputingModelPart(),
+                                               self.ProjectParameters["problem_data"]["problem_name"].GetString(),
+                                               output_settings)
+            self.gid_output.ExecuteInitialize()
+
+    def ExecuteInitialize(self):
         # Obtain the list of the processes to be applied
         self.list_of_processes = process_factory.KratosProcessFactory(self.Model).ConstructListOfProcesses(self.ProjectParameters["constraints_process_list"])
         self.list_of_processes += process_factory.KratosProcessFactory(self.Model).ConstructListOfProcesses(self.ProjectParameters["loads_process_list"])
@@ -50,73 +101,70 @@ class Kratos_Execute_Test:
 
         # ### START SOLUTION ####
 
-        self.computing_model_part = self.solver.GetComputingModelPart()
-
-        # ### Output settings start ####
-        self.problem_path = os.getcwd()
-        self.problem_name = self.ProjectParameters["problem_data"]["problem_name"].GetString()
-
-        # ### Output settings start ####
-        self.output_post = ProjectParameters.Has("output_configuration")
-        if (self.output_post == True):
-            from gid_output_process import GiDOutputProcess
-            output_settings = ProjectParameters["output_configuration"]
-            self.gid_output = GiDOutputProcess(self.computing_model_part,
-                                               self.problem_name,
-                                               output_settings)
-            self.gid_output.ExecuteInitialize()
-            
         # Sets strategies, builders, linear solvers, schemes and solving info, and fills the buffer
         self.solver.Initialize()
         self.solver.SetEchoLevel(0) # Avoid to print anything 
         
+    def ExecuteBeforeSolutionLoop(self):
         if (self.output_post == True):
             self.gid_output.ExecuteBeforeSolutionLoop()
 
-    def Solve(self):
         for process in self.list_of_processes:
             process.ExecuteBeforeSolutionLoop()
 
         # #Stepping and time settings (get from process info or solving info)
         # Delta time
-        delta_time = self.ProjectParameters["problem_data"]["time_step"].GetDouble()
+        self.delta_time = self.ProjectParameters["problem_data"]["time_step"].GetDouble()
         # Start step
         self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] = 0
         # Start time
-        time = self.ProjectParameters["problem_data"]["start_time"].GetDouble()
+        self.time = self.ProjectParameters["problem_data"]["start_time"].GetDouble()
         # End time
-        end_time = self.ProjectParameters["problem_data"]["end_time"].GetDouble()
+        self.end_time = self.ProjectParameters["problem_data"]["end_time"].GetDouble()
 
-        # Solving the problem (time integration)
-        while(time <= end_time):
-            time = time + delta_time
-            self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] += 1
-            self.main_model_part.CloneTimeStep(time)
+    def ExecuteInitializeSolutionStep(self):
+        time = time + delta_time
+        self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] += 1
+        self.main_model_part.CloneTimeStep(time)
 
-            for process in self.list_of_processes:
-                process.ExecuteInitializeSolutionStep()
-                
-            if (self.output_post == True):
-                self.gid_output.ExecuteInitializeSolutionStep()
-                        
-            self.solver.Solve()
+        for process in self.list_of_processes:
+            process.ExecuteInitializeSolutionStep()
             
-            if (self.output_post == True):
-                self.gid_output.ExecuteFinalizeSolutionStep()
+        if (self.output_post == True):
+            self.gid_output.ExecuteInitializeSolutionStep()
 
-            for process in self.list_of_processes:
-                process.ExecuteFinalizeSolutionStep()
+    def ExecuteBeforeSolve(self):
+        # This function is not needed in this solver
+        pass
 
-            for process in self.list_of_processes:
-                process.ExecuteBeforeOutputStep()
+    def Solve(self):
+        self.solver.Solve()
 
-            for process in self.list_of_processes:
-                process.ExecuteAfterOutputStep()
+    def ExecuteAfterSolve(self):
+        # This function is not needed in this solver
+        pass
+                        
+    def ExecuteFinalizeSolutionStep(self):            
+        if (self.output_post == True):
+            self.gid_output.ExecuteFinalizeSolutionStep()
 
-            if (self.output_post == True):
-                if self.gid_output.IsOutputStep():
-                    self.gid_output.PrintOutput()
+        for process in self.list_of_processes:
+            process.ExecuteFinalizeSolutionStep()
 
+    def ExecuteBeforeOutputStep(self):
+        for process in self.list_of_processes:
+            process.ExecuteBeforeOutputStep()
+
+    def PrintOutput(self):
+        if (self.output_post == True):
+            if self.gid_output.IsOutputStep():
+                self.gid_output.PrintOutput()
+
+    def ExecuteAfterOutputStep(self):
+        for process in self.list_of_processes:
+            process.ExecuteAfterOutputStep()
+
+    def ExecuteFinalize(self):
         if (self.output_post == True):
             self.gid_output.ExecuteFinalize()
 
