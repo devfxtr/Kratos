@@ -37,11 +37,6 @@ namespace Kratos
 ///@name  Enum's
 ///@{
     
-#if !defined(FRAMEWORK_EULER_LAGRANGE)
-#define FRAMEWORK_EULER_LAGRANGE
-    enum FrameworkEulerLagrange {Eulerian = 0, Lagrangian = 1};
-#endif
-    
 ///@}
 ///@name  Functions
 ///@{
