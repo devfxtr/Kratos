@@ -288,6 +288,16 @@ private:
     void ClearALMFrictionlessMortarConditions(NodesArrayType& NodesArray);
        
     /**
+     * This computes a simple linear regression to the gap and contact pressure
+     * @param a The first component of the regression
+     * @param b The second component of the regressiob
+     */
+    inline void ComputeLinearRegressionGapPressure(
+        double& a,
+        double& b
+        );
+    
+    /**
      * This method computes the maximal nodal H
      */
     inline double GetMaxNodalH();

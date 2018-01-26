@@ -475,6 +475,57 @@ void TreeContactSearch<TDim, TNumNodes>::ClearALMFrictionlessMortarConditions(No
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::ComputeLinearRegressionGapPressure(
+        double& a,
+        double& b
+        )
+{
+    // Initialize the n
+    std::size_t n = 0;
+    
+    // Initialize the values
+    double sum_x, sum_xsq, sum_y, sum_xy;
+
+    sum_x = 0.0;
+    sum_xsq = 0.0;
+    sum_y = 0.0;
+    sum_xy = 0.0;
+    
+    // Iterate over the nodes
+    ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
+    NodesArrayType& nodes_array = rcontact_model_part.Nodes();
+    
+    // We compute now the normal gap and set the nodes under certain threshold as active
+    #pragma omp parallel for 
+    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
+        auto it_node = nodes_array.begin() + i;
+
+        if (it_node->Is(ACTIVE) == true) {
+            const double xi = it_node->FastGetSolutionStepValue(WEIGHTED_GAP);
+            const double yi = it_node->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS);
+            #pragma omp atomic
+            sum_x += xi;
+            #pragma omp atomic
+            sum_xsq += std::pow(xi, 2);
+            #pragma omp atomic
+            sum_y += yi;
+            #pragma omp atomic
+            sum_xy += xi * yi;
+            #pragma omp atomic
+            n += 1;
+        }
+    }
+ 
+    const double size = static_cast<double>(n);
+    const double denom = size * sum_xsq - std::pow(sum_x, 2);
+    a = (sum_y * sum_xsq - sum_x * sum_xy) / denom;
+    b = (size * sum_xy - sum_x * sum_y) / denom;
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
 inline double TreeContactSearch<TDim, TNumNodes>::GetMaxNodalH()
 {
     // We iterate over the nodes
