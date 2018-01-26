@@ -290,7 +290,7 @@ private:
     /**
      * This computes a simple linear regression to the gap and contact pressure
      * @param a The first component of the regression
-     * @param b The second component of the regressiob
+     * @param b The second component of the regression
      */
     inline void ComputeLinearRegressionGapPressure(
         double& a,
@@ -399,70 +399,126 @@ private:
     /**
      * This method sets as active a node and it predicts the value of its LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
-    inline void SetActiveNode(NodesArrayType::iterator ItNode);
+    inline void SetActiveNode(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This method sets as inactive a node and it sets to zero its LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     inline void SetInactiveNode(NodesArrayType::iterator ItNode);
     
     /**
      * This function predicts the scalar LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void CorrectScalarMortarLM(NodesArrayType::iterator ItNode);
+    inline void CorrectScalarMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the vector LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void CorrectComponentsMortarLM(NodesArrayType::iterator ItNode);
+    inline void CorrectComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the ALM frictionless LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void CorrectALMFrictionlessMortarLM(NodesArrayType::iterator ItNode);
+    inline void CorrectALMFrictionlessMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the ALM frictional LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void CorrectALMFrictionalMortarLM(NodesArrayType::iterator ItNode);
+    inline void CorrectALMFrictionalMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the scalar LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void PredictScalarMortarLM(NodesArrayType::iterator ItNode);
+    inline void PredictScalarMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the vector LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void PredictComponentsMortarLM(NodesArrayType::iterator ItNode);
+    inline void PredictComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the ALM frictionless LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void PredictALMFrictionlessMortarLM(NodesArrayType::iterator ItNode);
+    inline void PredictALMFrictionlessMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This function predicts the ALM frictional LM
      * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
      */
     
-    inline void PredictALMFrictionalMortarLM(NodesArrayType::iterator ItNode);
+    inline void PredictALMFrictionalMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
     
     /**
      * This method sets as inactive a node and it sets to zero its LM

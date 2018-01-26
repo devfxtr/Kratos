@@ -874,6 +874,10 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
     // Some auxiliar values
     const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
     
+    // Compute linear regression 
+    double a, b;
+    ComputeLinearRegressionGapPressure(a, b);
+    
     // Iterate over the nodes
     ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
     NodesArrayType& nodes_array = rcontact_model_part.Nodes();
@@ -888,7 +892,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
     #endif
         const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
         if (it_node->GetValue(NORMAL_GAP) < auxiliar_length)
-            SetActiveNode(it_node);
+            SetActiveNode(it_node, a, b);
         else 
             SetInactiveNode(it_node);
     }
@@ -898,26 +902,30 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     if (ItNode->Is(ACTIVE) == true ) {
         switch(mTypeSolution) {
             case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
-                                                CorrectALMFrictionalMortarLM(ItNode);
+                                                CorrectALMFrictionalMortarLM(ItNode, a, b);
                                             else
-                                                CorrectComponentsMortarLM(ItNode);
-            case ScalarLagrangeMultiplier : CorrectScalarMortarLM(ItNode); 
-            case NormalContactStress : CorrectALMFrictionlessMortarLM(ItNode); 
+                                                CorrectComponentsMortarLM(ItNode, a, b);
+            case ScalarLagrangeMultiplier : CorrectScalarMortarLM(ItNode, a, b);
+            case NormalContactStress : CorrectALMFrictionlessMortarLM(ItNode, a, b);
         }
     } else {
         ItNode->Set(ACTIVE, true); 
         switch(mTypeSolution) {
             case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
-                                                PredictALMFrictionalMortarLM(ItNode);
+                                                PredictALMFrictionalMortarLM(ItNode, a, b);
                                             else
-                                                PredictComponentsMortarLM(ItNode);
-            case ScalarLagrangeMultiplier : PredictScalarMortarLM(ItNode); 
-            case NormalContactStress : PredictALMFrictionlessMortarLM(ItNode); 
+                                                PredictComponentsMortarLM(ItNode, a, b);
+            case ScalarLagrangeMultiplier : PredictScalarMortarLM(ItNode, a, b);
+            case NormalContactStress : PredictALMFrictionlessMortarLM(ItNode, a, b);
         }
     }
 }
@@ -945,7 +953,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::CorrectScalarMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectScalarMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
@@ -954,7 +966,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectScalarMortarLM(NodesArray
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::CorrectComponentsMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
@@ -963,13 +979,21 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectComponentsMortarLM(NodesA
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
 //     const double old_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP, 1); 
-//     const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
-//     
-//     double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
-//     
+    const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
+    
+    double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
+    
+    // Apply linear regression
+    const double aux_press = a + current_weighted_gap * b;
+    current_contact_stress = (aux_press < 0.0) ? aux_press : 0.0;
+    
 //     const bool old_penetration = (old_weighted_gap < 0.0) ? true : false;
 //     const bool current_penetration = (current_weighted_gap < 0.0) ? true : false;
 //     
@@ -1005,7 +1029,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(N
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionalMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionalMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
@@ -1014,7 +1042,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionalMortarLM(Nod
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::PredictScalarMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::PredictScalarMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
@@ -1023,7 +1055,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictScalarMortarLM(NodesArray
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::PredictComponentsMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::PredictComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
@@ -1032,7 +1068,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictComponentsMortarLM(NodesA
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
 //     // The penalty to be use (TODO: think about use the nodal penalty)
 //     ProcessInfo& current_process_info = mrMainModelPart.GetProcessInfo(); // TODO: Avoid call the process info each time
@@ -1040,11 +1080,15 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(N
 //     const double distance_threshold = current_process_info[DISTANCE_THRESHOLD]; 
 //     
 //     // If we have penetration
-//     const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
+    const double current_weighted_gap = ItNode->FastGetSolutionStepValue(WEIGHTED_GAP); 
 //     const double nodal_area = ItNode->GetValue(NODAL_AREA); 
 //     const bool current_penetration = (current_weighted_gap < 0.0) ? true : false;
 //     
-//     double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
+    double& current_contact_stress = ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS); 
+    
+    // Apply linear regression
+    const double aux_press = a + current_weighted_gap * b;
+    current_contact_stress = (aux_press < 0.0) ? aux_press : 0.0;
 //     
 //     // We have penetration so we just basically approximate the solution with the traditional 
 //     if (current_penetration) {
@@ -1059,7 +1103,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(N
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionalMortarLM(NodesArrayType::iterator ItNode)
+inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionalMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
 {
     // TODO: Add correction
 }
