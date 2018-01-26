@@ -250,102 +250,19 @@ public:
     bool SolveSolutionStep() override
     {
 //         bool is_converged = BaseType::SolveSolutionStep(); // FIXME: Requires to separate the non linear iterations 
-        bool is_converged = BaseSolveSolutionStep();
         
-        // Plots a warning if the maximum number of iterations is exceeded
+        bool is_converged = false;
+        try{
+            is_converged = BaseSolveSolutionStep();
+        }catch(Exception &e){
+            std::cout << e.what() << std::endl;
+            if (mAdaptativeStrategy == true) {
+                is_converged = AdapatativeStep();
+            }
+        }
+        
         if ((mAdaptativeStrategy == true) && (is_converged == false)) {
-            if (mpMyProcesses == nullptr && StrategyBaseType::mEchoLevel > 0) {
-                std::cout << "WARNING:: If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
-            }
-        
-            ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
-
-            const double original_delta_time = this_process_info[DELTA_TIME]; // We save the delta time to restore later
-            
-            unsigned int split_number = 0;
-            
-            // We iterate until we reach the convergence or we split more than desired
-            while (is_converged == false && split_number <= mMaxNumberSplits) {                   
-                // Expliting time step as a way to try improve the convergence
-                split_number += 1;
-                double aux_delta_time;
-                double current_time; 
-                const double aux_time = SplitTimeStep(aux_delta_time, current_time);
-                
-                bool inside_the_split_is_converged = true;
-                unsigned int inner_iteration = 0;
-                while (inside_the_split_is_converged == true && this_process_info[TIME] <= aux_time) {      
-                    current_time += aux_delta_time;
-                    inner_iteration += 1;
-                    this_process_info[STEP] += 1;
-                    
-                    if (inner_iteration == 1) {
-                        if (StrategyBaseType::MoveMeshFlag() == true) {
-                            UnMoveMesh();
-                        }
-                        
-                        NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
-                        
-                        #pragma omp parallel for
-                        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-                            auto it_node = nodes_array.begin() + i;
-                            
-                            it_node->OverwriteSolutionStepData(1, 0);
-//                             it_node->OverwriteSolutionStepData(2, 1);
-                        }
-                        
-                        this_process_info.SetCurrentTime(current_time); // Reduces the time step
-                        
-                        FinalizeSolutionStep();
-                    } else {
-                        NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
-                        
-                        #pragma omp parallel for
-                        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)  
-                            (nodes_array.begin() + i)->CloneSolutionStepData();
-                        
-                        this_process_info.CloneSolutionStepInfo();
-                        this_process_info.ClearHistory(StrategyBaseType::GetModelPart().GetBufferSize());
-                        this_process_info.SetAsTimeStepInfo(current_time); // Sets the new time step
-                    }
-                    
-                    // We execute the processes before the non-linear iteration
-                    if (mpMyProcesses != nullptr) {
-                        // TODO: Think about to add the postprocess processes
-                        mpMyProcesses->ExecuteInitializeSolutionStep();
-                    }
-                    
-                    // In order to initialize again everything
-                    BaseType::mInitializeWasPerformed = false;
-                    mFinalizeWasPerformed = false;
-                    
-                    // We repeat the solve with the new DELTA_TIME
-                    Initialize();
-                    InitializeSolutionStep();
-                    BaseType::Predict();
-                    inside_the_split_is_converged = BaseType::SolveSolutionStep();
-                    FinalizeSolutionStep();
-                    
-                    // We execute the processes after the non-linear iteration
-                    if (mpMyProcesses != nullptr) {
-                        // TODO: Think about to add the postprocess processes
-                        mpMyProcesses->ExecuteFinalizeSolutionStep();
-//                         mpMyProcesses->ExecuteBeforeOutputStep();
-//                         mpMyProcesses->ExecuteAfterOutputStep();
-                    }
-                }
-                
-                if (inside_the_split_is_converged == true)
-                    is_converged = true;
-            }
-            
-            // Plots a warning if the maximum number of iterations and splits are exceeded
-            if (is_converged == false) {
-                MaxIterationsAndSplitsExceeded();
-            }
-            
-            // Restoring original DELTA_TIME
-            this_process_info[DELTA_TIME] = original_delta_time;
+            is_converged = AdapatativeStep();
         }
 
         return is_converged;
@@ -539,6 +456,108 @@ protected:
         if (BaseType::mCalculateReactionsFlag == true)
             pBuilderAndSolver->CalculateReactions(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
 
+        return is_converged;
+    }
+    
+    /**
+     * This method performs the adaptative step
+     */
+    bool AdapatativeStep()
+    {
+        bool is_converged;
+        // Plots a warning if the maximum number of iterations is exceeded
+        if (mpMyProcesses == nullptr && StrategyBaseType::mEchoLevel > 0)
+            std::cout << "WARNING:: If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
+    
+        ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+
+        const double original_delta_time = this_process_info[DELTA_TIME]; // We save the delta time to restore later
+        
+        unsigned int split_number = 0;
+        
+        // We iterate until we reach the convergence or we split more than desired
+        while (is_converged == false && split_number <= mMaxNumberSplits) {                   
+            // Expliting time step as a way to try improve the convergence
+            split_number += 1;
+            double aux_delta_time;
+            double current_time; 
+            const double aux_time = SplitTimeStep(aux_delta_time, current_time);
+            
+            bool inside_the_split_is_converged = true;
+            unsigned int inner_iteration = 0;
+            while (inside_the_split_is_converged == true && this_process_info[TIME] <= aux_time) {      
+                current_time += aux_delta_time;
+                inner_iteration += 1;
+                this_process_info[STEP] += 1;
+                
+                if (inner_iteration == 1) {
+                    if (StrategyBaseType::MoveMeshFlag() == true) {
+                        UnMoveMesh();
+                    }
+                    
+                    NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
+                    
+                    #pragma omp parallel for
+                    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+                        auto it_node = nodes_array.begin() + i;
+                        
+                        it_node->OverwriteSolutionStepData(1, 0);
+//                             it_node->OverwriteSolutionStepData(2, 1);
+                    }
+                    
+                    this_process_info.SetCurrentTime(current_time); // Reduces the time step
+                    
+                    FinalizeSolutionStep();
+                } else {
+                    NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
+                    
+                    #pragma omp parallel for
+                    for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)  
+                        (nodes_array.begin() + i)->CloneSolutionStepData();
+                    
+                    this_process_info.CloneSolutionStepInfo();
+                    this_process_info.ClearHistory(StrategyBaseType::GetModelPart().GetBufferSize());
+                    this_process_info.SetAsTimeStepInfo(current_time); // Sets the new time step
+                }
+                
+                // We execute the processes before the non-linear iteration
+                if (mpMyProcesses != nullptr) {
+                    // TODO: Think about to add the postprocess processes
+                    mpMyProcesses->ExecuteInitializeSolutionStep();
+                }
+                
+                // In order to initialize again everything
+                BaseType::mInitializeWasPerformed = false;
+                mFinalizeWasPerformed = false;
+                
+                // We repeat the solve with the new DELTA_TIME
+                Initialize();
+                InitializeSolutionStep();
+                BaseType::Predict();
+                inside_the_split_is_converged = BaseType::SolveSolutionStep();
+                FinalizeSolutionStep();
+                
+                // We execute the processes after the non-linear iteration
+                if (mpMyProcesses != nullptr) {
+                    // TODO: Think about to add the postprocess processes
+                    mpMyProcesses->ExecuteFinalizeSolutionStep();
+//                         mpMyProcesses->ExecuteBeforeOutputStep();
+//                         mpMyProcesses->ExecuteAfterOutputStep();
+                }
+            }
+            
+            if (inside_the_split_is_converged == true)
+                is_converged = true;
+        }
+        
+        // Plots a warning if the maximum number of iterations and splits are exceeded
+        if (is_converged == false) {
+            MaxIterationsAndSplitsExceeded();
+        }
+        
+        // Restoring original DELTA_TIME
+        this_process_info[DELTA_TIME] = original_delta_time;
+        
         return is_converged;
     }
     
