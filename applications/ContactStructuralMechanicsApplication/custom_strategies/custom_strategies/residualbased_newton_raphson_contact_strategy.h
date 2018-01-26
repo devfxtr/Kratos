@@ -15,7 +15,6 @@
 /* System Includes */
 
 /* External Includes */
-#include "boost/smart_ptr.hpp"
 
 /* Project includes */
 #include "contact_structural_mechanics_application_variables.h"
@@ -249,16 +248,21 @@ public:
     
     bool SolveSolutionStep() override
     {
+        KRATOS_TRY;
+        
 //         bool is_converged = BaseType::SolveSolutionStep(); // FIXME: Requires to separate the non linear iterations 
         
         bool is_converged = false;
-        try{
+        try {
+//             KRATOS_ERROR << std::endl;
             is_converged = BaseSolveSolutionStep();
-        }catch(Exception &e){
+        } catch(Kratos::Exception& e){
             std::cout << e.what() << std::endl;
             if (mAdaptativeStrategy == true) {
                 is_converged = AdapatativeStep();
             }
+        } catch (...)  {
+            std::cout << "Default Exception\n";
         }
         
         if ((mAdaptativeStrategy == true) && (is_converged == false)) {
@@ -266,6 +270,8 @@ public:
         }
 
         return is_converged;
+        
+        KRATOS_CATCH("");
     }
         
     ///@}
@@ -313,6 +319,8 @@ protected:
     
     bool BaseSolveSolutionStep()
     {
+        KRATOS_TRY;
+        
         // Pointers needed in the solution
         typename TSchemeType::Pointer pScheme = BaseType::GetScheme();
         typename TBuilderAndSolverType::Pointer pBuilderAndSolver = BaseType::GetBuilderAndSolver();
@@ -457,6 +465,8 @@ protected:
             pBuilderAndSolver->CalculateReactions(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
 
         return is_converged;
+        
+        KRATOS_CATCH("");
     }
     
     /**
@@ -464,7 +474,9 @@ protected:
      */
     bool AdapatativeStep()
     {
-        bool is_converged;
+        KRATOS_TRY;
+        
+        bool is_converged = false;
         // Plots a warning if the maximum number of iterations is exceeded
         if (mpMyProcesses == nullptr && StrategyBaseType::mEchoLevel > 0)
             std::cout << "WARNING:: If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
@@ -559,6 +571,8 @@ protected:
         this_process_info[DELTA_TIME] = original_delta_time;
         
         return is_converged;
+        
+        KRATOS_CATCH("");
     }
     
     /**
