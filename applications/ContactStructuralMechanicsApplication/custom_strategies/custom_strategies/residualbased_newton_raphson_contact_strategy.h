@@ -100,6 +100,8 @@ public:
     
     typedef ModelPart::NodesContainerType                                          NodesArrayType;
     
+    typedef ModelPart::ElementsContainerType                                    ElementsArrayType;
+    
     typedef ModelPart::ConditionsContainerType                                ConditionsArrayType;
     
     typedef ProcessFactoryUtility::Pointer                                      ProcessesListType;
@@ -223,6 +225,20 @@ public:
         KRATOS_CATCH("");
     }
     
+        
+    /**
+     * Performs all the required operations that should be done (for each step) 
+     * before solving the solution step.
+     * A member variable should be used as a flag to make sure this function is called only once per step.
+     */
+        
+    void InitializeSolutionStep() override
+    {
+        BaseType::InitializeSolutionStep();
+        
+        // TODO: Add something if necessary
+    }
+    
     /**
      * Performs all the required operations that should be done (for each step) 
      * after solving the solution step.
@@ -252,18 +268,7 @@ public:
         
 //         bool is_converged = BaseType::SolveSolutionStep(); // FIXME: Requires to separate the non linear iterations 
         
-        bool is_converged = false;
-        try {
-//             KRATOS_ERROR << std::endl;
-            is_converged = BaseSolveSolutionStep();
-        } catch(Kratos::Exception& e){
-            std::cout << e.what() << std::endl;
-            if (mAdaptativeStrategy == true) {
-                is_converged = AdapatativeStep();
-            }
-        } catch (...)  {
-            std::cout << "Default Exception\n";
-        }
+        bool is_converged = BaseSolveSolutionStep();
         
         if ((mAdaptativeStrategy == true) && (is_converged == false)) {
             is_converged = AdapatativeStep();
@@ -338,6 +343,15 @@ protected:
         pScheme->InitializeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
         is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
+        // We do a geometry check before solve the system for first time
+        try {
+            KRATOS_ERROR_IF(CheckGeometry()) << "INVERTED ELEMENT BEFORE FIRST SOLVE" << std::endl;
+        } catch(Kratos::Exception& e){
+            std::cout << e.what() << std::endl;
+            if (mAdaptativeStrategy == true)
+                return false;
+        }
+        
         //function to perform the building and the solving phase.
         if (StrategyBaseType::mRebuildLevel > 1 || StrategyBaseType::mStiffnessMatrixIsBuilt == false) {
             TSparseSpace::SetToZero(A);
@@ -356,8 +370,14 @@ protected:
         BaseType::EchoInfo(iteration_number);
         
         // Updating the results stored in the database
-        UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
-
+        try {
+            UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
+        } catch(Kratos::Exception& e){
+            std::cout << e.what() << std::endl;
+            if (mAdaptativeStrategy == true)
+                return false;
+        }
+        
         pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
 
         if (is_converged == true) {
@@ -422,7 +442,15 @@ protected:
             BaseType::EchoInfo(iteration_number);
         
             // Updating the results stored in the database
-            UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
+            try {
+                UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
+            } catch(Kratos::Exception& e){
+                std::cout << e.what() << std::endl;
+                if (mAdaptativeStrategy == true)
+                    return false;
+            } catch (...)  {
+                std::cout << "Default Exception" << std::endl;
+            }
 
             pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
 
@@ -576,19 +604,6 @@ protected:
     }
     
     /**
-     * Performs all the required operations that should be done (for each step) 
-     * before solving the solution step.
-     * A member variable should be used as a flag to make sure this function is called only once per step.
-     */
-        
-    void InitializeSolutionStep() override
-    {
-        BaseType::InitializeSolutionStep();
-        
-        // TODO: Add something if necessary
-    }
-    
-    /**
      * Here the database is updated
      */
      
@@ -598,10 +613,31 @@ protected:
         TSystemVectorType& b,
         const bool MoveMesh
         ) override
-    {
+    {        
         BaseType::UpdateDatabase(A,Dx,b,MoveMesh);
         
-        // TODO: Add something if necessary
+        // We now check the geometry
+        KRATOS_ERROR_IF(CheckGeometry()) << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+    }
+    
+    /**
+     * This method checks if there is no element inverted
+     */
+    bool CheckGeometry()
+    {
+        bool inverted_element = false;
+        
+        ElementsArrayType& elements_array = StrategyBaseType::GetModelPart().Elements();
+        
+        // NOT OMP
+        for(int i = 0; i < static_cast<int>(elements_array.size()); ++i) { 
+            auto it_elem = elements_array.begin() + i;
+            auto& geom = it_elem->GetGeometry();
+            if (geom.DeterminantOfJacobian(0) < 0.0) 
+                return true;
+        }
+        
+        return inverted_element;
     }
     
     /**
