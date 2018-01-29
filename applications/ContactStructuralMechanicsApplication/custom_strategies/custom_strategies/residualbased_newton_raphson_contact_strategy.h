@@ -271,7 +271,7 @@ public:
         bool is_converged = BaseSolveSolutionStep();
         
         if ((mAdaptativeStrategy == true) && (is_converged == false)) {
-            is_converged = AdapatativeStep();
+            is_converged = AdaptativeStep();
         }
 
         return is_converged;
@@ -495,7 +495,7 @@ protected:
     /**
      * This method performs the adaptative step
      */
-    bool AdapatativeStep()
+    bool AdaptativeStep()
     {
         KRATOS_TRY;
         
@@ -520,15 +520,14 @@ protected:
             
             bool inside_the_split_is_converged = true;
             unsigned int inner_iteration = 0;
-            while (inside_the_split_is_converged == true && this_process_info[TIME] <= aux_time) {      
+            while (inside_the_split_is_converged && this_process_info[TIME] <= aux_time) {      
                 current_time += aux_delta_time;
                 inner_iteration += 1;
                 this_process_info[STEP] += 1;
                 
                 if (inner_iteration == 1) {
-                    if (StrategyBaseType::MoveMeshFlag() == true) {
+                    if (StrategyBaseType::MoveMeshFlag())
                         UnMoveMesh();
-                    }
                     
                     NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
                     
@@ -581,14 +580,13 @@ protected:
                 }
             }
             
-            if (inside_the_split_is_converged == true)
+            if (inside_the_split_is_converged)
                 is_converged = true;
         }
         
         // Plots a warning if the maximum number of iterations and splits are exceeded
-        if (is_converged == false) {
+        if (is_converged == false)
             MaxIterationsAndSplitsExceeded();
-        }
         
         // Restoring original DELTA_TIME
         this_process_info[DELTA_TIME] = original_delta_time;
