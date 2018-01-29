@@ -88,8 +88,9 @@ KRATOS_DOF_TRAITS
 ///@name Kratos Classes
 ///@{
 
-/// Short class definition.
-/** Detail class definition.
+/// Dof holds the unknown information and also the dofs values.
+/** Dof holds the unknown information and also the dofs values. 
+ * It stores also its position in the global system and provides information about boundary conditions. 
 */
 template<class TDataType>
 class Dof : public IndexedObject
