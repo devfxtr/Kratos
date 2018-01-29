@@ -765,7 +765,8 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     )
 {
     // We compute the maximal nodal h and some auxiliar values  // TODO: Think about this criteria
-    const double distance_threshold = GetMeanNodalH(); 
+    const double distance_threshold = 0.5 * GetMeanNodalH(); 
+//     const double distance_threshold = GetMeanNodalH(); 
 //     const double distance_threshold = GetMaxNodalH(); 
 //     const double distance_threshold = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR] * GetMaxNodalH();
     
