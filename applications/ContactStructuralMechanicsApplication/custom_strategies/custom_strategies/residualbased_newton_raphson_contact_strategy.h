@@ -344,12 +344,9 @@ protected:
         is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
         // We do a geometry check before solve the system for first time
-        try {
-            KRATOS_ERROR_IF(CheckGeometryInverted()) << "INVERTED ELEMENT BEFORE FIRST SOLVE" << std::endl;
-        } catch(Kratos::Exception& e){
-            std::cout << e.what() << std::endl;
-            if (mAdaptativeStrategy == true)
-                return false;
+        if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
+            std::cout << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
+            return false;
         }
         
         //function to perform the building and the solving phase.
@@ -370,12 +367,12 @@ protected:
         BaseType::EchoInfo(iteration_number);
         
         // Updating the results stored in the database
-        try {
-            UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
-        } catch(Kratos::Exception& e){
-            std::cout << e.what() << std::endl;
-            if (mAdaptativeStrategy == true)
-                return false;
+        UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
+        
+        // We now check the geometry
+        if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
+            std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+            return false;
         }
         
         pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
@@ -442,14 +439,12 @@ protected:
             BaseType::EchoInfo(iteration_number);
         
             // Updating the results stored in the database
-            try {
-                UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
-            } catch(Kratos::Exception& e){
-                std::cout << e.what() << std::endl;
-                if (mAdaptativeStrategy == true)
-                    return false;
-            } catch (...)  {
-                std::cout << "Default Exception" << std::endl;
+            UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
+            
+            // We now check the geometry
+            if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
+                std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+                return false;
             }
 
             pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
@@ -616,8 +611,7 @@ protected:
     {        
         BaseType::UpdateDatabase(A,Dx,b,MoveMesh);
         
-        // We now check the geometry
-        KRATOS_ERROR_IF(CheckGeometryInverted()) << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+        // TODO: Add something if necessary
     }
     
     /**
