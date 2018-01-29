@@ -345,7 +345,7 @@ protected:
 
         // We do a geometry check before solve the system for first time
         try {
-            KRATOS_ERROR_IF(CheckGeometry()) << "INVERTED ELEMENT BEFORE FIRST SOLVE" << std::endl;
+            KRATOS_ERROR_IF(CheckGeometryInverted()) << "INVERTED ELEMENT BEFORE FIRST SOLVE" << std::endl;
         } catch(Kratos::Exception& e){
             std::cout << e.what() << std::endl;
             if (mAdaptativeStrategy == true)
@@ -617,13 +617,13 @@ protected:
         BaseType::UpdateDatabase(A,Dx,b,MoveMesh);
         
         // We now check the geometry
-        KRATOS_ERROR_IF(CheckGeometry()) << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+        KRATOS_ERROR_IF(CheckGeometryInverted()) << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
     }
     
     /**
      * This method checks if there is no element inverted
      */
-    bool CheckGeometry()
+    bool CheckGeometryInverted()
     {
         bool inverted_element = false;
         

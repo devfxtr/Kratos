@@ -76,7 +76,7 @@
             "mesh_id"         : 0,
             "model_part_name" : "DISPLACEMENT_Displacement_Auto2",
             "variable_name"   : "DISPLACEMENT_Z",
-            "value"          : "-0.25*t"
+            "value"          : "-1.0*t"
         }
     }],
     "loads_process_list"       : [],
@@ -118,7 +118,7 @@
         },
         "point_data_configuration"  : []
     },
-    "_json_check_process" : [
+    "json_check_process" : [
     {
         "python_module"   : "from_json_check_result_process",
         "kratos_module" : "KratosMultiphysics",
