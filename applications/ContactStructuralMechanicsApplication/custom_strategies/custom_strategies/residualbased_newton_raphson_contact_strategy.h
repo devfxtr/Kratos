@@ -29,6 +29,7 @@
 // Utilities
 #include "utilities/variable_utils.h"
 #include "utilities/color_utilities.h"
+#include "utilities/math_utils.h"
 #include "custom_utilities/process_factory_utility.h"
 
 // TODO: Extend the descriptions
@@ -54,10 +55,9 @@ namespace Kratos {
 ///@name Kratos Classes
 ///@{
     
-/** \brief  Contact Newton Raphson class
- * This class is a specialization of the Newton Raphson strategy with some custom modifications for contact problems
+/** @brief  Contact Newton Raphson class
+ * @details This class is a specialization of the Newton Raphson strategy with some custom modifications for contact problems
 */
-
 template<class TSparseSpace,
          class TDenseSpace, // = DenseSpace<double>,
          class TLinearSolver //= LinearSolver<TSparseSpace,TDenseSpace>
@@ -536,7 +536,7 @@ protected:
                         auto it_node = nodes_array.begin() + i;
                         
                         it_node->OverwriteSolutionStepData(1, 0);
-//                             it_node->OverwriteSolutionStepData(2, 1);
+//                         it_node->OverwriteSolutionStepData(2, 1);
                     }
                     
                     this_process_info.SetCurrentTime(current_time); // Reduces the time step
@@ -575,8 +575,8 @@ protected:
                 if (mpMyProcesses != nullptr) {
                     // TODO: Think about to add the postprocess processes
                     mpMyProcesses->ExecuteFinalizeSolutionStep();
-//                         mpMyProcesses->ExecuteBeforeOutputStep();
-//                         mpMyProcesses->ExecuteAfterOutputStep();
+//                     mpMyProcesses->ExecuteBeforeOutputStep();
+//                     mpMyProcesses->ExecuteAfterOutputStep();
                 }
             }
             
@@ -617,6 +617,7 @@ protected:
      */
     bool CheckGeometryInverted()
     {
+        ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
         bool inverted_element = false;
         
         ElementsArrayType& elements_array = StrategyBaseType::GetModelPart().Elements();
@@ -627,6 +628,13 @@ protected:
             auto& geom = it_elem->GetGeometry();
             if (geom.DeterminantOfJacobian(0) < 0.0) 
                 return true;
+            
+            // We check now the deformation gradient
+            std::vector<Matrix> deformation_gradient_matrices;
+            it_elem->GetValueOnIntegrationPoints( DEFORMATION_GRADIENT, deformation_gradient_matrices, this_process_info);
+            for (unsigned int i_gp = 0; i_gp  < deformation_gradient_matrices.size(); ++i_gp)
+                if (MathUtils<double>::DetMat(deformation_gradient_matrices[i_gp]) < 0.0)
+                    return true;
         }
         
         return inverted_element;
