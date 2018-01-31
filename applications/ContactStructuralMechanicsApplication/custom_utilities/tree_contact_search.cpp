@@ -192,10 +192,6 @@ void TreeContactSearch<TDim, TNumNodes>::CreatePointListMortar()
 template<unsigned int TDim, unsigned int TNumNodes>
 void TreeContactSearch<TDim, TNumNodes>::UpdatePointListMortar()
 {
-    // We initialize the acceleration
-    if (mrMainModelPart.GetProcessInfo()[STEP] == 1) 
-        InitializeAcceleration();
-    
     // We check if we are in a dynamic or static case
     const bool dynamic = mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X); 
     const double delta_time = (dynamic) ? mrMainModelPart.GetProcessInfo()[DELTA_TIME] : 0.0;
@@ -571,45 +567,6 @@ inline double TreeContactSearch<TDim, TNumNodes>::GetMeanNodalH()
     return sum_nodal_h/static_cast<double>(nodes_array.size());
 }
 
-/***********************************************************************************/
-/***********************************************************************************/
-
-template<unsigned int TDim, unsigned int TNumNodes>
-inline void TreeContactSearch<TDim, TNumNodes>::InitializeAcceleration()
-{
-    // We iterate over the nodes
-    NodesArrayType& nodes_array = mrMainModelPart.Nodes();
-
-    // We check if we are in a dynamic or static case
-    const bool dynamic = mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X);
-    if (dynamic == true) {
-        array_1d<double, 3> volume_acceleration = ZeroVector(3);
-        auto& r_props = mrMainModelPart.rProperties();
-        for (auto& prop : r_props) {
-            if (prop.Has(VOLUME_ACCELERATION) == true) {
-                volume_acceleration = prop.GetValue(VOLUME_ACCELERATION);
-                if (norm_2(volume_acceleration) > 0.0) break;
-            }
-        }
-        
-        // Initialize the acceleration when VOLUME_ACCELERATION to be able to predict position in the first step
-        #pragma omp parallel for 
-        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
-            auto it_node = nodes_array.begin() + i;
-            const array_1d<double, 3>& nodal_volume_acceleration = it_node->FastGetSolutionStepValue(VOLUME_ACCELERATION);
-            if (norm_2(volume_acceleration) > 0.0) {
-                if (!it_node->IsFixed(ACCELERATION_X)) it_node->FastGetSolutionStepValue(ACCELERATION_X, 1) = volume_acceleration[0];
-                if (!it_node->IsFixed(ACCELERATION_Y)) it_node->FastGetSolutionStepValue(ACCELERATION_Y, 1) = volume_acceleration[1];
-                if (!it_node->IsFixed(ACCELERATION_Z)) it_node->FastGetSolutionStepValue(ACCELERATION_Z, 1) = volume_acceleration[2];
-            }
-            else if (norm_2(nodal_volume_acceleration) > 0.0) {
-                if (!it_node->IsFixed(ACCELERATION_X)) it_node->FastGetSolutionStepValue(ACCELERATION_X, 1) = nodal_volume_acceleration[0];
-                if (!it_node->IsFixed(ACCELERATION_Y)) it_node->FastGetSolutionStepValue(ACCELERATION_Y, 1) = nodal_volume_acceleration[1];
-                if (!it_node->IsFixed(ACCELERATION_Z)) it_node->FastGetSolutionStepValue(ACCELERATION_Z, 1) = nodal_volume_acceleration[2];
-            }
-        }
-    }
-}
 /***********************************************************************************/
 /***********************************************************************************/
 

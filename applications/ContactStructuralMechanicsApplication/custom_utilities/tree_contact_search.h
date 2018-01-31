@@ -60,7 +60,7 @@ namespace Kratos
 ///@{
     
 /** \brief TreeContactSearch
- * This utilitiy has as objective to create the contact conditions.
+ * @details This utilitiy has as objective to create the contact conditions.
  * The conditions that can be created are Mortar conditions (or segment to segment) conditions: The created conditions will be between two segments
  * The utility employs the projection.h from MeshingApplication, which works internally using a kd-tree 
  */
@@ -108,7 +108,7 @@ public:
      *                       - The size of the bucket
      *                       - The proportion increased of the Radius/Bounding-box volume for the search
      *                       - TypeSearch: 0 means search in radius, 1 means search in box // TODO: Add more types of bounding boxes, as kdops, look bounding_volume_tree.h
-     * NOTE: Use an InterfacePreprocess object to create such a model part from a regular one:
+     * @note Use an InterfacePreprocess object to create such a model part from a regular one:
      * InterfaceMapper = InterfacePreprocess()
      * InterfacePart = InterfaceMapper.GenerateInterfacePart(Complete_Model_Part)
      */
@@ -249,14 +249,14 @@ private:
     ///@name Member Variables
     ///@{
   
-    ModelPart& mrMainModelPart;                      // The main model part
-    Parameters mThisParameters;                      // The configuration parameters
-    CheckGap mCheckGap;                              // If the gap is checked during the search
-    TypeSolution mTypeSolution;                      // The solution type 
-    bool mInvertedSearch;                            // The search will be done inverting the way master and slave/master is assigned
-    std::string mConditionName;                      // The name of the condition to be created
-    bool mCreateAuxiliarConditions;                  // If the auxiliar conditions are created or not
-    PointVector mPointListDestination;               // A list that contents the all the points (from nodes) from the modelpart 
+    ModelPart& mrMainModelPart;                      /// The main model part
+    Parameters mThisParameters;                      /// The configuration parameters
+    CheckGap mCheckGap;                              /// If the gap is checked during the search
+    TypeSolution mTypeSolution;                      /// The solution type 
+    bool mInvertedSearch;                            /// The search will be done inverting the way master and slave/master is assigned
+    std::string mConditionName;                      /// The name of the condition to be created
+    bool mCreateAuxiliarConditions;                  /// If the auxiliar conditions are created or not
+    PointVector mPointListDestination;               /// A list that contents the all the points (from nodes) from the modelpart 
 
     ///@}
     ///@name Private Operators
@@ -306,11 +306,6 @@ private:
      * This method computes the mean nodal H
      */
     inline double GetMeanNodalH();
-       
-    /**
-     * This method initializes the acceleraction when there is a volume acceleration
-     */
-    inline void InitializeAcceleration();
     
     /**
      * It check the conditions if they are correctly detected
@@ -411,8 +406,6 @@ private:
     /**
      * This method sets as inactive a node and it sets to zero its LM
      * @param ItNode The node iterator to set
-     * @param a The first component of the regression
-     * @param b The second component of the regression
      */
     inline void SetInactiveNode(NodesArrayType::iterator ItNode);
     
