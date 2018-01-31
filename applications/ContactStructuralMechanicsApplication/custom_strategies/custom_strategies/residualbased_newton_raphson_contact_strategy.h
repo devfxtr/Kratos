@@ -212,7 +212,7 @@ public:
     //***********************************************************************************//
     
     /**
-     * Initialization of member variables and prior operations
+     * @brief Initialization of member variables and prior operations
      */
      
     void Initialize() override
@@ -227,9 +227,9 @@ public:
     
         
     /**
-     * Performs all the required operations that should be done (for each step) 
+     * @brief Performs all the required operations that should be done (for each step) 
      * before solving the solution step.
-     * A member variable should be used as a flag to make sure this function is called only once per step.
+     * @details A member variable should be used as a flag to make sure this function is called only once per step.
      */
         
     void InitializeSolutionStep() override
@@ -240,7 +240,7 @@ public:
     }
     
     /**
-     * Performs all the required operations that should be done (for each step) 
+     * @brief Performs all the required operations that should be done (for each step) 
      * after solving the solution step.
      */
     
@@ -259,7 +259,8 @@ public:
     }
 
     /**
-     * Solves the current step. This function returns true if a solution has been found, false otherwise.
+     * @brief Solves the current step. 
+     * @details This function returns true if a solution has been found, false otherwise.
      */
     
     bool SolveSolutionStep() override
@@ -319,7 +320,8 @@ protected:
     ///@{
     
     /**
-     * Solves the current step. This function returns true if a solution has been found, false otherwise.
+     * @brief Solves the current step. 
+     * @details This function returns true if a solution has been found, false otherwise.
      */
     
     bool BaseSolveSolutionStep()
@@ -346,10 +348,12 @@ protected:
         // We do a geometry check before solve the system for first time
         if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
             std::cout << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
+            ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+            this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
             return false;
         }
         
-        //function to perform the building and the solving phase.
+        // Function to perform the building and the solving phase.
         if (StrategyBaseType::mRebuildLevel > 1 || StrategyBaseType::mStiffnessMatrixIsBuilt == false) {
             TSparseSpace::SetToZero(A);
             TSparseSpace::SetToZero(Dx);
@@ -389,9 +393,8 @@ protected:
 
             is_converged = BaseType::mpConvergenceCriteria->PostCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
         }
-
-
-        //Iteration Cicle... performed only for NonLinearProblems
+        
+        // Iteration Cicle... performed only for NonLinearProblems
         while (is_converged == false && iteration_number++<BaseType::mMaxIterationNumber) {
             //setting the number of iteration
             StrategyBaseType::GetModelPart().GetProcessInfo()[NL_ITERATION_NUMBER] = iteration_number;
@@ -428,7 +431,7 @@ protected:
             } else {
                 std::cout << "ATTENTION: no free DOFs!! " << std::endl;
             }
-
+            
             // Debugging info
             BaseType::EchoInfo(iteration_number);
         
@@ -459,13 +462,12 @@ protected:
             }
         }
 
-
-        //plots a warning if the maximum number of iterations is exceeded
+        // Plots a warning if the maximum number of iterations is exceeded
         if (iteration_number >= BaseType::mMaxIterationNumber && StrategyBaseType::GetModelPart().GetCommunicator().MyPID() == 0)
             MaxIterationsExceeded();
 
-        //recalculate residual if needed
-        //(note that some convergence criteria need it to be recalculated)
+        // Recalculate residual if needed
+        // (note that some convergence criteria need it to be recalculated)
         if (residual_is_updated == false) {
             // NOTE:
             // The following part will be commented because it is time consuming
@@ -487,7 +489,7 @@ protected:
     }
     
     /**
-     * This method performs the adaptative step
+     * @brief This method performs the adaptative step
      */
     bool AdaptativeStep()
     {
@@ -508,14 +510,13 @@ protected:
         while (is_converged == false && split_number <= mMaxNumberSplits) {                   
             // Expliting time step as a way to try improve the convergence
             split_number += 1;
-            double aux_delta_time;
-            double current_time; 
+            double aux_delta_time, current_time; 
             const double aux_time = SplitTimeStep(aux_delta_time, current_time);
+            current_time += aux_delta_time;
             
-            bool inside_the_split_is_converged = true;
+            bool inside_the_split_is_converged = false;
             unsigned int inner_iteration = 0;
-            while (inside_the_split_is_converged && this_process_info[TIME] <= aux_time) {      
-                current_time += aux_delta_time;
+            while (current_time <= aux_time) {      
                 inner_iteration += 1;
                 this_process_info[STEP] += 1;
                 
@@ -572,6 +573,8 @@ protected:
 //                     mpMyProcesses->ExecuteBeforeOutputStep();
 //                     mpMyProcesses->ExecuteAfterOutputStep();
                 }
+                
+                current_time += aux_delta_time;
             }
             
             if (inside_the_split_is_converged)
@@ -591,7 +594,11 @@ protected:
     }
     
     /**
-     * Here the database is updated
+     * @brief Here the database is updated
+     * @param A The LHS matrix
+     * @param Dx The increment of solution after solving system
+     * @param b The RHS vector
+     * @param MoveMesh The flag that tells if the mesh should be moved
      */
      
     void UpdateDatabase(
@@ -607,7 +614,7 @@ protected:
     }
     
     /**
-     * This method checks if there is no element inverted
+     * @brief his method checks if there is no element inverted
      */
     bool CheckGeometryInverted()
     {
@@ -636,7 +643,10 @@ protected:
     }
     
     /**
-     * Here the time step is splitted
+     * @brief Here the time step is splitted
+     * @param AuxDeltaTime The new delta time to be considered
+     * @param CurrentTime The current time 
+     * @return The destination time
      */
     
     double SplitTimeStep(
@@ -654,7 +664,7 @@ protected:
         AuxDeltaTime /= mSplitFactor;
         StrategyBaseType::GetModelPart().GetProcessInfo()[DELTA_TIME] = AuxDeltaTime; // Change delta time
         
-        CoutSplittingTime(AuxDeltaTime);
+        CoutSplittingTime(AuxDeltaTime, aux_time);
         
         return aux_time;
         
@@ -686,7 +696,7 @@ protected:
     }
     
     /**
-     * This method prints information after solving the problem
+     * @brief This method prints information after solving the problem
      */
     
     void CoutSolvingProblem()
@@ -697,10 +707,15 @@ protected:
     }
     
     /**
-     * This method prints information after split the increment of time
+     * @brief This method prints information after split the increment of time
+     * @param AuxDeltaTime The new time step to be considered
+     * @param AuxTime The destination time
      */
         
-    void CoutSplittingTime(const double AuxDeltaTime)
+    void CoutSplittingTime(
+        const double AuxDeltaTime, 
+        const double AuxTime
+        )
     {
         if (mConvergenceCriteriaEchoLevel > 0 && StrategyBaseType::GetModelPart().GetCommunicator().MyPID() == 0 ) {
             const double Time = StrategyBaseType::GetModelPart().GetProcessInfo()[TIME];
@@ -709,12 +724,13 @@ protected:
             std::cout << "|     " << BOLDFONT("Max. iter. exceeded: SPLITTING TIME STEP") << "       |" << std::endl;
             std::cout << "| " << BOLDFONT("COMING BACK TO TIME: ") << std::scientific << Time << "                    |" << std::endl;
             std::cout << "| " << BOLDFONT("      NEW TIME STEP: ") << std::scientific << AuxDeltaTime << "                    |" << std::endl;
+            std::cout << "| " << BOLDFONT("         UNTIL TIME: ") << std::scientific << AuxTime << "                    |" << std::endl;
             std::cout << "|----------------------------------------------------|" << std::endl;
         }
     }
     
     /**
-     * This method prints information after reach the max number of interations
+     * @brief This method prints information after reach the max number of interations
      */
     
     void MaxIterationsExceeded() override
@@ -727,7 +743,7 @@ protected:
     }
     
     /**
-     * This method prints information after reach the max number of interations and splits
+     * @brief This method prints information after reach the max number of interations and splits
      */
         
     void MaxIterationsAndSplitsExceeded()
