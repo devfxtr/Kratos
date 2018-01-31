@@ -107,7 +107,7 @@ public:
     typedef ProcessFactoryUtility::Pointer                                      ProcessesListType;
     
     /**
-     * Default constructor 
+     * @brief Default constructor 
      * @param rModelPart The model part of the problem
      * @param pScheme The integration scheme
      * @param pNewLinearSolver The linear solver employed
@@ -154,7 +154,7 @@ public:
     }
 
     /**
-     * Default constructor 
+     * @brief Default constructor 
      * @param rModelPart The model part of the problem
      * @param pScheme The integration scheme
      * @param pNewLinearSolver The linear solver employed
@@ -305,14 +305,14 @@ protected:
     ///@{
     
     // ADAPTATIVE STRATEGY PARAMETERS
-    bool mAdaptativeStrategy;         // If consider time split
-    bool mFinalizeWasPerformed;       // If the FinalizeSolutionStep has been already performed
-    double mSplitFactor;              // Number by one the delta time is split
-    ProcessesListType mpMyProcesses;  // The processes list
-    unsigned int mMaxNumberSplits;    // Maximum number of splits
+    bool mAdaptativeStrategy;         /// If consider time split
+    bool mFinalizeWasPerformed;       /// If the FinalizeSolutionStep has been already performed
+    double mSplitFactor;              /// Number by one the delta time is split
+    ProcessesListType mpMyProcesses;  /// The processes list
+    unsigned int mMaxNumberSplits;    /// Maximum number of splits
     
     // OTHER PARAMETERS
-    int mConvergenceCriteriaEchoLevel; // The echo level of the convergence criteria
+    int mConvergenceCriteriaEchoLevel; /// The echo level of the convergence criteria
 
     ///@}
     ///@name Protected Operators
@@ -397,12 +397,6 @@ protected:
             StrategyBaseType::GetModelPart().GetProcessInfo()[NL_ITERATION_NUMBER] = iteration_number;
 
             pScheme->InitializeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
-
-            // To be able to calculate the current gap and recalulate the penalty
-            if (StrategyBaseType::GetModelPart().GetProcessInfo()[ADAPT_PENALTY] == true) {
-                TSparseSpace::SetToZero(b);
-                pBuilderAndSolver->BuildRHS(pScheme, StrategyBaseType::GetModelPart(), b);
-            }
                     
             is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
@@ -632,6 +626,7 @@ protected:
             // We check now the deformation gradient
             std::vector<Matrix> deformation_gradient_matrices;
             it_elem->GetValueOnIntegrationPoints( DEFORMATION_GRADIENT, deformation_gradient_matrices, this_process_info);
+            
             for (unsigned int i_gp = 0; i_gp  < deformation_gradient_matrices.size(); ++i_gp)
                 if (MathUtils<double>::DetMat(deformation_gradient_matrices[i_gp]) < 0.0)
                     return true;

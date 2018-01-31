@@ -21,10 +21,12 @@
 #include "includes/define.h"
 #include "includes/model_part.h"
 #include "includes/process_info.h"
-#include "includes/gid_io.h"
 #include "utilities/mortar_utilities.h"
 #include "custom_processes/aalm_adapt_penalty_value_process.h"
 #include "solving_strategies/convergencecriterias/convergence_criteria.h"
+
+// DEBUG
+#include "includes/gid_io.h"
 
 namespace Kratos
 {
@@ -106,7 +108,7 @@ public:
     ///@{
     
     /**
-     * Criterias that need to be called before getting the solution
+     * @brief Criterias that need to be called before getting the solution
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -128,8 +130,20 @@ public:
             MortarUtilities::ComputeNodesMeanNormalModelPart( rModelPart.GetSubModelPart("Contact") ); // Update normal of the conditions
         
         // We recalculate the penalty parameter
-        if (rModelPart.GetProcessInfo()[ADAPT_PENALTY] == true)
-        {
+        if (rModelPart.GetProcessInfo()[ADAPT_PENALTY] == true) {
+            // Set to zero the weighted gap
+            ResetWeightedGap(rModelPart);
+            
+            ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
+        
+            #ifdef KRATOS_DEBUG
+                if (conditions_array.size() == 0) std::cout << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
+            #endif
+                
+                #pragma omp parallel for
+                for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
+                    (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
+            
             AALMAdaptPenaltyValueProcess aalm_adaptation_of_penalty = AALMAdaptPenaltyValueProcess( rModelPart );
             aalm_adaptation_of_penalty.Execute();
         }
@@ -138,7 +152,7 @@ public:
     }
     
     /**
-     * Compute relative and absolute error.
+     * @brief Compute relative and absolute error.
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -164,18 +178,16 @@ public:
         if (conditions_array.size() == 0) std::cout << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
     #endif
         
-        #pragma omp parallel for 
+        #pragma omp parallel for
         for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
             (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
         
         // GiD IO for debugging
-        if (mIODebug == true)
-        {            
+        if (mIODebug == true) {            
             const int nl_iter = rModelPart.GetProcessInfo()[NL_ITERATION_NUMBER];
             const double label = static_cast<double>(nl_iter);
             
-            if (nl_iter == 1)
-            {
+            if (nl_iter == 1) {
                 mGidIO.InitializeMesh(label);
                 mGidIO.WriteMesh(rModelPart.GetMesh());
                 mGidIO.FinalizeMesh();
@@ -202,7 +214,7 @@ public:
     }
     
     /**
-     * This function initialize the convergence criteria
+     * @brief This function initialize the convergence criteria
      * @param rModelPart The model part of interest
      */ 
     
@@ -212,7 +224,7 @@ public:
     }
     
     /**
-     * This function initializes the solution step
+     * @brief This function initializes the solution step
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -232,8 +244,7 @@ public:
         MortarUtilities::ComputeNodesMeanNormalModelPart( rModelPart.GetSubModelPart("Contact") );
         
         // GiD IO for debugging
-        if (mIODebug == true)
-        {
+        if (mIODebug == true) {
             mGidIO.CloseResultFile();
             std::string new_name = "POST_LINEAR_ITER_STEP=";
             new_name.append(std::to_string(rModelPart.GetProcessInfo()[STEP]));
@@ -242,7 +253,7 @@ public:
     }
     
     /**
-     * This function finalizes the solution step
+     * @brief This function finalizes the solution step
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -297,7 +308,7 @@ protected:
     ///@{
     
     /**
-     * This method resets the weighted gap in the nodes of the problem
+     * @brief This method resets the weighted gap in the nodes of the problem
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      */
     
