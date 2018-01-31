@@ -45,7 +45,7 @@ UpdatedLagrangian::UpdatedLagrangian( IndexType NewId, GeometryType::Pointer pGe
 
 Element::Pointer UpdatedLagrangian::Create( IndexType NewId, NodesArrayType const& ThisNodes, PropertiesType::Pointer pProperties ) const
 {
-    return Element::Pointer( new UpdatedLagrangian( NewId, GetGeometry().Create( ThisNodes ), pProperties ) );
+    return Kratos::make_shared<UpdatedLagrangian>( NewId, GetGeometry().Create( ThisNodes ), pProperties );
 }
 
 /***********************************************************************************/

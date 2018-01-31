@@ -35,6 +35,7 @@ TotalLagrangian::TotalLagrangian( IndexType NewId, GeometryType::Pointer pGeomet
 TotalLagrangian::TotalLagrangian( IndexType NewId, GeometryType::Pointer pGeometry, PropertiesType::Pointer pProperties )
         : BaseSolidElement( NewId, pGeometry, pProperties )
 {
+    //DO NOT ADD DOFS HERE!!!
 }
 
 /***********************************************************************************/
@@ -42,7 +43,7 @@ TotalLagrangian::TotalLagrangian( IndexType NewId, GeometryType::Pointer pGeomet
 
 Element::Pointer TotalLagrangian::Create( IndexType NewId, NodesArrayType const& ThisNodes, PropertiesType::Pointer pProperties ) const
 {
-    return Element::Pointer( new TotalLagrangian( NewId, GetGeometry().Create( ThisNodes ), pProperties ) );
+    return Kratos::make_shared<TotalLagrangian>( NewId, GetGeometry().Create( ThisNodes ), pProperties );
 }
 
 /***********************************************************************************/

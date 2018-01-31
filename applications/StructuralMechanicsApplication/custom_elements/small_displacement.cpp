@@ -36,6 +36,7 @@ SmallDisplacement::SmallDisplacement( IndexType NewId, GeometryType::Pointer pGe
 SmallDisplacement::SmallDisplacement( IndexType NewId, GeometryType::Pointer pGeometry, PropertiesType::Pointer pProperties )
         : BaseSolidElement( NewId, pGeometry, pProperties )
 {
+    //DO NOT ADD DOFS HERE!!!
 }
 
 /***********************************************************************************/
@@ -43,7 +44,7 @@ SmallDisplacement::SmallDisplacement( IndexType NewId, GeometryType::Pointer pGe
 
 Element::Pointer SmallDisplacement::Create( IndexType NewId, NodesArrayType const& ThisNodes, PropertiesType::Pointer pProperties ) const
 {
-    return Element::Pointer( new SmallDisplacement( NewId, GetGeometry().Create( ThisNodes ), pProperties ) );
+    return Kratos::make_shared<SmallDisplacement>( NewId, GetGeometry().Create( ThisNodes ), pProperties );
 }
 
 /***********************************************************************************/
@@ -278,7 +279,6 @@ int  SmallDisplacement::Check( const ProcessInfo& rCurrentProcessInfo )
 
 void SmallDisplacement::save( Serializer& rSerializer ) const
 {
-    rSerializer.save( "Name", "SmallDisplacement" );
     KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, BaseSolidElement );
 }
 
