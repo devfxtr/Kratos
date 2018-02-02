@@ -137,14 +137,8 @@ public:
 
         mConvergenceCriteriaEchoLevel = pNewConvergenceCriteria->GetEchoLevel();
         
-        Parameters DefaultParameters = Parameters(R"(
-        {
-            "adaptative_strategy"              : false,
-            "split_factor"                     : 10.0,
-            "max_number_splits"                : 3
-        })" );
-
-        ThisParameters.ValidateAndAssignDefaults(DefaultParameters);
+        Parameters default_parameters = GetDefaultParameters(); 
+        ThisParameters.ValidateAndAssignDefaults(default_parameters);
         
         mAdaptativeStrategy = ThisParameters["adaptative_strategy"].GetBool();
         mSplitFactor = ThisParameters["split_factor"].GetDouble();
@@ -184,15 +178,9 @@ public:
         KRATOS_TRY;
 
         mConvergenceCriteriaEchoLevel = pNewConvergenceCriteria->GetEchoLevel();
-        
-        Parameters DefaultParameters = Parameters(R"(
-        {
-            "adaptative_strategy"              : false,
-            "split_factor"                     : 10.0,
-            "max_number_splits"                : 3
-        })" );
 
-        ThisParameters.ValidateAndAssignDefaults(DefaultParameters);
+        Parameters default_parameters = GetDefaultParameters(); 
+        ThisParameters.ValidateAndAssignDefaults(default_parameters);
         
         mAdaptativeStrategy = ThisParameters["adaptative_strategy"].GetBool();
         mSplitFactor = ThisParameters["split_factor"].GetDouble();
@@ -210,6 +198,37 @@ public:
     
     //******************** OPERATIONS ACCESSIBLE FROM THE INPUT: ************************//
     //***********************************************************************************//
+    
+    /**
+     * @brief Operation to predict the solution ... if it is not called a trivial predictor is used in which the
+     * values of the solution step of interest are assumed equal to the old values 
+     */   
+    void Predict() override
+    {
+        KRATOS_TRY
+        
+        //OPERATIONS THAT SHOULD BE DONE ONCE - internal check to avoid repetitions
+        
+        // If the operations needed were already performed this does nothing
+        if (!BaseType::mInitializeWasPerformed)
+            Initialize();
+
+        // Initialize solution step
+        if (!BaseType::mSolutionStepIsInitialized)
+            InitializeSolutionStep();
+
+        TSystemMatrixType &A = *BaseType::mpA;
+        TSystemVectorType &Dx = *BaseType::mpDx;
+        TSystemVectorType &b = *BaseType::mpb;
+
+        BaseType::GetScheme()->Predict(StrategyBaseType::GetModelPart(), BaseType::GetBuilderAndSolver()->GetDofSet(), A, Dx, b);
+
+        // Move the mesh if needed
+        if (this->MoveMeshFlag() == true)
+            BaseType::MoveMesh();
+
+        KRATOS_CATCH("")
+    }
     
     /**
      * @brief Initialization of member variables and prior operations
@@ -562,7 +581,7 @@ protected:
                 // We repeat the solve with the new DELTA_TIME
                 Initialize();
                 InitializeSolutionStep();
-                BaseType::Predict();
+                Predict();
                 inside_the_split_is_converged = BaseType::SolveSolutionStep();
                 FinalizeSolutionStep();
                 
@@ -693,6 +712,23 @@ protected:
         }
 
         KRATOS_CATCH("");
+    }
+    
+    /**
+     * @brief This method returns the defaulr parameters in order to avoid code duplication
+     * @return Returns the default parameters
+     */
+    
+    Parameters GetDefaultParameters()
+    {
+        Parameters default_parameters = Parameters(R"(
+        {
+            "adaptative_strategy"              : false,
+            "split_factor"                     : 10.0,
+            "max_number_splits"                : 3
+        })" );
+        
+        return default_parameters;
     }
     
     /**
