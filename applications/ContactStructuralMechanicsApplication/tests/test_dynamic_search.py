@@ -53,7 +53,7 @@ class TestDynamicSearch(KratosUnittest.TestCase):
             # DEBUG
             #node.X -= 9.81 / 32.0
             #node.SetSolutionStepValue(KratosMultiphysics.DISPLACEMENT_X, -9.81 / 32.0)
-            node.SetSolutionStepValue(KratosMultiphysics.VOLUME_ACCELERATION_X, -9.81)
+            node.SetSolutionStepValue(KratosMultiphysics.ACCELERATION_X, -9.81)
         del(node)
         model_part_master = self.main_model_part.GetSubModelPart("Parts_Parts_Auto2")
         for node in model_part_master.Nodes:
