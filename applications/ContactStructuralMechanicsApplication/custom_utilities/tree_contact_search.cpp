@@ -208,7 +208,8 @@ void TreeContactSearch<TDim, TNumNodes>::UpdatePointListMortar()
     }
     
     #pragma omp parallel for 
-    for(int i = 0; i < static_cast<int>(mPointListDestination.size()); ++i) mPointListDestination[i]->UpdatePoint();
+    for(int i = 0; i < static_cast<int>(mPointListDestination.size()); ++i) 
+        mPointListDestination[i]->UpdatePoint();
 }
 
 /***********************************************************************************/
@@ -480,6 +481,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeLinearRegressionGapPressu
     std::size_t n = 0;
     
     // Initialize the values
+    double xi, yi;
     double sum_x, sum_xsq, sum_y, sum_xy;
 
     sum_x = 0.0;
@@ -492,22 +494,17 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeLinearRegressionGapPressu
     NodesArrayType& nodes_array = rcontact_model_part.Nodes();
     
     // We compute now the normal gap and set the nodes under certain threshold as active
-    #pragma omp parallel for 
+    #pragma omp parallel for private(xi, yi) reduction(+:sum_x,sum_xsq,sum_y,sum_xy,n)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
         auto it_node = nodes_array.begin() + i;
 
         if (it_node->Is(ACTIVE) == true) {
-            const double xi = it_node->FastGetSolutionStepValue(WEIGHTED_GAP);
-            const double yi = it_node->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS);
-            #pragma omp atomic
+            xi = it_node->FastGetSolutionStepValue(WEIGHTED_GAP);
+            yi = it_node->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS);
             sum_x += xi;
-            #pragma omp atomic
             sum_xsq += std::pow(xi, 2);
-            #pragma omp atomic
             sum_y += yi;
-            #pragma omp atomic
             sum_xy += xi * yi;
-            #pragma omp atomic
             n += 1;
         }
     }
@@ -530,10 +527,11 @@ inline double TreeContactSearch<TDim, TNumNodes>::GetMaxNodalH()
     // Creating a buffer for parallel vector fill
     const int num_threads = OpenMPUtils::GetNumThreads();
     std::vector<double> max_vector(num_threads, 0.0);
-    #pragma omp parallel for 
+    double nodal_h;
+    #pragma omp parallel for private(nodal_h)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
-        const double nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
+        nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
 
         const int id = OpenMPUtils::ThisThread();
         
@@ -553,14 +551,13 @@ inline double TreeContactSearch<TDim, TNumNodes>::GetMeanNodalH()
     // We iterate over the nodes
     NodesArrayType& nodes_array = mrMainModelPart.Nodes();
     
+    double nodal_h;
     double sum_nodal_h = 0.0;
     
-    #pragma omp parallel for 
+    #pragma omp parallel for  private(nodal_h) reduction(+:sum_nodal_h)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
-        const double nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
-
-        #pragma omp atomic
+        nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
         sum_nodal_h += nodal_h;
     }
     
@@ -805,16 +802,18 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeMappedGap(const bool Sear
         SwitchFlagNodes(nodes_array);
     
     // We compute now the normal gap and set the nodes under certain threshold as active
-    #pragma omp parallel for 
+    array_1d<double, 3> normal, auxiliar_coordinates, components_gap;
+    double gap;
+    #pragma omp parallel for private(gap, normal, auxiliar_coordinates, components_gap)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
         auto it_node = nodes_array.begin() + i;
 
         if (it_node->Is(SLAVE) == SearchOrientation) {
             // We compute the gap
-            const array_1d<double, 3>& normal = it_node->FastGetSolutionStepValue(NORMAL);
-            const array_1d<double, 3>& auxiliar_coordinates = it_node->GetValue(AUXILIAR_COORDINATES);
-            const array_1d<double, 3>& components_gap = ( it_node->Coordinates() - auxiliar_coordinates);
-            const double gap = inner_prod(components_gap, - normal);
+            normal = it_node->FastGetSolutionStepValue(NORMAL);
+            auxiliar_coordinates = it_node->GetValue(AUXILIAR_COORDINATES);
+            components_gap = ( it_node->Coordinates() - auxiliar_coordinates);
+            gap = inner_prod(components_gap, - normal);
             
             // We activate if the node is close enough
             if (norm_2(auxiliar_coordinates) > tolerance)
