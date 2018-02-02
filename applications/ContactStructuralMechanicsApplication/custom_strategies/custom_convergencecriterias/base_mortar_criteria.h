@@ -22,6 +22,7 @@
 #include "includes/model_part.h"
 #include "includes/process_info.h"
 #include "utilities/mortar_utilities.h"
+#include "utilities/variable_utils.h"
 #include "custom_processes/aalm_adapt_penalty_value_process.h"
 #include "solving_strategies/convergencecriterias/convergence_criteria.h"
 
@@ -170,7 +171,8 @@ public:
         ) override
     {
         // Set to zero the weighted gap
-        ResetWeightedGap(rModelPart);
+        NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
+        VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, nodes_array);
         
         ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
@@ -306,21 +308,7 @@ protected:
     ///@}
     ///@name Protected Operations
     ///@{
-    
-    /**
-     * @brief This method resets the weighted gap in the nodes of the problem
-     * @param rModelPart Reference to the ModelPart containing the contact problem.
-     */
-    
-    virtual void ResetWeightedGap(ModelPart& rModelPart)
-    {       
-        NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
 
-        #pragma omp parallel for 
-        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)
-            (nodes_array.begin() + i)->FastGetSolutionStepValue(WEIGHTED_GAP) = 0.0;
-    }
-    
     ///@}
     ///@name Protected  Access
     ///@{
