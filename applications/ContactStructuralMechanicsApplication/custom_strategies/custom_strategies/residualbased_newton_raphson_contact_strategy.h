@@ -207,26 +207,10 @@ public:
     {
         KRATOS_TRY
         
-        //OPERATIONS THAT SHOULD BE DONE ONCE - internal check to avoid repetitions
+        BaseType::Predict();
+
+        // TODO: Add something if necessary
         
-        // If the operations needed were already performed this does nothing
-        if (!BaseType::mInitializeWasPerformed)
-            Initialize();
-
-        // Initialize solution step
-        if (!BaseType::mSolutionStepIsInitialized)
-            InitializeSolutionStep();
-
-        TSystemMatrixType &A = *BaseType::mpA;
-        TSystemVectorType &Dx = *BaseType::mpDx;
-        TSystemVectorType &b = *BaseType::mpb;
-
-        BaseType::GetScheme()->Predict(StrategyBaseType::GetModelPart(), BaseType::GetBuilderAndSolver()->GetDofSet(), A, Dx, b);
-
-        // Move the mesh if needed
-        if (this->MoveMeshFlag() == true)
-            BaseType::MoveMesh();
-
         KRATOS_CATCH("")
     }
     
