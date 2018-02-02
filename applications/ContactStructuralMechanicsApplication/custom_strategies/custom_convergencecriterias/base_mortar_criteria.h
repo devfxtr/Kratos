@@ -171,8 +171,7 @@ public:
         ) override
     {
         // Set to zero the weighted gap
-        NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
-        VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, nodes_array);
+        ResetWeightedGap(rModelPart);
         
         ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
@@ -308,7 +307,18 @@ protected:
     ///@}
     ///@name Protected Operations
     ///@{
-
+    
+    /**
+     * @brief This method resets the weighted gap in the nodes of the problem
+     * @param rModelPart Reference to the ModelPart containing the contact problem.
+     */
+    
+    virtual void ResetWeightedGap(ModelPart& rModelPart)
+    {       
+        NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
+        VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, nodes_array);
+    }
+    
     ///@}
     ///@name Protected  Access
     ///@{

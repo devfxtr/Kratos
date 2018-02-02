@@ -334,14 +334,8 @@ protected:
     void ResetWeightedGap(ModelPart& rModelPart) override
     {       
         NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
-
-        #pragma omp parallel for 
-        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)  {
-            auto it_node = nodes_array.begin() + i;
-            
-            it_node->FastGetSolutionStepValue(WEIGHTED_GAP) = 0.0;
-            it_node->FastGetSolutionStepValue(WEIGHTED_SLIP) = 0.0;
-        }
+        VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, nodes_array);
+        VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SLIP, 0.0, nodes_array);
     }
     
     ///@}
