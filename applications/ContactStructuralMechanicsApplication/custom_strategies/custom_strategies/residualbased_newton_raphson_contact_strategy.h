@@ -228,6 +228,24 @@ public:
         KRATOS_CATCH("");
     }
     
+    /**
+     * @brief The problem of interest is solved.
+     * @details This function calls sequentially: Initialize(), InitializeSolutionStep(), Predict(),
+     * SolveSolutionStep() and FinalizeSolutionStep().
+     * All those functions can otherwise be called separately.
+     */    
+    double Solve() override
+    {
+        this->Initialize();
+        this->InitializeSolutionStep();
+//         this->Predict(); // NOTE: Giving problems in dynamics!!! 
+        this->SolveSolutionStep();
+        this->FinalizeSolutionStep();
+        
+        // TODO: Add something if necessary
+        
+        return 0.0;
+    }
         
     /**
      * @brief Performs all the required operations that should be done (for each step) 

@@ -42,6 +42,7 @@ TreeContactSearch<TDim, TNumNodes>::TreeContactSearch(
         "condition_name"                       : "",  
         "final_string"                         : "",  
         "inverted_search"                      : false,
+        "dynamic_search"                       : false,
         "double_formulation"                   : false
     })" );
     
@@ -193,7 +194,7 @@ template<unsigned int TDim, unsigned int TNumNodes>
 void TreeContactSearch<TDim, TNumNodes>::UpdatePointListMortar()
 {
     // We check if we are in a dynamic or static case
-    const bool dynamic = mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X); 
+    const bool dynamic = mThisParameters["dynamic_search"].GetBool() ? mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) : false; 
     const double delta_time = (dynamic) ? mrMainModelPart.GetProcessInfo()[DELTA_TIME] : 0.0;
     
     // We compute the delta displacement
@@ -233,7 +234,7 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
         ClearMortarConditions();
     
     // We check if we are in a dynamic or static case
-    const bool dynamic = mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X);
+    const bool dynamic = mThisParameters["dynamic_search"].GetBool() ? mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) : false;
     
     // Some auxiliar values
     const unsigned int allocation_size = mThisParameters["allocation_size"].GetInt();           // Allocation size for the vectors and max number of potential results 
@@ -328,11 +329,13 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
         CheckPairing(computing_rcontact_model_part, condition_id);
     else {
         // We revert the nodes to the original position    
-        if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
-            NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
-            #pragma omp parallel for
-            for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-                noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+        if (mThisParameters["dynamic_search"].GetBool() == true) {
+            if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
+                NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
+                #pragma omp parallel for
+                for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
+                    noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+            }
         }
         // We compute the weighted reaction
         ComputeWeightedReaction();
@@ -744,10 +747,12 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     
     // We revert the nodes to the original position    
     NodesArrayType& nodes_array = rcontact_model_part.Nodes();
-    if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
-        #pragma omp parallel for
-        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-            noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+    if (mThisParameters["dynamic_search"].GetBool() == true) {
+        if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
+            #pragma omp parallel for
+            for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
+                noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+        }
     }
     
     // Calculate the mean of the normal in all the nodes

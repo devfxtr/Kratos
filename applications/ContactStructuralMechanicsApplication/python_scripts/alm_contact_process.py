@@ -89,6 +89,7 @@ class ALMContactProcess(python_process.PythonProcess):
             "database_step_update"        : 1,
             "integration_order"           : 3,
             "max_gap_factor"              : 1.0e-3,
+            "dynamic_search"              : false,
             "double_formulation"          : false,
             "debug_mode"                  : false,
             "remeshing_with_contact_bc"   : false
@@ -437,6 +438,7 @@ class ALMContactProcess(python_process.PythonProcess):
         search_parameters.AddValue("bucket_size",self.settings["bucket_size"])
         search_parameters.AddValue("search_factor",self.settings["search_factor"])
         search_parameters.AddValue("double_formulation",self.settings["double_formulation"])
+        search_parameters.AddValue("dynamic_search",self.settings["dynamic_search"])
         search_parameters["condition_name"].SetString(condition_name)
         
         # We compute the number of nodes of the geometry
