@@ -367,11 +367,13 @@ protected:
         is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
         // We do a geometry check before solve the system for first time
-        if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
-            std::cout << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
-            ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
-            this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
-            return false;
+        if (mAdaptativeStrategy == true) { 
+            if (CheckGeometryInverted() == true) {
+                std::cout << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
+                ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+                this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                return false;
+            }
         }
         
         // Function to perform the building and the solving phase.
@@ -395,9 +397,13 @@ protected:
         UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
         
         // We now check the geometry
-        if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
-            std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
-            return false;
+        if (mAdaptativeStrategy == true) {
+            if (CheckGeometryInverted() == true) {
+                std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+                ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+                this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                return false;
+            }
         }
         
         pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
@@ -460,9 +466,13 @@ protected:
             UpdateDatabase(A, Dx, b, StrategyBaseType::MoveMeshFlag());
             
             // We now check the geometry
-            if (mAdaptativeStrategy == true && CheckGeometryInverted()) {
-                std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
-                return false;
+            if (mAdaptativeStrategy == true) {
+                if (CheckGeometryInverted() == true) {
+                    std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+                    ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+                    this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                    return false;
+                }
             }
 
             pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
