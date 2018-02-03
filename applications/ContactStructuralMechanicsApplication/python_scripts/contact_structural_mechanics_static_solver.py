@@ -129,13 +129,13 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
             
         mechanical_solver = self.get_mechanical_solver()
             
-        # The steps of the solve are Initialize(), InitializeSolutionStep(), Predict(), SolveSolutionStep(), FinalizeSolutionStep()
-        mechanical_solver.Initialize()
-        mechanical_solver.InitializeSolutionStep()
-        mechanical_solver.Predict()
-        # We solve the problem
-        mechanical_solver.SolveSolutionStep()
-        mechanical_solver.FinalizeSolutionStep()
+        # The steps of the solve are Initialize(), InitializeSolutionStep(), Predict(), SolveSolutionStep(), FinalizeSolutionStep()        
+        mechanical_solver.Solve()
+        #mechanical_solver.Initialize()
+        #mechanical_solver.InitializeSolutionStep()
+        #mechanical_solver.Predict()
+        #mechanical_solver.SolveSolutionStep()
+        #mechanical_solver.FinalizeSolutionStep()
         
     def AddProcessesList(self, processes_list):
         self.processes_list = CSMA.ProcessFactoryUtility(processes_list)

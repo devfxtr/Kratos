@@ -134,7 +134,7 @@ void TreeContactSearch<TDim, TNumNodes>::ClearMortarConditions()
     NodesArrayType& nodes_array = mrMainModelPart.GetSubModelPart("Contact").Nodes();
         
     switch(mTypeSolution) {
-        case VectorLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
+        case VectorLagrangeMultiplier : ClearComponentsMortarConditions(nodes_array); 
         case ScalarLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
         case NormalContactStress : ClearALMFrictionlessMortarConditions(nodes_array); 
     }
@@ -227,6 +227,10 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
     // We get the computing model part
     std::size_t condition_id = ReorderConditionsIds();
     ModelPart& computing_rcontact_model_part = mrMainModelPart.GetSubModelPart("ComputingContact"); 
+    
+    // We reset the computing contact model part in case of already initialized
+    if (computing_rcontact_model_part.Conditions().size() > 0)
+        ClearMortarConditions();
     
     // We check if we are in a dynamic or static case
     const bool dynamic = mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X);
