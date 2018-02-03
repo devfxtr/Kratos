@@ -8,31 +8,31 @@ import KratosMultiphysics.ContactStructuralMechanicsApplication as CSMA
 KM.CheckForPreviousImport()
 
 # Import the implicit solver (the explicit one is derived from it)
-import structural_mechanics_static_solver
+import structural_mechanics_implicit_dynamic_solver
 
 def CreateSolver(main_model_part, custom_settings):
-    return StaticMechanicalSolver(main_model_part, custom_settings)
+    return ImplicitMechanicalSolver(main_model_part, custom_settings)
 
-class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanicalSolver):
-    """The structural mechanics contact static solver.
+class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.ImplicitMechanicalSolver):
+    """The structural mechanics contact implicit dynamic solver.
 
-    This class creates the mechanical solvers for contact static analysis. It currently
-    supports line search, linear, arc-length, form-finding and Newton-Raphson
-    strategies.
+    This class creates the mechanical solvers for contact implicit dynamic analysis.
+    It currently supports Newmark, Bossak and dynamic relaxation schemes.
 
     Public member variables:
-    arc_length_settings -- settings for the arc length method.
+    dynamic_settings -- settings for the implicit dynamic solvers.
 
     See structural_mechanics_solver.py for more information.
     """
+    
     def __init__(self, main_model_part, custom_settings): 
         
         self.main_model_part = main_model_part    
         
-        ##settings string in json format
-        contact_settings = KM.Parameters("""
+        # Settings string in json format
+        contact_related_settings = KM.Parameters("""
         {
-            "contact_settings" :
+            "contact_strategy_settings" :
             {
                 "mortar_type"                            : "",
                 "condn_convergence_criterion"            : false,
@@ -47,14 +47,42 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
                 "contact_displacement_absolute_tolerance": 1.0e-9,
                 "contact_residual_relative_tolerance"    : 1.0e-4,
                 "contact_residual_absolute_tolerance"    : 1.0e-9
+            },
+            "contact_settings" :
+            {
+                "contact_model_part"                     : "Contact_Part",
+                "axisymmetric"                           : false,
+                "frictional_law"                         : "Coulomb",
+                "assume_master_slave"                    : "",
+                "normal_variation"                       : "NO_DERIVATIVES_COMPUTATION",
+                "manual_ALM"                             : false,
+                "stiffness_factor"                       : 1.0,
+                "penalty_scale_factor"                   : 1.0,
+                "use_scale_factor"                       : true,
+                "penalty"                                : 0.0,
+                "scale_factor"                           : 1.0e0,
+                "tangent_factor"                         : 0.1,
+                "integration_order"                      : 3,
+                "active_check_factor"                    : 0.01,
+                "max_gap_factor"                         : 1.0e-3,
+                "remeshing_with_contact_bc"              : false
+            },
+            "contact_search_settings" :
+            {
+                "max_number_results"                     : 1000,
+                "bucket_size"                            : 4,
+                "search_factor"                          : 2.0,
+                "type_search"                            : "InRadius",
+                "check_gap"                              : "MappingCheck",
+                "database_step_update"                   : 1
             }
         }
         """)
         
         ## Overwrite the default settings with user-provided parameters
         self.settings = custom_settings
-        self.validate_and_transfer_matching_settings(self.settings, contact_settings)
-        self.contact_settings = contact_settings["contact_settings"]
+        self.validate_and_transfer_matching_settings(self.settings, contact_related_settings)
+        self.contact_strategy_settings = contact_related_settings["contact_strategy_settings"]
 
         # Construct the base solver.
         super().__init__(self.main_model_part, self.settings)
@@ -72,31 +100,41 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
 
         # Setting echo level
         self.echo_level =  self.settings["echo_level"].GetInt()
-    
+
         # Initialize the processes list
         self.processes_list = None
         
+        # Create an auxiliary Kratos parameters object for the search utility settings.
+        search_utility_params = KM.Parameters("{}")
+        search_utility_params.AddValue("contact_settings",contact_related_settings["contact_settings"])
+        search_utility_params.AddValue("contact_search_settings",contact_related_settings["contact_search_settings"])
+        search_utility_params["contact_settings"].AddValue("mortar_type",self.contact_strategy_settings["mortar_type"])
+        search_utility_params["contact_settings"].AddValue("gidio_debug",self.contact_strategy_settings["gidio_debug"])
+        import contact_search_utility
+        self.contact_search_utility = contact_search_utility.ContactSearchUtility(self.main_model_part, search_utility_params)
+        
         print("Construction of ContactMechanicalSolver finished")
-        
+
     def AddVariables(self):
-        
+
         super().AddVariables()
-            
-        if  self.contact_settings["mortar_type"].GetString() != "":
+
+        mortar_type = self.contact_strategy_settings["mortar_type"].GetString()
+        if  mortar_type != "":
             self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL)  # Add normal
             self.main_model_part.AddNodalSolutionStepVariable(KM.NODAL_H) # Add nodal size variable
-            if  self.contact_settings["mortar_type"].GetString() == "ALMContactFrictionless":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL_CONTACT_STRESS)                        # Add normal contact stress
+            if  "ALMContactFrictionless" in mortar_type:
+                self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL_CONTACT_STRESS)       # Add normal contact stress
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_GAP)              # Add normal contact gap
-            elif self.contact_settings["mortar_type"].GetString() == "ALMContactFrictional": 
-                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)                   # Add normal contact stress 
+            elif "ALMContactFrictional" in mortar_type: 
+                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add normal contact stress 
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_GAP)              # Add normal contact gap 
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_SLIP)             # Add normal contact gap 
-            elif  self.contact_settings["mortar_type"].GetString() == "ScalarMeshTying":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.SCALAR_LAGRANGE_MULTIPLIER)                   # Add scalar LM
+            elif "ScalarMeshTying" in mortar_type:
+                self.main_model_part.AddNodalSolutionStepVariable(KM.SCALAR_LAGRANGE_MULTIPLIER)  # Add scalar LM
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_SCALAR_RESIDUAL)  # Add scalar LM residual
-            elif  self.contact_settings["mortar_type"].GetString() == "ComponentsMeshTying":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)                   # Add vector LM
+            elif "ComponentsMeshTying" in mortar_type:
+                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add vector LM
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_VECTOR_RESIDUAL)  # Add vector LM residual
                 
         print("::[Contact Mechanical Solver]:: Variables ADDED")
@@ -105,15 +143,16 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
 
         super().AddDofs()
         
-        if (self.contact_settings["mortar_type"].GetString() == "ALMContactFrictionless"):
+        mortar_type = self.contact_strategy_settings["mortar_type"].GetString()
+        if ("ALMContactFrictionless" in mortar_type):
             KM.VariableUtils().AddDof(KM.NORMAL_CONTACT_STRESS, CSMA.WEIGHTED_GAP, self.main_model_part)
-        elif (self.contact_settings["mortar_type"].GetString() == "ALMContactFrictional"): 
+        elif ("ALMContactFrictional" in mortar_type): 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_X, self.main_model_part) 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Y, self.main_model_part) 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Z, self.main_model_part) 
-        elif (self.contact_settings["mortar_type"].GetString() == "ScalarMeshTying"):
-            KM.VariableUtils().AddDof(KM.SCALAR_LAGRANGE_MULTIPLIER,CSMA.WEIGHTED_SCALAR_RESIDUAL, self.main_model_part)
-        elif (self.contact_settings["mortar_type"].GetString() == "ComponentsMeshTying"):
+        elif ("ScalarMeshTying" in mortar_type):
+            KM.VariableUtils().AddDof(KM.SCALAR_LAGRANGE_MULTIPLIER, CSMA.WEIGHTED_SCALAR_RESIDUAL, self.main_model_part)
+        elif ("ComponentsMeshTying" in mortar_type):
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_X, CSMA.WEIGHTED_VECTOR_RESIDUAL_X, self.main_model_part)
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Y, CSMA.WEIGHTED_VECTOR_RESIDUAL_Y, self.main_model_part)
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Z, CSMA.WEIGHTED_VECTOR_RESIDUAL_Z, self.main_model_part)
@@ -122,24 +161,43 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
     
     def Initialize(self):
         super().Initialize() # The mechanical solver is created here.
-        
+          
+        # Local matrices and vectors (for manual predict and update)
+        self.A = KM.CompressedMatrix()
+        self.Dx = KM.Vector()
+        self.b = KM.Vector()
+          
+        # The contact search
+        computing_model_part = self.GetComputingModelPart()
+        self.contact_search_utility.Initialize(computing_model_part)
+    
     def Solve(self):
         if self.settings["clear_storage"].GetBool():
             self.Clear()
-            
+        
         mechanical_solver = self.get_mechanical_solver()
+        
+        # We predict before searching 
+        self.mechanical_scheme.Predict(self.main_model_part, self.builder_and_solver.GetDofSet(), self.A, self.Dx, self.b)
+        mechanical_solver.MoveMesh()
+        
+        # After predict we execute the search
+        self.contact_search_utility.ExecuteSearch()
             
         # The steps of the solve are Initialize(), InitializeSolutionStep(), Predict(), SolveSolutionStep(), FinalizeSolutionStep()
         mechanical_solver.Initialize()
         mechanical_solver.InitializeSolutionStep()
-        mechanical_solver.Predict()
+        #mechanical_solver.Predict() # Predict is performed before search
         # We solve the problem
         mechanical_solver.SolveSolutionStep()
         mechanical_solver.FinalizeSolutionStep()
         
+        # The post time step executions in the ContactSearchUtility
+        self.contact_search_utility.ExecutePostTimeStep()
+    
     def AddProcessesList(self, processes_list):
         self.processes_list = CSMA.ProcessFactoryUtility(processes_list)
-        
+    
     def _create_convergence_criterion(self):
         # Create an auxiliary Kratos parameters object to store the convergence settings.
         conv_params = KM.Parameters("{}")
@@ -150,22 +208,22 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
         conv_params.AddValue("displacement_absolute_tolerance",self.settings["displacement_absolute_tolerance"])
         conv_params.AddValue("residual_relative_tolerance",self.settings["residual_relative_tolerance"])
         conv_params.AddValue("residual_absolute_tolerance",self.settings["residual_absolute_tolerance"])
-        conv_params.AddValue("contact_displacement_relative_tolerance",self.contact_settings["contact_displacement_relative_tolerance"])
-        conv_params.AddValue("contact_displacement_absolute_tolerance",self.contact_settings["contact_displacement_absolute_tolerance"])
-        conv_params.AddValue("contact_residual_relative_tolerance",self.contact_settings["contact_residual_relative_tolerance"])
-        conv_params.AddValue("contact_residual_absolute_tolerance",self.contact_settings["contact_residual_absolute_tolerance"])
-        conv_params.AddValue("mortar_type",self.contact_settings["mortar_type"])
-        conv_params.AddValue("condn_convergence_criterion",self.contact_settings["condn_convergence_criterion"])
-        conv_params.AddValue("fancy_convergence_criterion",self.contact_settings["fancy_convergence_criterion"])
-        conv_params.AddValue("print_convergence_criterion",self.contact_settings["print_convergence_criterion"])
-        conv_params.AddValue("ensure_contact",self.contact_settings["ensure_contact"])
-        conv_params.AddValue("gidio_debug",self.contact_settings["gidio_debug"])
+        conv_params.AddValue("contact_displacement_relative_tolerance",self.contact_strategy_settings["contact_displacement_relative_tolerance"])
+        conv_params.AddValue("contact_displacement_absolute_tolerance",self.contact_strategy_settings["contact_displacement_absolute_tolerance"])
+        conv_params.AddValue("contact_residual_relative_tolerance",self.contact_strategy_settings["contact_residual_relative_tolerance"])
+        conv_params.AddValue("contact_residual_absolute_tolerance",self.contact_strategy_settings["contact_residual_absolute_tolerance"])
+        conv_params.AddValue("mortar_type",self.contact_strategy_settings["mortar_type"])
+        conv_params.AddValue("condn_convergence_criterion",self.contact_strategy_settings["condn_convergence_criterion"])
+        conv_params.AddValue("fancy_convergence_criterion",self.contact_strategy_settings["fancy_convergence_criterion"])
+        conv_params.AddValue("print_convergence_criterion",self.contact_strategy_settings["print_convergence_criterion"])
+        conv_params.AddValue("ensure_contact",self.contact_strategy_settings["ensure_contact"])
+        conv_params.AddValue("gidio_debug",self.contact_strategy_settings["gidio_debug"])
         import contact_convergence_criteria_factory
         convergence_criterion = contact_convergence_criteria_factory.convergence_criterion(conv_params)
         return convergence_criterion.mechanical_convergence_criterion
-        
+    
     def _create_builder_and_solver(self):
-        if  self.contact_settings["mortar_type"].GetString() != "":
+        if  self.contact_strategy_settings["mortar_type"].GetString() != "":
             linear_solver = self.get_linear_solver()
             if self.settings["block_builder"].GetBool():
                 if self.settings["multi_point_constraints_used"].GetBool():
@@ -178,9 +236,9 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
             builder_and_solver = super()._create_builder_and_solver()
             
         return builder_and_solver
-        
+    
     def _create_mechanical_solver(self):
-        if  self.contact_settings["mortar_type"].GetString() != "":
+        if  self.contact_strategy_settings["mortar_type"].GetString() != "":
             if self.settings["analysis_type"].GetString() == "linear":
                 mechanical_solver = self._create_linear_strategy()
             else:
@@ -211,6 +269,7 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
                                                 self.settings["move_mesh_flag"].GetBool(),
                                                 newton_parameters
                                                 )
+    
     def _create_contact_newton_raphson_strategy(self):
         computing_model_part = self.GetComputingModelPart()
         self.mechanical_scheme = self.get_solution_scheme()
@@ -218,9 +277,9 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
         self.mechanical_convergence_criterion = self.get_convergence_criterion()
         self.builder_and_solver = self.get_builder_and_solver()
         newton_parameters = KM.Parameters("""{}""")
-        newton_parameters.AddValue("adaptative_strategy",self.contact_settings["adaptative_strategy"])
-        newton_parameters.AddValue("split_factor",self.contact_settings["split_factor"])
-        newton_parameters.AddValue("max_number_splits",self.contact_settings["max_number_splits"])
+        newton_parameters.AddValue("adaptative_strategy",self.contact_strategy_settings["adaptative_strategy"])
+        newton_parameters.AddValue("split_factor",self.contact_strategy_settings["split_factor"])
+        newton_parameters.AddValue("max_number_splits",self.contact_strategy_settings["max_number_splits"])
         return CSMA.ResidualBasedNewtonRaphsonContactStrategy(computing_model_part, 
                                                                 self.mechanical_scheme, 
                                                                 self.linear_solver, 
