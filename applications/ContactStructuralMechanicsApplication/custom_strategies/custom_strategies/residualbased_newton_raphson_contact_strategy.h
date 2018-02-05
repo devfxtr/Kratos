@@ -783,7 +783,7 @@ protected:
             const double Time = StrategyBaseType::GetModelPart().GetProcessInfo()[TIME];
             std::cout.precision(4);
             std::cout << "|----------------------------------------------------|" << std::endl;
-            std::cout << "|     " << BOLDFONT("Max. iter. exceeded: SPLITTING TIME STEP") << "       |" << std::endl;
+            std::cout << "|     " << BOLDFONT("SPLITTING TIME STEP") << "                            |" << std::endl;
             std::cout << "| " << BOLDFONT("COMING BACK TO TIME: ") << std::scientific << Time << "                    |" << std::endl;
             std::cout << "| " << BOLDFONT("      NEW TIME STEP: ") << std::scientific << AuxDeltaTime << "                    |" << std::endl;
             std::cout << "| " << BOLDFONT("         UNTIL TIME: ") << std::scientific << AuxTime << "                    |" << std::endl;
