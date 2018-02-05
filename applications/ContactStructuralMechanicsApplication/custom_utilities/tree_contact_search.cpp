@@ -85,7 +85,7 @@ TreeContactSearch<TDim, TNumNodes>::TreeContactSearch(
     
     // We set to zero the NORMAL_GAP
     if (mCheckGap == MappingCheck)
-        VariableUtils().SetScalarVarNonHistorical<Variable<double>>(NORMAL_GAP, 0.0, rcontact_model_part.Nodes()); 
+        VariableUtils().SetNonHistoricalScalarVar<Variable<double>>(NORMAL_GAP, 0.0, rcontact_model_part.Nodes()); 
     
     // Iterate in the conditions
     ConditionsArrayType& conditions_array = rcontact_model_part.Conditions();
@@ -738,7 +738,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     ModelPart& rcontact_model_part = mrMainModelPart.GetSubModelPart("Contact");
     
     // We set the gap to an enormous value in order to initialize it
-    VariableUtils().SetScalarVarNonHistorical<Variable<double>>(NORMAL_GAP, 1.0e12, rcontact_model_part.Nodes()); 
+    VariableUtils().SetNonHistoricalScalarVar<Variable<double>>(NORMAL_GAP, 1.0e12, rcontact_model_part.Nodes()); 
     
     // We compute the gap in the slave
     ComputeMappedGap(!mInvertedSearch);
