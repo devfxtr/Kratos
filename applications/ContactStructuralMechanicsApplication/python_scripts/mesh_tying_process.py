@@ -172,14 +172,13 @@ class MeshTyingProcess(python_process.PythonProcess):
         zero_vector[2] = 0.0
         
         # Initilialize weighted variables and LM
-        KM.VariableUtils().SetVariableNonHistorical(KM.NORMAL, zero_vector, self.mesh_tying_model_part.Nodes)
         if (self.type_variable == "Scalar"):
             KM.VariableUtils().SetVariable(CSMA.WEIGHTED_SCALAR_RESIDUAL, 0.0, self.mesh_tying_model_part.Nodes)
         else:
             KM.VariableUtils().SetVariable(CSMA.WEIGHTED_VECTOR_RESIDUAL, zero_vector, self.mesh_tying_model_part.Nodes)
         
         # Setting the conditions 
-        KM.VariableUtils().SetVariableNonHistorical(KM.NORMAL, zero_vector, self.mesh_tying_model_part.Conditions)
+        KM.VariableUtils().SetNonHistoricalVariable(KM.NORMAL, zero_vector, self.mesh_tying_model_part.Conditions)
         
         self.contact_search.CreatePointListMortar()
         self.contact_search.InitializeMortarConditions()
