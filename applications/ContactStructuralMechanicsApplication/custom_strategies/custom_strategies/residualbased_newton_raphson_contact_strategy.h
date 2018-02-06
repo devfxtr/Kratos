@@ -207,7 +207,7 @@ public:
     {
         KRATOS_TRY
         
-        BaseType::Predict();
+//         BaseType::Predict();  // NOTE: Giving problems in dynamics!!! 
 
         // TODO: Add something if necessary
         
@@ -238,7 +238,7 @@ public:
     {
         this->Initialize();
         this->InitializeSolutionStep();
-//         this->Predict(); // NOTE: Giving problems in dynamics!!! 
+        this->Predict();
         this->SolveSolutionStep();
         this->FinalizeSolutionStep();
         
@@ -292,8 +292,10 @@ public:
         
         bool is_converged = BaseSolveSolutionStep();
         
-        if ((mAdaptativeStrategy == true) && (is_converged == false)) {
-            is_converged = AdaptativeStep();
+        if (mAdaptativeStrategy == true) {
+            if (is_converged == false) {
+                is_converged = AdaptativeStep();
+            }
         }
 
         return is_converged;
@@ -591,11 +593,11 @@ protected:
                 mFinalizeWasPerformed = false;
                 
                 // We repeat the solve with the new DELTA_TIME
-                Initialize();
-                InitializeSolutionStep();
-                Predict();
+                this->Initialize();
+                this->InitializeSolutionStep();
+                this->Predict();
                 inside_the_split_is_converged = BaseType::SolveSolutionStep();
-                FinalizeSolutionStep();
+                this->FinalizeSolutionStep();
                 
                 // We execute the processes after the non-linear iteration
                 if (mpMyProcesses != nullptr) {
