@@ -48,10 +48,14 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
     
-/** \brief DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition
- * This is a contact condition which employes the mortar method with dual lagrange multiplier 
+/** 
+ * @class DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition 
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition
+ * @details This is a contact condition which employes the mortar method with dual lagrange multiplier 
  * The method has been taken from the Alexander Popps thesis:
  * Popp, Alexander: Mortar Methods for Computational Contact Mechanics and General Interface Problems, Technische Universität München, jul 2012
+ * @author Vicente Mataix Ferrandiz
  */
 template< unsigned int TDim, unsigned int TNumNodes, bool TNormalVariation >
 class DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition

@@ -45,7 +45,11 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
 
-/** @brief Custom convergence criteria for the mortar condition 
+/**  
+ * @class ALMFrictionalMortarConvergenceCriteria 
+ * @ingroup ContactStructuralMechanicsApplication 
+ * @brief Custom convergence criteria for the mortar condition for frictional case
+ * @author Vicente Mataix Ferrandiz
  */
 template<class TSparseSpace, class TDenseSpace>
 class ALMFrictionalMortarConvergenceCriteria 

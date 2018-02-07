@@ -59,10 +59,14 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
     
-/** \brief MeshTyingMortarCondition
- * This is a mesh tying condition which employes the mortar method with dual lagrange multiplier 
+/** 
+ * @class MeshTyingMortarCondition 
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief MeshTyingMortarCondition
+ * @details This is a mesh tying condition which employes the mortar method with dual lagrange multiplier 
  * The method has been taken from the Alexander Popps thesis:
  * Popp, Alexander: Mortar Methods for Computational Contact Mechanics and General Interface Problems, Technische Universität München, jul 2012
+ * @author Vicente Mataix Ferrandiz
  */
 
 template< const unsigned int TDim, const unsigned int TNumNodesElem, TensorValue TTensor>
