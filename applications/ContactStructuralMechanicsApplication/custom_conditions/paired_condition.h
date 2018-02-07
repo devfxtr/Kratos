@@ -48,7 +48,8 @@ namespace Kratos
 /** \brief PairedCondition
  * This is a base class for the conditions paired, it is basically equal to the base condition, with a 
  */
-class PairedCondition: public Condition 
+class PairedCondition
+    : public Condition 
 {
 public:
     ///@name Type Definitions

@@ -48,11 +48,16 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
     
-/** \brief AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition
- * TODO: Complete this
+/** 
+ * @class AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition 
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition
+ * @todo Complete this
+ * @author Vicente Mataix Ferrandiz
  */
 template< unsigned int TNumNodes, bool TNormalVariation >
-class AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition: public AugmentedLagrangianMethodFrictionalMortarContactCondition<2, TNumNodes, TNormalVariation> 
+class AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition
+    : public AugmentedLagrangianMethodFrictionalMortarContactCondition<2, TNumNodes, TNormalVariation> 
 {
 public:
     ///@name Type Definitions
@@ -61,39 +66,39 @@ public:
     /// Counted pointer of AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition
     KRATOS_CLASS_POINTER_DEFINITION( AugmentedLagrangianMethodFrictionalMortarContactAxisymCondition );
 
-    typedef AugmentedLagrangianMethodMortarContactCondition<2, TNumNodes, true, TNormalVariation> MortarBaseType;
+    typedef AugmentedLagrangianMethodMortarContactCondition<2, TNumNodes, FrictionalCase::FRICTIONAL, TNormalVariation> MortarBaseType;
     
-    typedef AugmentedLagrangianMethodFrictionalMortarContactCondition<2, TNumNodes, TNormalVariation>   BaseType;
+    typedef AugmentedLagrangianMethodFrictionalMortarContactCondition<2, TNumNodes, TNormalVariation>                         BaseType;
     
-    typedef typename MortarBaseType::MortarConditionMatrices                             MortarConditionMatrices;
+    typedef typename MortarBaseType::MortarConditionMatrices                                                   MortarConditionMatrices;
 
-    typedef typename MortarBaseType::GeneralVariables                                           GeneralVariables;
+    typedef typename MortarBaseType::GeneralVariables                                                                 GeneralVariables;
     
-    typedef typename MortarBaseType::AeData                                                               AeData;
+    typedef typename MortarBaseType::AeData                                                                                     AeData;
         
-    typedef Condition                                                                          ConditionBaseType;
+    typedef Condition                                                                                                ConditionBaseType;
     
-    typedef typename ConditionBaseType::VectorType                                                    VectorType;
+    typedef typename ConditionBaseType::VectorType                                                                          VectorType;
 
-    typedef typename ConditionBaseType::MatrixType                                                    MatrixType;
+    typedef typename ConditionBaseType::MatrixType                                                                          MatrixType;
 
-    typedef typename ConditionBaseType::IndexType                                                      IndexType;
+    typedef typename ConditionBaseType::IndexType                                                                            IndexType;
 
-    typedef typename ConditionBaseType::GeometryType::Pointer                                GeometryPointerType;
+    typedef typename ConditionBaseType::GeometryType::Pointer                                                      GeometryPointerType;
 
-    typedef typename ConditionBaseType::NodesArrayType                                            NodesArrayType;
+    typedef typename ConditionBaseType::NodesArrayType                                                                  NodesArrayType;
 
-    typedef typename ConditionBaseType::PropertiesType::Pointer                            PropertiesPointerType;
+    typedef typename ConditionBaseType::PropertiesType::Pointer                                                  PropertiesPointerType;
     
-    typedef typename ConditionBaseType::EquationIdVectorType                                EquationIdVectorType;
+    typedef typename ConditionBaseType::EquationIdVectorType                                                      EquationIdVectorType;
     
-    typedef typename ConditionBaseType::DofsVectorType                                            DofsVectorType;
+    typedef typename ConditionBaseType::DofsVectorType                                                                  DofsVectorType;
     
-    typedef typename std::vector<array_1d<PointType,2>>                                   ConditionArrayListType;
+    typedef typename std::vector<array_1d<PointType,2>>                                                         ConditionArrayListType;
     
-    typedef Line2D2<Point>                                                                     DecompositionType;
+    typedef Line2D2<Point>                                                                                           DecompositionType;
     
-    typedef DerivativeDataFrictional<2, TNumNodes, TNormalVariation>                          DerivativeDataType;
+    typedef DerivativeDataFrictional<2, TNumNodes, TNormalVariation>                                                DerivativeDataType;
     
     static constexpr unsigned int MatrixSize = 2 * (TNumNodes + TNumNodes) + TNumNodes;
          
@@ -136,7 +141,7 @@ public:
     /**
      * Creates a new element pointer from an arry of nodes
      * @param NewId The ID of the new element
-     * @param ThisNodes The nodes of the new element
+     * @param rThisNodes The nodes of the new element
      * @param pProperties The properties assigned to the new element
      * @return a Pointer to the new element
      */

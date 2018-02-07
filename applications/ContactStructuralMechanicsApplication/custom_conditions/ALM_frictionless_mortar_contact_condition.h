@@ -48,13 +48,18 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
     
-/** \brief AugmentedLagrangianMethodFrictionlessMortarContactCondition
- * This is a contact condition which employes the mortar method with dual lagrange multiplier 
+/** 
+ * @class AugmentedLagrangianMethodFrictionlessMortarContactCondition 
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief AugmentedLagrangianMethodFrictionlessMortarContactCondition
+ * @details This is a contact condition which employes the mortar method with dual lagrange multiplier 
  * The method has been taken from the Alexander Popps thesis:
  * Popp, Alexander: Mortar Methods for Computational Contact Mechanics and General Interface Problems, Technische Universität München, jul 2012
+ * @author Vicente Mataix Ferrandiz
  */
 template< unsigned int TDim, unsigned int TNumNodes, bool TNormalVariation >
-class AugmentedLagrangianMethodFrictionlessMortarContactCondition: public AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, false, TNormalVariation> 
+class AugmentedLagrangianMethodFrictionlessMortarContactCondition
+    : public AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, FrictionalCase::FRICTIONLESS, TNormalVariation> 
 {
 public:
     ///@name Type Definitions
@@ -63,41 +68,41 @@ public:
     /// Counted pointer of AugmentedLagrangianMethodFrictionlessMortarContactCondition
     KRATOS_CLASS_POINTER_DEFINITION( AugmentedLagrangianMethodFrictionlessMortarContactCondition );
 
-    typedef AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, false, TNormalVariation> BaseType;
+    typedef AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, FrictionalCase::FRICTIONLESS, TNormalVariation> BaseType;
     
-    typedef typename BaseType::MortarConditionMatrices                                 MortarConditionMatrices;
+    typedef typename BaseType::MortarConditionMatrices                                                        MortarConditionMatrices;
     
-    typedef Condition                                                                        ConditionBaseType;
+    typedef Condition                                                                                               ConditionBaseType;
     
-    typedef PairedCondition                                                            PairedConditionBaseType;
+    typedef PairedCondition                                                                                   PairedConditionBaseType;
     
-    typedef typename ConditionBaseType::VectorType                                                  VectorType;
+    typedef typename ConditionBaseType::VectorType                                                                         VectorType;
 
-    typedef typename ConditionBaseType::MatrixType                                                  MatrixType;
+    typedef typename ConditionBaseType::MatrixType                                                                         MatrixType;
 
-    typedef typename ConditionBaseType::IndexType                                                    IndexType;
+    typedef typename ConditionBaseType::IndexType                                                                           IndexType;
 
-    typedef typename ConditionBaseType::GeometryType::Pointer                              GeometryPointerType;
+    typedef typename ConditionBaseType::GeometryType::Pointer                                                     GeometryPointerType;
 
-    typedef typename ConditionBaseType::NodesArrayType                                          NodesArrayType;
+    typedef typename ConditionBaseType::NodesArrayType                                                                 NodesArrayType;
 
-    typedef typename ConditionBaseType::PropertiesType                                          PropertiesType;
+    typedef typename ConditionBaseType::PropertiesType                                                                 PropertiesType;
     
-    typedef typename ConditionBaseType::PropertiesType::Pointer                          PropertiesPointerType;
+    typedef typename ConditionBaseType::PropertiesType::Pointer                                                 PropertiesPointerType;
     
-    typedef typename ConditionBaseType::EquationIdVectorType                              EquationIdVectorType;
+    typedef typename ConditionBaseType::EquationIdVectorType                                                     EquationIdVectorType;
     
-    typedef typename ConditionBaseType::DofsVectorType                                          DofsVectorType;
+    typedef typename ConditionBaseType::DofsVectorType                                                                 DofsVectorType;
     
-    typedef typename std::vector<array_1d<PointType,TDim>>                              ConditionArrayListType;
+    typedef typename std::vector<array_1d<PointType,TDim>>                                                     ConditionArrayListType;
     
-    typedef Line2D2<Point>                                                                            LineType;
+    typedef Line2D2<Point>                                                                                                   LineType;
     
-    typedef Triangle3D3<Point>                                                                    TriangleType;
+    typedef Triangle3D3<Point>                                                                                           TriangleType;
     
-    typedef typename std::conditional<TDim == 2, LineType, TriangleType >::type              DecompositionType;
+    typedef typename std::conditional<TDim == 2, LineType, TriangleType >::type                                     DecompositionType;
     
-    typedef DerivativeData<TDim, TNumNodes, TNormalVariation>                               DerivativeDataType;
+    typedef DerivativeData<TDim, TNumNodes, TNormalVariation>                                                      DerivativeDataType;
     
     static constexpr unsigned int MatrixSize = TDim * (TNumNodes + TNumNodes) + TNumNodes;
          

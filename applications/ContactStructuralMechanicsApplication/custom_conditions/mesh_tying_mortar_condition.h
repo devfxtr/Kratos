@@ -66,7 +66,8 @@ namespace Kratos
  */
 
 template< const unsigned int TDim, const unsigned int TNumNodesElem, TensorValue TTensor>
-class MeshTyingMortarCondition: public PairedCondition 
+class MeshTyingMortarCondition
+    : public PairedCondition 
 {
 public:
     ///@name Type Definitions

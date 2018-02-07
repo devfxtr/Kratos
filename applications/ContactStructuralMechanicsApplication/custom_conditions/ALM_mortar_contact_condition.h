@@ -54,6 +54,11 @@ namespace Kratos
 ///@name  Enum's
 ///@{
     
+    /** 
+     * @brief We use this to differentiate between cases of friction
+     */
+    enum class FrictionalCase {FRICTIONLESS = 0, FRICTIONLESS_COMPONENTS = 1, FRICTIONAL = 2 };
+    
 ///@}
 ///@name  Functions
 ///@{
@@ -62,13 +67,14 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
     
-/** \brief AugmentedLagrangianMethodMortarContactCondition
- * This is a contact condition which employes the mortar method with dual lagrange multiplier 
+/** @brief AugmentedLagrangianMethodMortarContactCondition
+ * @details This is a contact condition which employes the mortar method with dual lagrange multiplier 
  * The method has been taken from the Alexander Popps thesis:
  * Popp, Alexander: Mortar Methods for Computational Contact Mechanics and General Interface Problems, Technische Universität München, jul 2012
  */
-template< unsigned int TDim, unsigned int TNumNodes, bool TFrictional, bool TNormalVariation>
-class AugmentedLagrangianMethodMortarContactCondition: public PairedCondition 
+template< unsigned int TDim, unsigned int TNumNodes, FrictionalCase TFrictional, bool TNormalVariation>
+class AugmentedLagrangianMethodMortarContactCondition
+    : public PairedCondition 
 {
 public:
     ///@name Type Definitions
@@ -77,49 +83,51 @@ public:
     /// Counted pointer of AugmentedLagrangianMethodMortarContactCondition
     KRATOS_CLASS_POINTER_DEFINITION( AugmentedLagrangianMethodMortarContactCondition );
 
-    typedef PairedCondition                                                                              BaseType;
+    typedef PairedCondition                                                                               BaseType;
     
-    typedef typename BaseType::VectorType                                                              VectorType;
+    typedef typename BaseType::VectorType                                                               VectorType;
 
-    typedef typename BaseType::MatrixType                                                              MatrixType;
+    typedef typename BaseType::MatrixType                                                               MatrixType;
 
-    typedef typename BaseType::IndexType                                                                IndexType;
+    typedef typename BaseType::IndexType                                                                 IndexType;
 
-    typedef typename BaseType::GeometryType::Pointer                                          GeometryPointerType;
+    typedef typename BaseType::GeometryType::Pointer                                           GeometryPointerType;
 
-    typedef typename BaseType::NodesArrayType                                                      NodesArrayType;
+    typedef typename BaseType::NodesArrayType                                                       NodesArrayType;
 
-    typedef typename BaseType::PropertiesType::Pointer                                      PropertiesPointerType;
+    typedef typename BaseType::PropertiesType::Pointer                                       PropertiesPointerType;
     
     typedef typename std::conditional<TNumNodes == 2, PointBelongsLine2D2N, typename std::conditional<TNumNodes == 3, PointBelongsTriangle3D3N, PointBelongsQuadrilateral3D4N>::type>::type BelongType;
     
-    typedef PointBelong<TNumNodes>                                                                PointBelongType;
+    typedef PointBelong<TNumNodes>                                                                 PointBelongType;
     
-    typedef Geometry<PointBelongType>                                                     GeometryPointBelongType;
+    typedef Geometry<PointBelongType>                                                      GeometryPointBelongType;
     
-    typedef array_1d<PointBelongType,TDim>                                                     ConditionArrayType;
+    typedef array_1d<PointBelongType,TDim>                                                      ConditionArrayType;
     
-    typedef typename std::vector<ConditionArrayType>                                       ConditionArrayListType;
+    typedef typename std::vector<ConditionArrayType>                                        ConditionArrayListType;
     
-    typedef Line2D2<PointType>                                                                           LineType;
+    typedef Line2D2<PointType>                                                                            LineType;
     
-    typedef Triangle3D3<PointType>                                                                   TriangleType;
+    typedef Triangle3D3<PointType>                                                                    TriangleType;
     
-    typedef typename std::conditional<TDim == 2, LineType, TriangleType >::type                 DecompositionType;
+    typedef typename std::conditional<TDim == 2, LineType, TriangleType >::type                  DecompositionType;
     
-    typedef typename std::conditional<TFrictional == true, DerivativeDataFrictional<TDim, TNumNodes, TNormalVariation>, DerivativeData<TDim, TNumNodes, TNormalVariation> >::type DerivativeDataType;
+    typedef typename std::conditional<TFrictional == FrictionalCase::FRICTIONAL, DerivativeDataFrictional<TDim, TNumNodes, TNormalVariation>, DerivativeData<TDim, TNumNodes, TNormalVariation> >::type DerivativeDataType;
     
-    static constexpr unsigned int MatrixSize = TFrictional == true ? TDim * (TNumNodes + TNumNodes + TNumNodes) : TDim * (TNumNodes + TNumNodes) + TNumNodes;
+    static constexpr unsigned int MatrixSize = (TFrictional == FrictionalCase::FRICTIONLESS) ? TDim * (TNumNodes + TNumNodes) + TNumNodes : TDim * (TNumNodes + TNumNodes + TNumNodes);
     
-    typedef MortarKinematicVariablesWithDerivatives<TDim, TNumNodes>                             GeneralVariables;
+    static constexpr unsigned int IsFrictional  = (TFrictional == FrictionalCase::FRICTIONAL) ? true: false;
     
-    typedef DualLagrangeMultiplierOperatorsWithDerivatives<TDim, TNumNodes, TFrictional, TNormalVariation> AeData;
+    typedef MortarKinematicVariablesWithDerivatives<TDim, TNumNodes>                              GeneralVariables;
     
-    typedef MortarOperatorWithDerivatives<TDim, TNumNodes, TFrictional, TNormalVariation> MortarConditionMatrices;
+    typedef DualLagrangeMultiplierOperatorsWithDerivatives<TDim, TNumNodes, IsFrictional, TNormalVariation> AeData;
     
-    typedef ExactMortarIntegrationUtility<TDim, TNumNodes, true>                               IntegrationUtility;
+    typedef MortarOperatorWithDerivatives<TDim, TNumNodes, IsFrictional, TNormalVariation> MortarConditionMatrices;
     
-    typedef DerivativesUtilities<TDim, TNumNodes, TFrictional, TNormalVariation>         DerivativesUtilitiesType;
+    typedef ExactMortarIntegrationUtility<TDim, TNumNodes, true>                                IntegrationUtility;
+    
+    typedef DerivativesUtilities<TDim, TNumNodes, IsFrictional, TNormalVariation>         DerivativesUtilitiesType;
          
     ///@}
     ///@name Life Cycle

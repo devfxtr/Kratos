@@ -54,7 +54,8 @@ namespace Kratos
  * Popp, Alexander: Mortar Methods for Computational Contact Mechanics and General Interface Problems, Technische Universität München, jul 2012
  */
 template< unsigned int TDim, unsigned int TNumNodes, bool TNormalVariation >
-class DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition: public AugmentedLagrangianMethodFrictionlessMortarContactCondition<TDim, TNumNodes, TNormalVariation> 
+class DoubleAugmentedLagrangianMethodFrictionlessMortarContactCondition
+    : public AugmentedLagrangianMethodFrictionlessMortarContactCondition<TDim, TNumNodes, TNormalVariation> 
 {
 public:
     ///@name Type Definitions
