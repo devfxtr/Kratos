@@ -60,6 +60,15 @@ KratosContactStructuralMechanicsApplication::KratosContactStructuralMechanicsApp
     mALMNVFrictionlessMortarContactCondition3D3N( 0, Condition::GeometryType::Pointer( new Triangle3D3 <Node<3> >( Condition::GeometryType::PointsArrayType( 3 ) ) ) ),
     mALMFrictionlessMortarContactCondition3D4N( 0, Condition::GeometryType::Pointer( new Quadrilateral3D4 <Node<3> >( Condition::GeometryType::PointsArrayType( 4 ) ) ) ),
     mALMNVFrictionlessMortarContactCondition3D4N( 0, Condition::GeometryType::Pointer( new Quadrilateral3D4 <Node<3> >( Condition::GeometryType::PointsArrayType( 4 ) ) ) ),
+    // Frictionless components
+    // 2D
+    mALMFrictionlessComponentsMortarContactCondition2D2N( 0, Condition::GeometryType::Pointer( new Line2D2 <Node<3> >( Condition::GeometryType::PointsArrayType( 2 ) ) ) ),
+    mALMNVFrictionlessComponentsMortarContactCondition2D2N( 0, Condition::GeometryType::Pointer( new Line2D2 <Node<3> >( Condition::GeometryType::PointsArrayType( 2 ) ) ) ),
+    // 3D
+    mALMFrictionlessComponentsMortarContactCondition3D3N( 0, Condition::GeometryType::Pointer( new Triangle3D3 <Node<3> >( Condition::GeometryType::PointsArrayType( 3 ) ) ) ),
+    mALMNVFrictionlessComponentsMortarContactCondition3D3N( 0, Condition::GeometryType::Pointer( new Triangle3D3 <Node<3> >( Condition::GeometryType::PointsArrayType( 3 ) ) ) ),
+    mALMFrictionlessComponentsMortarContactCondition3D4N( 0, Condition::GeometryType::Pointer( new Quadrilateral3D4 <Node<3> >( Condition::GeometryType::PointsArrayType( 4 ) ) ) ),
+    mALMNVFrictionlessComponentsMortarContactCondition3D4N( 0, Condition::GeometryType::Pointer( new Quadrilateral3D4 <Node<3> >( Condition::GeometryType::PointsArrayType( 4 ) ) ) ),
 //     // Double 2D
 //     mDALMFrictionlessMortarContactCondition2D2N( 0, Condition::GeometryType::Pointer( new Line2D2 <Node<3> >( Condition::GeometryType::PointsArrayType( 2 ) ) ) ),
 //     mDALMNVFrictionlessMortarContactCondition2D2N( 0, Condition::GeometryType::Pointer( new Line2D2 <Node<3> >( Condition::GeometryType::PointsArrayType( 2 ) ) ) ),
@@ -137,6 +146,13 @@ void KratosContactStructuralMechanicsApplication::Register()
     KRATOS_REGISTER_CONDITION( "ALMNVFrictionlessMortarContactCondition3D3N", mALMNVFrictionlessMortarContactCondition3D3N );
     KRATOS_REGISTER_CONDITION( "ALMFrictionlessMortarContactCondition3D4N", mALMFrictionlessMortarContactCondition3D4N );
     KRATOS_REGISTER_CONDITION( "ALMNVFrictionlessMortarContactCondition3D4N", mALMNVFrictionlessMortarContactCondition3D4N );
+    // Frictionless components cases
+    KRATOS_REGISTER_CONDITION( "ALMFrictionlessComponentsMortarContactCondition2D2N", mALMFrictionlessComponentsMortarContactCondition2D2N );
+    KRATOS_REGISTER_CONDITION( "ALMNVFrictionlessComponentsMortarContactCondition2D2N", mALMNVFrictionlessComponentsMortarContactCondition2D2N );
+    KRATOS_REGISTER_CONDITION( "ALMFrictionlessComponentsMortarContactCondition3D3N", mALMFrictionlessComponentsMortarContactCondition3D3N );
+    KRATOS_REGISTER_CONDITION( "ALMNVFrictionlessComponentsMortarContactCondition3D3N", mALMNVFrictionlessComponentsMortarContactCondition3D3N );
+    KRATOS_REGISTER_CONDITION( "ALMFrictionlessComponentsMortarContactCondition3D4N", mALMFrictionlessComponentsMortarContactCondition3D4N );
+    KRATOS_REGISTER_CONDITION( "ALMNVFrictionlessComponentsMortarContactCondition3D4N", mALMNVFrictionlessComponentsMortarContactCondition3D4N );
 //     // Double Frictionless cases
 //     KRATOS_REGISTER_CONDITION( "DALMFrictionlessMortarContactCondition2D2N", mDALMFrictionlessMortarContactCondition2D2N );
 //     KRATOS_REGISTER_CONDITION( "DALMNVFrictionlessMortarContactCondition2D2N", mDALMNVFrictionlessMortarContactCondition2D2N );
