@@ -165,7 +165,7 @@ public:
         
         NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
 
-        #pragma omp parallel for 
+        #pragma omp parallel for reduction(+:is_converged_active, is_converged_slip)
         for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
             auto it_node = nodes_array.begin() + i;
             
@@ -182,7 +182,6 @@ public:
             if (augmented_normal_pressure < 0.0) { // NOTE: This could be conflictive (< or <=)
                 if (it_node->Is(ACTIVE) == false ) {
                     it_node->Set(ACTIVE, true);
-                    #pragma omp atomic
                     is_converged_active += 1;
                 }
                 
@@ -202,20 +201,17 @@ public:
                 if (augmented_tangent_pressure <= 0.0) { // TODO: Check if it is minor equal or just minor
                     if (it_node->Is(SLIP) == true ) {
                         it_node->Set(SLIP, false);
-                        #pragma omp atomic
                         is_converged_slip += 1;
                     }
                 } else {
                     if (it_node->Is(SLIP) == false) {
                         it_node->Set(SLIP, true);
-                        #pragma omp atomic
                         is_converged_slip += 1;
                     }
                 }   
             } else {
                 if (it_node->Is(ACTIVE) == true ) {
                     it_node->Set(ACTIVE, false);
-                    #pragma omp atomic
                     is_converged_active += 1;
                 }
             }
@@ -359,9 +355,9 @@ private:
     ///@name Member Variables
     ///@{
     
-    TablePrinterPointerType mpTable; // Pointer to the fancy table 
-    bool mPrintingOutput;            // If the colors and bold are printed
-    bool mTableIsInitialized;        // If the table is already initialized
+    TablePrinterPointerType mpTable; /// Pointer to the fancy table 
+    bool mPrintingOutput;            /// If the colors and bold are printed
+    bool mTableIsInitialized;        /// If the table is already initialized
     
     ///@}
     ///@name Private Operators
