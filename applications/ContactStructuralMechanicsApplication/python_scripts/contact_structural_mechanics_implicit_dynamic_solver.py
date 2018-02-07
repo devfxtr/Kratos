@@ -80,22 +80,26 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
     def AddVariables(self):
         
         super().AddVariables()
-            
-        if  self.contact_settings["mortar_type"].GetString() != "":
+        
+        mortar_type = self.contact_settings["mortar_type"].GetString()
+        if  mortar_type != "":
             self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL)  # Add normal
             self.main_model_part.AddNodalSolutionStepVariable(KM.NODAL_H) # Add nodal size variable
-            if  self.contact_settings["mortar_type"].GetString() == "ALMContactFrictionless":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL_CONTACT_STRESS)                        # Add normal contact stress
+            if  mortar_type == "ALMContactFrictionless":
+                self.main_model_part.AddNodalSolutionStepVariable(KM.NORMAL_CONTACT_STRESS)       # Add normal contact stress
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_GAP)              # Add normal contact gap
-            elif self.contact_settings["mortar_type"].GetString() == "ALMContactFrictional": 
-                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)                   # Add normal contact stress 
+            elif mortar_type == "ALMContactFrictionlessComponents": 
+                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add normal contact stress 
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_GAP)              # Add normal contact gap 
-                self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_SLIP)             # Add normal contact gap 
-            elif  self.contact_settings["mortar_type"].GetString() == "ScalarMeshTying":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.SCALAR_LAGRANGE_MULTIPLIER)                   # Add scalar LM
+            elif mortar_type == "ALMContactFrictional": 
+                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add normal contact stress 
+                self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_GAP)              # Add normal contact gap 
+                self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_SLIP)             # Add contact slip
+            elif  mortar_type == "ScalarMeshTying":
+                self.main_model_part.AddNodalSolutionStepVariable(KM.SCALAR_LAGRANGE_MULTIPLIER)  # Add scalar LM
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_SCALAR_RESIDUAL)  # Add scalar LM residual
-            elif  self.contact_settings["mortar_type"].GetString() == "ComponentsMeshTying":
-                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)                   # Add vector LM
+            elif  mortar_type == "ComponentsMeshTying":
+                self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add vector LM
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_VECTOR_RESIDUAL)  # Add vector LM residual
    
         print("::[Contact Mechanical Solver]:: Variables ADDED")
@@ -104,15 +108,16 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
 
         super().AddDofs()
         
-        if (self.contact_settings["mortar_type"].GetString() == "ALMContactFrictionless"):
+        mortar_type = self.contact_settings["mortar_type"].GetString()
+        if (mortar_type == "ALMContactFrictionless"):
             KM.VariableUtils().AddDof(KM.NORMAL_CONTACT_STRESS, CSMA.WEIGHTED_GAP, self.main_model_part)
-        elif (self.contact_settings["mortar_type"].GetString() == "ALMContactFrictional"): 
+        elif (mortar_type == "ALMContactFrictional" or mortar_type == "ALMContactFrictionlessComponents"): 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_X, self.main_model_part) 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Y, self.main_model_part) 
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Z, self.main_model_part) 
-        elif (self.contact_settings["mortar_type"].GetString() == "ScalarMeshTying"):
+        elif (mortar_type == "ScalarMeshTying"):
             KM.VariableUtils().AddDof(KM.SCALAR_LAGRANGE_MULTIPLIER,CSMA.WEIGHTED_SCALAR_RESIDUAL, self.main_model_part)
-        elif (self.contact_settings["mortar_type"].GetString() == "ComponentsMeshTying"):
+        elif (mortar_type == "ComponentsMeshTying"):
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_X, CSMA.WEIGHTED_VECTOR_RESIDUAL_X, self.main_model_part)
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Y, CSMA.WEIGHTED_VECTOR_RESIDUAL_Y, self.main_model_part)
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Z, CSMA.WEIGHTED_VECTOR_RESIDUAL_Z, self.main_model_part)

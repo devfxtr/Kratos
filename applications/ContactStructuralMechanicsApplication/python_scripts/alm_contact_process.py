@@ -336,6 +336,8 @@ class ALMContactProcess(python_process.PythonProcess):
         computing_model_part -- The model part that contains the structural problem to be solved
         """
         
+        # We set the CONTACT flag
+        computing_model_part.Set(KM.CONTACT, True)
         # We consider frictional contact (We use the SLIP flag because was the easiest way)
         if self.settings["contact_type"].GetString() == "Frictional":
             computing_model_part.Set(KM.SLIP, True)
@@ -406,7 +408,7 @@ class ALMContactProcess(python_process.PythonProcess):
         
         # We define the condition name to be used
         if self.settings["contact_type"].GetString() == "Frictionless":
-            if self.normal_variation == 2:
+            if self.normal_variation == CSMA.NormalDerivativesComputation.NODAL_ELEMENTAL_DERIVATIVES:
                 if self.settings["axisymmetric"].GetBool() == True:
                     condition_name = "ALMNVFrictionlessAxisymMortarContact"
                 else:
@@ -420,8 +422,13 @@ class ALMContactProcess(python_process.PythonProcess):
                     condition_name = "ALMFrictionlessMortarContact"
                     if self.settings["double_formulation"].GetBool():
                         condition_name = "D" + condition_name
+        elif self.settings["contact_type"].GetString() == "FrictionlessComponents":
+            if self.normal_variation == CSMA.NormalDerivativesComputation.NODAL_ELEMENTAL_DERIVATIVES:
+                condition_name = "ALMNVFrictionlessComponentsMortarContact"
+            else:
+                condition_name = "ALMFrictionlessComponentsMortarContact"
         elif self.settings["contact_type"].GetString() == "Frictional":
-            if self.normal_variation == 2:
+            if self.normal_variation == CSMA.NormalDerivativesComputation.NODAL_ELEMENTAL_DERIVATIVES:
                 if self.settings["axisymmetric"].GetBool() == True:
                     condition_name = "ALMNVFrictionalAxisymMortarContact"
                 else:

@@ -449,6 +449,19 @@ private:
         );
     
     /**
+     * This function predicts the ALM frictionless in components LM
+     * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
+     */
+    
+    inline void CorrectALMFrictionlessComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
+    
+    /**
      * This function predicts the ALM frictional LM
      * @param ItNode The node iterator to set
      * @param a The first component of the regression
@@ -495,6 +508,19 @@ private:
      */
     
     inline void PredictALMFrictionlessMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        );
+    
+    /**
+     * This function predicts the ALM frictionless in components LM
+     * @param ItNode The node iterator to set
+     * @param a The first component of the regression
+     * @param b The second component of the regression
+     */
+    
+    inline void PredictALMFrictionlessComponentsMortarLM(
         NodesArrayType::iterator ItNode,
         const double a,
         const double b

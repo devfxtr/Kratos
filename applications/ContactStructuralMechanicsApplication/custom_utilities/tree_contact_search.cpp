@@ -878,20 +878,30 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetActiveNode(
         switch(mTypeSolution) {
             case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
                                                 CorrectALMFrictionalMortarLM(ItNode, a, b);
+                                            else if (mrMainModelPart.Is(CONTACT) == true) 
+                                                CorrectALMFrictionlessComponentsMortarLM(ItNode, a, b);
                                             else
                                                 CorrectComponentsMortarLM(ItNode, a, b);
+                                            break;
             case ScalarLagrangeMultiplier : CorrectScalarMortarLM(ItNode, a, b);
+                                            break;
             case NormalContactStress : CorrectALMFrictionlessMortarLM(ItNode, a, b);
+                                       break;
         }
     } else {
         ItNode->Set(ACTIVE, true); 
         switch(mTypeSolution) {
             case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) 
                                                 PredictALMFrictionalMortarLM(ItNode, a, b);
+                                            else if (mrMainModelPart.Is(CONTACT) == true)
+                                                PredictALMFrictionlessComponentsMortarLM(ItNode, a, b);
                                             else
                                                 PredictComponentsMortarLM(ItNode, a, b);
+                                            break;
             case ScalarLagrangeMultiplier : PredictScalarMortarLM(ItNode, a, b);
+                                            break;
             case NormalContactStress : PredictALMFrictionlessMortarLM(ItNode, a, b);
+                                       break;
         }
     }
 }
@@ -995,6 +1005,19 @@ inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessMortarLM(
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionlessComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::CorrectALMFrictionalMortarLM(
         NodesArrayType::iterator ItNode,
         const double a,
@@ -1069,6 +1092,19 @@ inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessMortarLM(
 /***********************************************************************************/
 
 template<unsigned int TDim, unsigned int TNumNodes>
+inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionlessComponentsMortarLM(
+        NodesArrayType::iterator ItNode,
+        const double a,
+        const double b
+        )
+{
+    // TODO: Add correction
+}
+
+/***********************************************************************************/
+/***********************************************************************************/
+
+template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::PredictALMFrictionalMortarLM(
         NodesArrayType::iterator ItNode,
         const double a,
@@ -1090,6 +1126,8 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeWeightedReaction()
         case VectorLagrangeMultiplier : if (mrMainModelPart.Is(SLIP) == true) {
                                              VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
                                              VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SLIP, 0.0, rcontact_model_part.Nodes()); 
+                                        } else if (mrMainModelPart.Is(CONTACT) == true) {
+                                             VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
                                         } else
                                             VariableUtils().SetVectorVar(WEIGHTED_VECTOR_RESIDUAL, ZeroVector(3), rcontact_model_part.Nodes());
         case ScalarLagrangeMultiplier : VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SCALAR_RESIDUAL, 0.0, rcontact_model_part.Nodes()); 
