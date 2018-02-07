@@ -15,7 +15,7 @@
 
 // Project includes
 /* Mortar includes */
-#include "custom_conditions/ALM_frictionless_mortar_contact_condition.h"
+#include "custom_conditions/ALM_frictionless_components_mortar_contact_condition.h"
 
 namespace Kratos 
 {
