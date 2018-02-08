@@ -184,7 +184,7 @@ for normalvar in range(normal_combs):
             else:
                 lhs_string += "    else if (rActiveInactive == "+str(convert_active_inactive_int(active_inactive)) + " )\n    {\n    "
             lhs_string += lhs_out.replace("\n","\n    ")
-            lhs_string += "}\n"    
+            lhs_string += "}"    
             
             if (active_inactive_comb == len(active_inactive_combinations)):
                 lhs_string += lhs_template_end_string
@@ -195,7 +195,7 @@ for normalvar in range(normal_combs):
             else:
                 rhs_string += "    else if (rActiveInactive == "+str(convert_active_inactive_int(active_inactive)) + " )\n    {\n    "
             rhs_string += rhs_out.replace("\n","\n    ")
-            rhs_string += "}\n"
+            rhs_string += "}"
             
             if (active_inactive_comb == len(active_inactive_combinations)):
                 rhs_string += rhs_template_end_string
