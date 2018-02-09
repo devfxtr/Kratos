@@ -55,8 +55,12 @@ namespace Kratos {
 ///@name Kratos Classes
 ///@{
     
-/** @brief  Contact Newton Raphson class
+/** 
+ * @class ResidualBasedNewtonRaphsonContactStrategy
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief  Contact Newton Raphson class
  * @details This class is a specialization of the Newton Raphson strategy with some custom modifications for contact problems
+ * @author Vicente Mataix Ferrandiz
 */
 template<class TSparseSpace,
          class TDenseSpace, // = DenseSpace<double>,
@@ -352,6 +356,8 @@ protected:
         KRATOS_TRY;
         
         // Pointers needed in the solution
+        ModelPart& r_model_part = StrategyBaseType::GetModelPart();
+        ProcessInfo& r_process_info = r_model_part.GetProcessInfo();
         typename TSchemeType::Pointer pScheme = BaseType::GetScheme();
         typename TBuilderAndSolverType::Pointer pBuilderAndSolver = BaseType::GetBuilderAndSolver();
 
@@ -361,19 +367,18 @@ protected:
 
         //initializing the parameters of the Newton-Raphson cicle
         unsigned int iteration_number = 1;
-        StrategyBaseType::GetModelPart().GetProcessInfo()[NL_ITERATION_NUMBER] = iteration_number;
+        r_process_info[NL_ITERATION_NUMBER] = iteration_number;
 
         bool is_converged = false;
         bool residual_is_updated = false;
-        pScheme->InitializeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
-        is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
+        pScheme->InitializeNonLinIteration(r_model_part, A, Dx, b);
+        is_converged = BaseType::mpConvergenceCriteria->PreCriteria(r_model_part, pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
         // We do a geometry check before solve the system for first time
         if (mAdaptativeStrategy == true) { 
             if (CheckGeometryInverted() == true) {
-                std::cout << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
-                ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
-                this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                KRATOS_WARNING("Element inverted") << "INVERTED ELEMENT BEFORE FIRST SOLVE"  << std::endl;
+                r_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
                 return false;
             }
         }
@@ -384,12 +389,12 @@ protected:
             TSparseSpace::SetToZero(Dx);
             TSparseSpace::SetToZero(b);
 
-            pBuilderAndSolver->BuildAndSolve(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+            pBuilderAndSolver->BuildAndSolve(pScheme, r_model_part, A, Dx, b);
         } else {
             TSparseSpace::SetToZero(Dx); //Dx=0.00;
             TSparseSpace::SetToZero(b);
 
-            pBuilderAndSolver->BuildRHSAndSolve(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+            pBuilderAndSolver->BuildRHSAndSolve(pScheme, r_model_part, A, Dx, b);
         }
         
         // Debugging info
@@ -401,36 +406,35 @@ protected:
         // We now check the geometry
         if (mAdaptativeStrategy == true) {
             if (CheckGeometryInverted() == true) {
-                std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
-                ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
-                this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                KRATOS_WARNING("Element inverted") << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+                r_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
                 return false;
             }
         }
         
-        pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
+        pScheme->FinalizeNonLinIteration(r_model_part, A, Dx, b);
 
         if (is_converged == true) {
             //initialisation of the convergence criteria
-            BaseType::mpConvergenceCriteria->InitializeSolutionStep(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
+            BaseType::mpConvergenceCriteria->InitializeSolutionStep(r_model_part, pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
             if (BaseType::mpConvergenceCriteria->GetActualizeRHSflag() == true) {
                 TSparseSpace::SetToZero(b);
 
-                pBuilderAndSolver->BuildRHS(pScheme, StrategyBaseType::GetModelPart(), b);
+                pBuilderAndSolver->BuildRHS(pScheme, r_model_part, b);
             }
 
-            is_converged = BaseType::mpConvergenceCriteria->PostCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
+            is_converged = BaseType::mpConvergenceCriteria->PostCriteria(r_model_part, pBuilderAndSolver->GetDofSet(), A, Dx, b);
         }
         
         // Iteration Cicle... performed only for NonLinearProblems
         while (is_converged == false && iteration_number++<BaseType::mMaxIterationNumber) {
             //setting the number of iteration
-            StrategyBaseType::GetModelPart().GetProcessInfo()[NL_ITERATION_NUMBER] = iteration_number;
+            r_process_info[NL_ITERATION_NUMBER] = iteration_number;
 
-            pScheme->InitializeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
+            pScheme->InitializeNonLinIteration(r_model_part, A, Dx, b);
                     
-            is_converged = BaseType::mpConvergenceCriteria->PreCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
+            is_converged = BaseType::mpConvergenceCriteria->PreCriteria(r_model_part, pBuilderAndSolver->GetDofSet(), A, Dx, b);
 
             //call the linear system solver to find the correction mDx for the
             //it is not called if there is no system to solve
@@ -442,23 +446,23 @@ protected:
                         TSparseSpace::SetToZero(Dx);
                         TSparseSpace::SetToZero(b);
 
-                        pBuilderAndSolver->BuildAndSolve(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+                        pBuilderAndSolver->BuildAndSolve(pScheme, r_model_part, A, Dx, b);
                     }
                     else {
                         TSparseSpace::SetToZero(Dx);
                         TSparseSpace::SetToZero(b);
 
-                        pBuilderAndSolver->BuildRHSAndSolve(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+                        pBuilderAndSolver->BuildRHSAndSolve(pScheme, r_model_part, A, Dx, b);
                     }
                 }
                 else {
                     TSparseSpace::SetToZero(Dx);
                     TSparseSpace::SetToZero(b);
 
-                    pBuilderAndSolver->BuildRHSAndSolve(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+                    pBuilderAndSolver->BuildRHSAndSolve(pScheme, r_model_part, A, Dx, b);
                 }
             } else {
-                std::cout << "ATTENTION: no free DOFs!! " << std::endl;
+                KRATOS_WARNING("No DoFs") << "ATTENTION: no free DOFs!! " << std::endl;
             }
             
             // Debugging info
@@ -470,14 +474,13 @@ protected:
             // We now check the geometry
             if (mAdaptativeStrategy == true) {
                 if (CheckGeometryInverted() == true) {
-                    std::cout << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
-                    ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
-                    this_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
+                    KRATOS_WARNING("Element inverted") << "INVERTED ELEMENT DURING DATABASE UPDATE" << std::endl;
+                    r_process_info[STEP] -= 1; // We revert one step in the case that the geometry is already broken before start the computing 
                     return false;
                 }
             }
 
-            pScheme->FinalizeNonLinIteration(StrategyBaseType::GetModelPart(), A, Dx, b);
+            pScheme->FinalizeNonLinIteration(r_model_part, A, Dx, b);
 
             residual_is_updated = false;
 
@@ -486,17 +489,17 @@ protected:
                 if (BaseType::mpConvergenceCriteria->GetActualizeRHSflag() == true) {
                     TSparseSpace::SetToZero(b);
 
-                    pBuilderAndSolver->BuildRHS(pScheme, StrategyBaseType::GetModelPart(), b);
+                    pBuilderAndSolver->BuildRHS(pScheme, r_model_part, b);
                     residual_is_updated = true;
                     //std::cout << "mb is calculated" << std::endl;
                 }
 
-                is_converged = BaseType::mpConvergenceCriteria->PostCriteria(StrategyBaseType::GetModelPart(), pBuilderAndSolver->GetDofSet(), A, Dx, b);
+                is_converged = BaseType::mpConvergenceCriteria->PostCriteria(r_model_part, pBuilderAndSolver->GetDofSet(), A, Dx, b);
             }
         }
 
         // Plots a warning if the maximum number of iterations is exceeded
-        if (iteration_number >= BaseType::mMaxIterationNumber && StrategyBaseType::GetModelPart().GetCommunicator().MyPID() == 0)
+        if (iteration_number >= BaseType::mMaxIterationNumber && r_model_part.GetCommunicator().MyPID() == 0)
             MaxIterationsExceeded();
 
         // Recalculate residual if needed
@@ -509,12 +512,12 @@ protected:
             // Pooyan.
 
             //    TSparseSpace::SetToZero(mb);
-            //    pBuilderAndSolver->BuildRHS(pScheme, StrategyBaseType::GetModelPart(), mb);
+            //    pBuilderAndSolver->BuildRHS(pScheme, r_model_part, mb);
         }
 
-        //calculate reactions if required
+        // Calculate reactions if required
         if (BaseType::mCalculateReactionsFlag == true)
-            pBuilderAndSolver->CalculateReactions(pScheme, StrategyBaseType::GetModelPart(), A, Dx, b);
+            pBuilderAndSolver->CalculateReactions(pScheme, r_model_part, A, Dx, b);
 
         return is_converged;
         
@@ -531,11 +534,12 @@ protected:
         bool is_converged = false;
         // Plots a warning if the maximum number of iterations is exceeded
         if (mpMyProcesses == nullptr && StrategyBaseType::mEchoLevel > 0)
-            std::cout << "WARNING:: If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
+            KRATOS_WARNING("No python processes") << "If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
     
-        ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+        ModelPart& r_model_part = StrategyBaseType::GetModelPart();
+        ProcessInfo& r_process_info = r_model_part.GetProcessInfo();
 
-        const double original_delta_time = this_process_info[DELTA_TIME]; // We save the delta time to restore later
+        const double original_delta_time = r_process_info[DELTA_TIME]; // We save the delta time to restore later
         
         unsigned int split_number = 0;
         
@@ -551,13 +555,13 @@ protected:
             unsigned int inner_iteration = 0;
             while (current_time <= aux_time) {      
                 inner_iteration += 1;
-                this_process_info[STEP] += 1;
+                r_process_info[STEP] += 1;
                 
                 if (inner_iteration == 1) {
                     if (StrategyBaseType::MoveMeshFlag())
                         UnMoveMesh();
                     
-                    NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
+                    NodesArrayType& nodes_array = r_model_part.Nodes();
                     
                     #pragma omp parallel for
                     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
@@ -567,19 +571,19 @@ protected:
 //                         it_node->OverwriteSolutionStepData(2, 1);
                     }
                     
-                    this_process_info.SetCurrentTime(current_time); // Reduces the time step
+                    r_process_info.SetCurrentTime(current_time); // Reduces the time step
                     
                     FinalizeSolutionStep();
                 } else {
-                    NodesArrayType& nodes_array = StrategyBaseType::GetModelPart().Nodes();
+                    NodesArrayType& nodes_array = r_model_part.Nodes();
                     
                     #pragma omp parallel for
                     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)  
                         (nodes_array.begin() + i)->CloneSolutionStepData();
                     
-                    this_process_info.CloneSolutionStepInfo();
-                    this_process_info.ClearHistory(StrategyBaseType::GetModelPart().GetBufferSize());
-                    this_process_info.SetAsTimeStepInfo(current_time); // Sets the new time step
+                    r_process_info.CloneSolutionStepInfo();
+                    r_process_info.ClearHistory(r_model_part.GetBufferSize());
+                    r_process_info.SetAsTimeStepInfo(current_time); // Sets the new time step
                 }
                 
                 // We execute the processes before the non-linear iteration
@@ -619,7 +623,7 @@ protected:
             MaxIterationsAndSplitsExceeded();
         
         // Restoring original DELTA_TIME
-        this_process_info[DELTA_TIME] = original_delta_time;
+        r_process_info[DELTA_TIME] = original_delta_time;
         
         return is_converged;
         
@@ -651,10 +655,11 @@ protected:
      */
     bool CheckGeometryInverted()
     {
-        ProcessInfo& this_process_info = StrategyBaseType::GetModelPart().GetProcessInfo();
+        ModelPart& r_model_part = StrategyBaseType::GetModelPart();
+        ProcessInfo& r_process_info = r_model_part.GetProcessInfo();
         bool inverted_element = false;
         
-        ElementsArrayType& elements_array = StrategyBaseType::GetModelPart().Elements();
+        ElementsArrayType& elements_array = r_model_part.Elements();
         
         // NOT OMP
         for(int i = 0; i < static_cast<int>(elements_array.size()); ++i) { 
@@ -671,7 +676,7 @@ protected:
             
             // We check now the deformation gradient
             std::vector<Matrix> deformation_gradient_matrices;
-            it_elem->GetValueOnIntegrationPoints( DEFORMATION_GRADIENT, deformation_gradient_matrices, this_process_info);
+            it_elem->GetValueOnIntegrationPoints( DEFORMATION_GRADIENT, deformation_gradient_matrices, r_process_info);
             
             for (unsigned int i_gp = 0; i_gp  < deformation_gradient_matrices.size(); ++i_gp) {
                 const double det_f = MathUtils<double>::DetMat(deformation_gradient_matrices[i_gp]);
