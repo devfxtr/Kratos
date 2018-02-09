@@ -150,8 +150,8 @@ void InterfacePreprocessCondition::PrintNodesAndConditions(
     const int CondCounter
     )
 {
-    std::cout << "\t" << NodesCounter << " nodes ";
-    std::cout << "and " << CondCounter <<  " conditions found." << std::endl;
+    KRATOS_INFO("Nodes found") << "\t" << NodesCounter << " nodes ";
+    KRATOS_INFO("Conditions found") << "and " << CondCounter <<  " conditions found." << std::endl;
 
     // Check that we actually found something
     KRATOS_ERROR_IF(NodesCounter == 0) << "No interface nodes found. Please check that nodes on both sides of the interface have been assigned Is(INTERFACE) = true." << std::endl;

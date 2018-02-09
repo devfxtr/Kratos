@@ -57,10 +57,9 @@ StructureModel.AddModelPart(main_model_part)
 
 ## Print model_part and properties
 if ((parallel_type == "OpenMP") or (mpi.rank == 0)) and (echo_level > 1):
-    print("")
-    print(main_model_part)
+    Logger.PrintInfo(main_model_part)
     for properties in main_model_part.Properties:
-        print(properties)
+        Logger.PrintInfo(properties)
 
 ## Processes construction
 import process_factory
@@ -75,7 +74,7 @@ if (ProjectParameters.Has("json_output_process") == True):
 
 if ((parallel_type == "OpenMP") or (mpi.rank == 0)) and (echo_level > 1):
     for process in list_of_processes:
-        print(process)
+        Logger.PrintInfo(process)
 
 ## Processes initialization
 for process in list_of_processes:
@@ -116,9 +115,8 @@ while(time <= end_time):
     main_model_part.CloneTimeStep(time)
 
     if (parallel_type == "OpenMP") or (mpi.rank == 0):
-        print("")
-        print("STEP = ", main_model_part.ProcessInfo[STEP])
-        print("TIME = ", time)
+        Logger.PrintInfo("STEP = "+str(main_model_part.ProcessInfo[STEP]))
+        Logger.PrintInfo("TIME = "+str(time))
 
     for process in list_of_processes:
         process.ExecuteInitializeSolutionStep()
@@ -150,6 +148,4 @@ if (output_post == True):
     gid_output.ExecuteFinalize()
 
 if (parallel_type == "OpenMP") or (mpi.rank == 0):
-    print(" ")
-    print("::[KSM Simulation]:: Analysis -END- ")
-    print(" ")
+    Logger.PrintInfo("::[KSM Simulation]:: Analysis -END- ")

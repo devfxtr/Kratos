@@ -65,6 +65,7 @@ public:
     ///@name Type Definitions
     ///@{
 
+    /// Creating the corresponding pointer
     KRATOS_CLASS_POINTER_DEFINITION( DisplacementLagrangeMultiplierContactCriteria );
 
     typedef ConvergenceCriteria< TSparseSpace, TDenseSpace >     BaseType;

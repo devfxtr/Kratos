@@ -60,13 +60,13 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
         
         # Setting default configurations true by default
         if (self.settings["clear_storage"].GetBool() == False):
-            print("WARNING:: Storage must be cleared each step. Switching to True")
+            KM.Logger.PrintWarning("Storage must be cleared each step. Switching to True")
             self.settings["clear_storage"].SetBool(True)
         if (self.settings["reform_dofs_at_each_step"].GetBool() == False):
-            print("WARNING:: DoF must be reformed each time step. Switching to True")
+            KM.Logger.PrintWarning("DoF must be reformed each time step. Switching to True")
             self.settings["reform_dofs_at_each_step"].SetBool(True)
         if (self.settings["block_builder"].GetBool() == False):
-            print("WARNING:: EliminationBuilderAndSolver can not used with the current implementation. Switching to BlockBuilderAndSolver")
+            KM.Logger.PrintWarning("EliminationBuilderAndSolver can not used with the current implementation. Switching to BlockBuilderAndSolver")
             self.settings["block_builder"].SetBool(True)
         
         # Setting echo level
@@ -75,7 +75,7 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
         # Initialize the processes list
         self.processes_list = None
         
-        print("Construction of ContactMechanicalSolver finished")
+        KM.Logger.PrintInfo("Construction of ContactMechanicalSolver finished")
 
     def AddVariables(self):
         
@@ -102,7 +102,7 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
                 self.main_model_part.AddNodalSolutionStepVariable(KM.VECTOR_LAGRANGE_MULTIPLIER)  # Add vector LM
                 self.main_model_part.AddNodalSolutionStepVariable(CSMA.WEIGHTED_VECTOR_RESIDUAL)  # Add vector LM residual
    
-        print("::[Contact Mechanical Solver]:: Variables ADDED")
+        KM.Logger.PrintInfo("::[Contact Mechanical Solver]:: Variables ADDED")
         
     def AddDofs(self):
 
@@ -122,7 +122,7 @@ class ImplicitMechanicalSolver(structural_mechanics_implicit_dynamic_solver.Impl
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Y, CSMA.WEIGHTED_VECTOR_RESIDUAL_Y, self.main_model_part)
             KM.VariableUtils().AddDof(KM.VECTOR_LAGRANGE_MULTIPLIER_Z, CSMA.WEIGHTED_VECTOR_RESIDUAL_Z, self.main_model_part)
 
-        print("::[Contact Mechanical Solver]:: DOF's ADDED")
+        KM.Logger.PrintInfo("::[Contact Mechanical Solver]:: DOF's ADDED")
     
     def Initialize(self):
         super().Initialize() # The mechanical solver is created here.

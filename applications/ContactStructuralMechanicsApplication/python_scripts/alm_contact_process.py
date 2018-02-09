@@ -394,9 +394,9 @@ class ALMContactProcess(python_process.PythonProcess):
             process_info[KM.SCALE_FACTOR] = self.settings["scale_factor"].GetDouble()
             
         # We print the parameters considered
-        print("The parameters considered finally are: ")            
-        print("SCALE_FACTOR: ", "{:.2e}".format(process_info[KM.SCALE_FACTOR]))
-        print("INITIAL_PENALTY: ", "{:.2e}".format(process_info[KM.INITIAL_PENALTY]))
+        KM.Logger.PrintInfo("The parameters considered finally are: ")            
+        KM.Logger.PrintInfo("SCALE_FACTOR: {:.2e}".format(process_info[KM.SCALE_FACTOR]))
+        KM.Logger.PrintInfo("INITIAL_PENALTY: {:.2e}".format(process_info[KM.INITIAL_PENALTY]))
             
     def _create_main_search(self, computing_model_part):
         """ This method creates the search process that will be use during contact search

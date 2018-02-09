@@ -1,4 +1,4 @@
-## This script collects the available convergence criteria to be used in the SolidMechanicsApplication
+## This script collects the available convergence criteria to be used in the ContactStructuralMechanicsApplication
 
 from __future__ import print_function, absolute_import, division  # makes KM backward compatible with python 2.6 and 2.7
 #import kratos core and applications
@@ -31,7 +31,7 @@ class convergence_criterion:
             gidio_debug = convergence_criterion_parameters["gidio_debug"].GetBool()
             
             if(echo_level >= 1):
-                print("::[Mechanical Solver]:: CONVERGENCE CRITERION : ", convergence_criterion_name)
+                KM.Logger.PrintInfo("::[Mechanical Solver]:: CONVERGENCE CRITERION : ", convergence_criterion_name)
             
             if (fancy_convergence_criterion == True):
                 table = KM.TableStreamUtility()

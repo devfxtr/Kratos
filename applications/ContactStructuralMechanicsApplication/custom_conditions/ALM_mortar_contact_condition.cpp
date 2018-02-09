@@ -468,7 +468,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
         
     #ifdef KRATOS_DEBUG
         if (dual_LM == false)
-            std::cout << "WARNING:: NOT USING DUAL LM. Integration area: " << integration_area << "\tOriginal area: " << slave_geometry.Area() << "\tRatio: " << integration_area/slave_geometry.Area() << std::endl;
+            KRATOS_WARNING("No dual LM") << "NOT USING DUAL LM. Integration area: " << integration_area << "\tOriginal area: " << slave_geometry.Area() << "\tRatio: " << integration_area/slave_geometry.Area() << std::endl;
     #endif
         
         for (unsigned int i_geom = 0; i_geom < conditions_points_slave.size(); ++i_geom) {
@@ -694,14 +694,14 @@ bool AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
 //     else if (((std::abs(angle_slave) > angle_threshold) && (norm_slave < ratio_master_slave * norm_master))
 //           || ((std::abs(angle_master) > angle_threshold) && (norm_master < ratio_master_slave * norm_slave))) { // In case the angle is greater Pi/2 and the other domain is not moving
 // #ifdef KRATOS_DEBUG
-//     std::cout << "ABS(ANGLE SLAVE) : " << std::abs(angle_slave) << "NORM DELTA DISP: " << norm_slave << std::endl;
-//     std::cout << "ABS(ANGLE MASTER) : " << std::abs(angle_master) << "NORM DELTA DISP: " << norm_master << std::endl;
+//     KRATOS_INFO("ANGLE SLAVE") << "ABS(ANGLE SLAVE) : " << std::abs(angle_slave) << "NORM DELTA DISP: " << norm_slave << std::endl;
+//     KRATOS_INFO("ANGLE MASTER") << "ABS(ANGLE MASTER) : " << std::abs(angle_master) << "NORM DELTA DISP: " << norm_master << std::endl;
 // #endif
 //         return true;
 //     } else { // In case both are moving in oposition to the normal
 // #ifdef KRATOS_DEBUG
-//     std::cout << "ABS(ANGLE SLAVE) : " << std::abs(angle_slave) << "NORM DELTA DISP: " << norm_slave << std::endl;
-//     std::cout << "ABS(ANGLE MASTER) : " << std::abs(angle_master) << "NORM DELTA DISP: " << norm_master << std::endl;
+//     KRATOS_INFO("ANGLE SLAVE") << "ABS(ANGLE SLAVE) : " << std::abs(angle_slave) << "NORM DELTA DISP: " << norm_slave << std::endl;
+//     KRATOS_INFO("ANGLE MASTER") << "ABS(ANGLE MASTER) : " << std::abs(angle_master) << "NORM DELTA DISP: " << norm_master << std::endl;
 // #endif
 //         return true;
 //     }

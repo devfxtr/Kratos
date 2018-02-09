@@ -38,9 +38,12 @@ namespace Kratos
 ///@name  Functions
 ///@{
     
-/// Short class definition.
-// This process adapts the penalty following the algorithm (Algorithm 3) from "The adapted augmented Lagrangian method: a new method for the resolution of the mechanical frictional contact problem" Philippe Bussetta · Daniel Marceau ·Jean-Philippe Ponthot
-/** Detail class definition.
+/** 
+ * @class AALMAdaptPenaltyValueProcess 
+ * @ingroup ContactStructuralMechanicsApplication 
+ * @brief This process is used in order to adapt the penalty in the ALM formulation
+ * @details This process adapts the penalty following the algorithm (Algorithm 3) from "The adapted augmented Lagrangian method: a new method for the resolution of the mechanical frictional contact problem" Philippe Bussetta · Daniel Marceau ·Jean-Philippe Ponthot
+ * @author Vicente Mataix Ferrandiz
 */
 class AALMAdaptPenaltyValueProcess
     : public Process

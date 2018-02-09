@@ -53,7 +53,11 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
 
-/** @brief Custom convergence criteria for the mortar condition 
+/** 
+ * @class DisplacementLagrangeMultiplierContactCriteria 
+ * @ingroup ContactStructuralMechanicsApplication 
+ * @brief Custom convergence criteria for the mortar condition
+ * @author Vicente Mataix Ferrandiz 
  */
 template<class TSparseSpace, class TDenseSpace>
 class BaseMortarConvergenceCriteria 
@@ -63,6 +67,7 @@ public:
     ///@name Type Definitions
     ///@{
 
+    /// Creating the corresponding pointer
     KRATOS_CLASS_POINTER_DEFINITION( BaseMortarConvergenceCriteria );
 
     typedef ConvergenceCriteria< TSparseSpace, TDenseSpace > BaseType;
@@ -139,13 +144,14 @@ public:
             
             ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
-            #ifdef KRATOS_DEBUG
-                if (conditions_array.size() == 0) std::cout << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
-            #endif
-                
-                #pragma omp parallel for
-                for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
-                    (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
+        #ifdef KRATOS_DEBUG
+            if (conditions_array.size() == 0) 
+                KRATOS_WARNING("Empty model part") << "YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
+        #endif
+            
+            #pragma omp parallel for
+            for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
+                (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
             
             AALMAdaptPenaltyValueProcess aalm_adaptation_of_penalty = AALMAdaptPenaltyValueProcess( rModelPart );
             aalm_adaptation_of_penalty.Execute();
@@ -178,7 +184,8 @@ public:
         ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
     #ifdef KRATOS_DEBUG
-        if (conditions_array.size() == 0) std::cout << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
+        if (conditions_array.size() == 0) 
+            KRATOS_WARNING("Empty model part") << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
     #endif
         
         #pragma omp parallel for
@@ -190,8 +197,7 @@ public:
             const int nl_iter = rModelPart.GetProcessInfo()[NL_ITERATION_NUMBER];
             const double label = static_cast<double>(nl_iter);
             
-            if (nl_iter == 1)
-            {
+            if (nl_iter == 1) {
                 mpGidIO->InitializeMesh(label);
                 mpGidIO->WriteMesh(rModelPart.GetMesh());
                 mpGidIO->FinalizeMesh();
@@ -205,8 +211,7 @@ public:
             mpGidIO->WriteNodalResults(NORMAL, rModelPart.Nodes(), label, 0);
             mpGidIO->WriteNodalResultsNonHistorical(AUGMENTED_NORMAL_CONTACT_PRESSURE, rModelPart.Nodes(), label);
             mpGidIO->WriteNodalResults(DISPLACEMENT, rModelPart.Nodes(), label, 0);
-            if (rModelPart.Nodes().begin()->SolutionStepsDataHas(VELOCITY_X) == true)
-            {
+            if (rModelPart.Nodes().begin()->SolutionStepsDataHas(VELOCITY_X) == true) {
                 mpGidIO->WriteNodalResults(VELOCITY, rModelPart.Nodes(), label, 0);
                 mpGidIO->WriteNodalResults(ACCELERATION, rModelPart.Nodes(), label, 0);
             }
@@ -224,7 +229,7 @@ public:
     
     void Initialize(ModelPart& rModelPart) override
     {
-        KRATOS_ERROR << "WARNING:: YOUR ARE CALLING THE BASE MORTAR CRITERIA" << std::endl;
+        KRATOS_ERROR << "YOUR ARE CALLING THE BASE MORTAR CRITERIA" << std::endl;
     }
     
     /**
@@ -248,8 +253,7 @@ public:
         MortarUtilities::ComputeNodesMeanNormalModelPart( rModelPart.GetSubModelPart("Contact") );
         
         // GiD IO for debugging
-        if (mIODebug == true)
-        {
+        if (mIODebug == true) {
             mpGidIO->CloseResultFile();
             std::string new_name = "POST_LINEAR_ITER_STEP=";
             new_name.append(std::to_string(rModelPart.GetProcessInfo()[STEP]));

@@ -183,7 +183,7 @@ void TreeContactSearch<TDim, TNumNodes>::CreatePointListMortar()
     // NOTE: We check the list
     for (unsigned int i_point = 0; i_point < mPointListDestination.size(); ++i_point )
         mPointListDestination[i_point]->Check();
-//     std::cout << "The list is properly built" << std::endl;
+//     KRATOS_INFO("Check list") << "The list is properly built" << std::endl;
 #endif
 }
 
@@ -305,7 +305,7 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
                 // NOTE: We check the list
                 for (unsigned int i_point = 0; i_point < number_points_found; ++i_point )
                     points_found[i_point]->Check();
-//                 std::cout << "The search is properly done" << std::endl;
+//                 KRATOS_INFO("Check search") << "The search is properly done" << std::endl;
             #endif
                 
                 IndexSet::Pointer indexes_set = it_cond->GetValue(INDEX_SET);
@@ -409,8 +409,8 @@ void TreeContactSearch<TDim, TNumNodes>::CheckMortarConditions()
         if (it_cond->Has(INDEX_SET) == true) {
             IndexSet::Pointer ids_destination = it_cond->GetValue(INDEX_SET);
             if (ids_destination->size() > 0) {
-                std::cout << "Origin condition ID:" << it_cond->Id() << " Number of pairs: " << ids_destination->size() << std::endl;
-                std::cout << ids_destination->Info();
+                KRATOS_INFO("Check paired conditions (Origin)") << "Origin condition ID:" << it_cond->Id() << " Number of pairs: " << ids_destination->size() << std::endl;
+                KRATOS_INFO("Check paired conditions (Destination)") << ids_destination->Info();
             }
         }
     }
@@ -420,7 +420,7 @@ void TreeContactSearch<TDim, TNumNodes>::CheckMortarConditions()
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
         if (it_node->Is(ACTIVE) == true) 
-            std::cout << "Node: " << it_node->Id() << " is active" << std::endl;
+            KRATOS_INFO("Check paired nodes") << "Node: " << it_node->Id() << " is active" << std::endl;
     }
 }
 
