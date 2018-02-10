@@ -14,6 +14,7 @@ class TestDynamicSearch(KratosUnittest.TestCase):
     
     def _dynamic_search_tests(self, input_filename, num_nodes):
         self.main_model_part = KratosMultiphysics.ModelPart("Structure")
+        self.main_model_part.SetBufferSize(2)
         
         ## Creation of the Kratos model (build sub_model_parts or submeshes)
         self.StructureModel = {"Structure": self.main_model_part}
