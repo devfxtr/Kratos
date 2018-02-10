@@ -348,14 +348,14 @@ void TreeContactSearch<TDim, TNumNodes>::UpdateMortarConditions()
 template<unsigned int TDim, unsigned int TNumNodes>
 void TreeContactSearch<TDim, TNumNodes>::AddPairing(
     ModelPart& rComputingModelPart,
-    std::size_t& ConditionId,
+    std::size_t& rConditionId,
     Condition::Pointer pCondSlave,
     Condition::Pointer pCondMaster
     )
 {    
     if (mCreateAuxiliarConditions == true) { // We add the ID and we create a new auxiliar condition
-        ++ConditionId;
-        Condition::Pointer p_auxiliar_condition = rComputingModelPart.CreateNewCondition(mConditionName, ConditionId, pCondSlave->GetGeometry(), pCondSlave->pGetProperties());
+        ++rConditionId;
+        Condition::Pointer p_auxiliar_condition = rComputingModelPart.CreateNewCondition(mConditionName, rConditionId, pCondSlave->GetGeometry(), pCondSlave->pGetProperties());
         // We set the geometrical values
         p_auxiliar_condition->SetValue(PAIRED_GEOMETRY, pCondMaster->pGetGeometry());
         p_auxiliar_condition->SetValue(NORMAL, pCondSlave->GetValue(NORMAL));
@@ -364,8 +364,8 @@ void TreeContactSearch<TDim, TNumNodes>::AddPairing(
         p_auxiliar_condition->Set(ACTIVE, true);
         p_auxiliar_condition->Initialize();
         if (mThisParameters["double_formulation"].GetBool() == true) {
-            ++ConditionId;
-            Condition::Pointer p_auxiliar_condition = rComputingModelPart.CreateNewCondition(mConditionName, ConditionId, pCondMaster->GetGeometry(), pCondMaster->pGetProperties());
+            ++rConditionId;
+            Condition::Pointer p_auxiliar_condition = rComputingModelPart.CreateNewCondition(mConditionName, rConditionId, pCondMaster->GetGeometry(), pCondMaster->pGetProperties());
             // We set the geometrical values
             p_auxiliar_condition->SetValue(PAIRED_GEOMETRY, pCondSlave->pGetGeometry());
             p_auxiliar_condition->SetValue(NORMAL, pCondMaster->GetValue(NORMAL));
@@ -383,7 +383,7 @@ void TreeContactSearch<TDim, TNumNodes>::AddPairing(
 template<unsigned int TDim, unsigned int TNumNodes>
 void TreeContactSearch<TDim, TNumNodes>::AddPairing(
     ModelPart& rComputingModelPart,
-    std::size_t& ConditionId,
+    std::size_t& rConditionId,
     Condition::Pointer pCondSlave,
     Condition::Pointer pCondMaster,
     IndexSet::Pointer IndexesSet
@@ -391,7 +391,7 @@ void TreeContactSearch<TDim, TNumNodes>::AddPairing(
 {
     IndexesSet->AddId(pCondMaster->Id());
     
-    AddPairing(rComputingModelPart, ConditionId, pCondSlave, pCondMaster);
+    AddPairing(rComputingModelPart, rConditionId, pCondSlave, pCondMaster);
 }
 
 /***********************************************************************************/
@@ -629,9 +629,9 @@ inline std::size_t TreeContactSearch<TDim, TNumNodes>::ReorderConditionsIds()
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
     ModelPart& rComputingModelPart,
-    std::size_t& ConditionId,
+    std::size_t& rConditionId,
     Condition::Pointer pCondSlave,
-    PointVector& PointsFound,
+    PointVector& rPointsFound,
     const unsigned int NumberOfPointsFound,
     IndexSet::Pointer IndexesSet
     )
@@ -648,7 +648,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
         bool at_least_one_node_potential_contact = false;
         
         // Master condition
-        Condition::Pointer p_cond_master = PointsFound[i_point]->GetCondition();
+        Condition::Pointer p_cond_master = rPointsFound[i_point]->GetCondition();
         
         if (mCheckGap == DirectCheck) {
             // Master geometry
@@ -712,7 +712,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
         }
     
         if (at_least_one_node_potential_contact) 
-            AddPairing(rComputingModelPart, ConditionId, pCondSlave, p_cond_master, IndexesSet);
+            AddPairing(rComputingModelPart, rConditionId, pCondSlave, p_cond_master, IndexesSet);
     }
 }
 
@@ -722,7 +722,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::AddPotentialPairing(
 template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(        
     ModelPart& rComputingModelPart,
-    std::size_t& ConditionId
+    std::size_t& rConditionId
     )
 {
     // We compute the maximal nodal h and some auxiliar values  // TODO: Think about this criteria
@@ -759,7 +759,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     MortarUtilities::ComputeNodesMeanNormalModelPart(rcontact_model_part); 
     
     // Iterate in the conditions and create the new ones
-    CreateAuxiliarConditions(rcontact_model_part, rComputingModelPart, ConditionId);
+    CreateAuxiliarConditions(rcontact_model_part, rComputingModelPart, rConditionId);
     
     // We compute the weighted reaction
     ComputeWeightedReaction();
@@ -1153,7 +1153,7 @@ template<unsigned int TDim, unsigned int TNumNodes>
 inline void TreeContactSearch<TDim, TNumNodes>::CreateAuxiliarConditions(
     ModelPart& rContactModelPart,
     ModelPart& rComputingModelPart,
-    std::size_t& ConditionId
+    std::size_t& rConditionId
     )
 {
     // Iterate in the conditions and create the new ones
@@ -1165,7 +1165,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::CreateAuxiliarConditions(
             IndexSet::Pointer indexes_set = it_cond->GetValue(INDEX_SET);
             for (auto it_pair = indexes_set->begin(); it_pair != indexes_set->end(); ++it_pair ) {
                 Condition::Pointer p_cond_master = mrMainModelPart.pGetCondition(*it_pair); // MASTER
-                AddPairing(rComputingModelPart, ConditionId, (*it_cond.base()), p_cond_master, indexes_set);
+                AddPairing(rComputingModelPart, rConditionId, (*it_cond.base()), p_cond_master, indexes_set);
             }
         }
     } 
