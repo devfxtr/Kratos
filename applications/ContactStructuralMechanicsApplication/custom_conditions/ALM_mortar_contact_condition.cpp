@@ -318,7 +318,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim,TNumNodes,TFrictional,
             for (unsigned int i_node = 0; i_node < TDim; ++i_node) {
                 PointType global_point;
                 slave_geometry.GlobalCoordinates(global_point, conditions_points_slave[i_geom][i_node]);
-                points_array[i_node] = PointType::Pointer( new PointType(global_point) );
+                points_array[i_node] = Kratos::make_shared<PointType>(PointType(global_point));
                 belong_array[i_node] = conditions_points_slave[i_geom][i_node].GetBelong();
             }
             
@@ -477,7 +477,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
             for (unsigned int i_node = 0; i_node < TDim; ++i_node) {
                 PointType global_point;
                 slave_geometry.GlobalCoordinates(global_point, conditions_points_slave[i_geom][i_node]);
-                points_array[i_node] = PointType::Pointer( new PointType(global_point));
+                points_array[i_node] = Kratos::make_shared<PointType>(PointType(global_point));
                 belong_array[i_node] = conditions_points_slave[i_geom][i_node].GetBelong();
             }
             
@@ -514,7 +514,7 @@ void AugmentedLagrangianMethodMortarContactCondition<TDim, TNumNodes, TFrictiona
                         // Update the derivatives of the shape functions and the gap
                         DerivativesUtilitiesType::CalculateDeltaN(rVariables, rDerivativeData, slave_geometry, master_geometry, normal_slave, normal_master, decomp_geom, local_point_decomp, local_point_parent, consider_normal_variation, dual_LM);
                         
-                        rThisMortarConditionMatrices.CalculateDeltaMortarOperators(rVariables, rDerivativeData, integration_weight);    
+                        rThisMortarConditionMatrices.CalculateDeltaMortarOperators(rVariables, rDerivativeData, integration_weight);  
                     } else // In case we are computing RHS we don't compute derivatives (not necessary)
                         rThisMortarConditionMatrices.CalculateMortarOperators(rVariables, integration_weight);
                 }
