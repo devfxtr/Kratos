@@ -669,7 +669,6 @@ protected:
                 if (mConvergenceCriteriaEchoLevel > 0) {
                     KRATOS_WATCH(it_elem->Id())
                     KRATOS_WATCH(geom.DeterminantOfJacobian(0))
-                    KRATOS_WATCH(geom.Volume())
                 }
                 return true;
             }
@@ -684,7 +683,6 @@ protected:
                     if (mConvergenceCriteriaEchoLevel > 0) {
                         KRATOS_WATCH(it_elem->Id())
                         KRATOS_WATCH(det_f)
-                        KRATOS_WATCH(geom.Volume())
                     }
                     return true;
                 }
