@@ -173,10 +173,9 @@ public:
     
          
     /** 
-     * It calculates the matrix of a variable of a geometry 
+     * @brief It calculates the matrix of a variable of a geometry 
      * @param Nodes The geometry to calculate 
      * @param rVarName The name of the variable to calculate 
-     * @param Step The step where calculate 
      * @return var_matrix: The matrix containing the variables of the geometry 
      */ 
      
