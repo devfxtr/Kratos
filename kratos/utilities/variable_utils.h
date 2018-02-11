@@ -600,7 +600,7 @@ public:
         // First we do a chek
         KRATOS_CHECK_VARIABLE_KEY(rVar)
         if(rModelPart.NumberOfNodes() != 0)
-            KRATOS_ERROR_IF_NOT(rModelPart.NodesBegin()->SolutionStepsDataHas(rVar)) << "ERROR:: Variable : " << rVar << "not included in the Soluttion step data ";
+            KRATOS_ERROR_IF_NOT(rModelPart.NodesBegin()->SolutionStepsDataHas(rVar)) << "ERROR:: Variable : " << rVar << "not included in the Solution step data ";
 
         #pragma omp parallel for 
         for (int k = 0; k < static_cast<int>(rModelPart.NumberOfNodes()); ++k) {
