@@ -136,8 +136,11 @@ void TreeContactSearch<TDim, TNumNodes>::ClearMortarConditions()
         
     switch(mTypeSolution) {
         case VectorLagrangeMultiplier : ClearComponentsMortarConditions(nodes_array); 
+                                        break;
         case ScalarLagrangeMultiplier : ClearScalarMortarConditions(nodes_array); 
-        case NormalContactStress : ClearALMFrictionlessMortarConditions(nodes_array); 
+                                        break;
+        case NormalContactStress : ClearALMFrictionlessMortarConditions(nodes_array);
+                                   break;
     }
 }
     
@@ -919,8 +922,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::SetInactiveNode(NodesArrayType::
         ItNode->Set(ACTIVE, false);
         switch(mTypeSolution) {
             case VectorLagrangeMultiplier : noalias(ItNode->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)) = ZeroVector(3); 
+                                            break;
             case ScalarLagrangeMultiplier : ItNode->FastGetSolutionStepValue(SCALAR_LAGRANGE_MULTIPLIER) = 0.0;  
-            case NormalContactStress : ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+                                            break;
+            case NormalContactStress :      ItNode->FastGetSolutionStepValue(NORMAL_CONTACT_STRESS) = 0.0; 
+                                            break;
         }
     }
     
@@ -1133,8 +1139,11 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeWeightedReaction()
                                              VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
                                         } else
                                             VariableUtils().SetVectorVar(WEIGHTED_VECTOR_RESIDUAL, ZeroVector(3), rcontact_model_part.Nodes());
+                                        break;
         case ScalarLagrangeMultiplier : VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_SCALAR_RESIDUAL, 0.0, rcontact_model_part.Nodes()); 
-        case NormalContactStress : VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes()); 
+                                        break;
+        case NormalContactStress :      VariableUtils().SetScalarVar<Variable<double>>(WEIGHTED_GAP, 0.0, rcontact_model_part.Nodes());
+                                        break;
     }
     ModelPart& r_computing_contact_model_part = mrMainModelPart.GetSubModelPart("ComputingContact");
     ConditionsArrayType& computing_conditions_array = r_computing_contact_model_part.Conditions();
