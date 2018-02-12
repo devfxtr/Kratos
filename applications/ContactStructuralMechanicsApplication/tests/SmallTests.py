@@ -105,3 +105,55 @@ class ALMThreeDPatchNotMatchingTestContact(StructuralMechanichsTestFactory):
 class ComponentsALMHyperSimplePatchTestContact(StructuralMechanichsTestFactory):
     frictionless_by_components = True
     file_name = "ALM_frictionless_contact_test_2D/hyper_simple_patch_test"
+    
+class ComponentsALMHyperSimpleSlopePatchTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/hyper_simple_slope_patch_test"
+
+class ComponentsALMTwoDPatchComplexGeomTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/contact_patch_complex_geom_test"
+
+class ComponentsALMTwoDPatchComplexGeomSlopeTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/contact_patch_complex_geom_slope_test"
+
+class ComponentsALMSimplePatchTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/simple_patch_test"
+
+class ComponentsALMSimpleSlopePatchTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/hyper_simple_slope_patch_test"
+
+class ComponentsALMSimplePatchNotMatchingATestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/simple_patch_notmatching_a_test"
+
+class ComponentsALMSimplePatchNotMatchingBTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/simple_patch_notmatching_b_test"
+
+class ComponentsALMThreeDSimplestPatchMatchingTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_test"
+
+class ComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_adaptative_test"
+
+class ComponentsALMThreeDPatchComplexGeomTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_complex_geom_test"
+
+class ComponentsALMThreeDSimplestPatchMatchingSlopeTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_slope_test"
+
+class ComponentsALMThreeDPatchMatchingTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_matching_test"
+
+class ComponentsALMThreeDPatchNotMatchingTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_nonmatching_test"
