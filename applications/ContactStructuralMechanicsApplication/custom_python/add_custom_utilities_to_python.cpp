@@ -83,10 +83,12 @@ void  AddCustomUtilitiesToPython()
     ;
 
     // Process Factory utility
-    class_<ProcessFactoryUtility>("ProcessFactoryUtility", init<boost::python::list&>())
-    .def(init< >())
+    class_<ProcessFactoryUtility>("ProcessFactoryUtility", init<>())
+    .def(init<boost::python::list&>())
+    .def(init<boost::python::object&>())
     .def("AddProcess",&ProcessFactoryUtility::AddProcess)
     .def("AddProcesses",&ProcessFactoryUtility::AddProcesses)
+    .def("ExecuteMethod",&ProcessFactoryUtility::ExecuteMethod)
     .def("ExecuteInitialize",&ProcessFactoryUtility::ExecuteInitialize)
     .def("ExecuteBeforeSolutionLoop",&ProcessFactoryUtility::ExecuteBeforeSolutionLoop)
     .def("ExecuteInitializeSolutionStep",&ProcessFactoryUtility::ExecuteInitializeSolutionStep)
@@ -94,6 +96,8 @@ void  AddCustomUtilitiesToPython()
     .def("ExecuteBeforeOutputStep",&ProcessFactoryUtility::ExecuteBeforeOutputStep)
     .def("ExecuteAfterOutputStep",&ProcessFactoryUtility::ExecuteAfterOutputStep)
     .def("ExecuteFinalize",&ProcessFactoryUtility::ExecuteFinalize)
+    .def("IsOutputStep",&ProcessFactoryUtility::IsOutputStep)
+    .def("PrintOutput",&ProcessFactoryUtility::PrintOutput)
     .def("Clear",&ProcessFactoryUtility::Clear)
     ;
 }
