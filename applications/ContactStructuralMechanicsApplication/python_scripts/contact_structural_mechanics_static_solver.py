@@ -75,6 +75,9 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
 
         # Initialize the processes list
         self.processes_list = None
+        
+        # Initialize the post process
+        self.post_process = None
 
         self.print_on_rank_zero("::[Contact Mechanical Static Solver]:: ", "Construction of ContactMechanicalSolver finished")
 
@@ -144,6 +147,9 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
 
     def AddProcessesList(self, processes_list):
         self.processes_list = CSMA.ProcessFactoryUtility(processes_list)
+        
+    def AddPostProcess(self, post_process):
+        self.post_process = CSMA.ProcessFactoryUtility(post_process)
 
     def print_on_rank_zero(self, *args):
         # This function will be overridden in the trilinos-solvers
@@ -244,5 +250,6 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
                                                                 self.settings["reform_dofs_at_each_step"].GetBool(),
                                                                 self.settings["move_mesh_flag"].GetBool(),
                                                                 newton_parameters,
-                                                                self.processes_list
+                                                                self.processes_list,
+                                                                self.post_process
                                                                 )

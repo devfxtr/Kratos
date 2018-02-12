@@ -107,6 +107,7 @@ class Kratos_Execute_Test:
 
         if (self.output_post == True):
             self.gid_output.ExecuteBeforeSolutionLoop()
+            self.solver.AddPostProcess(self.gid_output)
 
     def Solve(self):
         for process in self.list_of_processes:

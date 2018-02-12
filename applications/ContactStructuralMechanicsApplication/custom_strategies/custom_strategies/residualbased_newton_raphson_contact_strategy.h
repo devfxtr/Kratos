@@ -132,10 +132,12 @@ public:
         bool ReformDofSetAtEachStep = false,
         bool MoveMeshFlag = false,
         Parameters ThisParameters =  Parameters(R"({})"),
-        ProcessesListType pMyProcesses = nullptr
+        ProcessesListType pMyProcesses = nullptr,
+        ProcessesListType pPostProcesses = nullptr
     )
         : ResidualBasedNewtonRaphsonStrategy<TSparseSpace, TDenseSpace, TLinearSolver>(rModelPart, pScheme, pNewLinearSolver, pNewConvergenceCriteria, MaxIterations, CalculateReactions, ReformDofSetAtEachStep, MoveMeshFlag),
-        mpMyProcesses(pMyProcesses)
+        mpMyProcesses(pMyProcesses),
+        mpPostProcesses(pPostProcesses)
     {
         KRATOS_TRY;
 
@@ -174,10 +176,12 @@ public:
         bool ReformDofSetAtEachStep = false,
         bool MoveMeshFlag = false,
         Parameters ThisParameters =  Parameters(R"({})"),
-        ProcessesListType pMyProcesses = nullptr                                      
+        ProcessesListType pMyProcesses = nullptr,
+        ProcessesListType pPostProcesses = nullptr                                     
         )
         : ResidualBasedNewtonRaphsonStrategy<TSparseSpace, TDenseSpace, TLinearSolver>(rModelPart, pScheme, pNewLinearSolver, pNewConvergenceCriteria, pNewBuilderAndSolver, MaxIterations, CalculateReactions, ReformDofSetAtEachStep, MoveMeshFlag ),
-        mpMyProcesses(pMyProcesses)
+        mpMyProcesses(pMyProcesses),
+        mpPostProcesses(pPostProcesses)
     {
         KRATOS_TRY;
 
@@ -333,11 +337,12 @@ protected:
     ///@{
     
     // ADAPTATIVE STRATEGY PARAMETERS
-    bool mAdaptativeStrategy;         /// If consider time split
-    bool mFinalizeWasPerformed;       /// If the FinalizeSolutionStep has been already performed
-    double mSplitFactor;              /// Number by one the delta time is split
-    ProcessesListType mpMyProcesses;  /// The processes list
-    unsigned int mMaxNumberSplits;    /// Maximum number of splits
+    bool mAdaptativeStrategy;          /// If consider time split
+    bool mFinalizeWasPerformed;        /// If the FinalizeSolutionStep has been already performed
+    double mSplitFactor;               /// Number by one the delta time is split
+    ProcessesListType mpMyProcesses;   /// The processes list
+    ProcessesListType mpPostProcesses; /// The post processes list
+    unsigned int mMaxNumberSplits;     /// Maximum number of splits
     
     // OTHER PARAMETERS
     int mConvergenceCriteriaEchoLevel; /// The echo level of the convergence criteria
@@ -536,6 +541,9 @@ protected:
         if (mpMyProcesses == nullptr && StrategyBaseType::mEchoLevel > 0)
             KRATOS_WARNING("No python processes") << "If you have not implemented any method to recalculate BC or loads in function of time, this strategy will be USELESS" << std::endl;
     
+        if (mpPostProcesses == nullptr && StrategyBaseType::mEchoLevel > 0)
+            KRATOS_WARNING("No python post processes") << "If you don't add the postprocesses and the time step if splitted you won't postprocess that steps" << std::endl;
+    
         ModelPart& r_model_part = StrategyBaseType::GetModelPart();
         ProcessInfo& r_process_info = r_model_part.GetProcessInfo();
 
@@ -587,10 +595,11 @@ protected:
                 }
                 
                 // We execute the processes before the non-linear iteration
-                if (mpMyProcesses != nullptr) {
-                    // TODO: Think about to add the postprocess processes
+                if (mpMyProcesses != nullptr)
                     mpMyProcesses->ExecuteInitializeSolutionStep();
-                }
+                
+                if (mpPostProcesses != nullptr)
+                    mpPostProcesses->ExecuteInitializeSolutionStep();
                 
                 // In order to initialize again everything
                 BaseType::mInitializeWasPerformed = false;
@@ -604,12 +613,20 @@ protected:
                 this->FinalizeSolutionStep();
                 
                 // We execute the processes after the non-linear iteration
-                if (mpMyProcesses != nullptr) {
-                    // TODO: Think about to add the postprocess processes
+                if (mpMyProcesses != nullptr)
                     mpMyProcesses->ExecuteFinalizeSolutionStep();
-//                     mpMyProcesses->ExecuteBeforeOutputStep();
-//                     mpMyProcesses->ExecuteAfterOutputStep();
-                }
+                
+                if (mpPostProcesses != nullptr)
+                    mpPostProcesses->ExecuteFinalizeSolutionStep();
+                
+                if (mpMyProcesses != nullptr)
+                    mpMyProcesses->ExecuteBeforeOutputStep();
+                
+                if (mpPostProcesses != nullptr)
+                    mpPostProcesses->PrintOutput();
+                
+                if (mpMyProcesses != nullptr)
+                    mpMyProcesses->ExecuteAfterOutputStep();
                 
                 current_time += aux_delta_time;
             }

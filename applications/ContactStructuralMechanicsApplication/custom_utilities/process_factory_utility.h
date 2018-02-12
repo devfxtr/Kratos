@@ -15,11 +15,11 @@
 // System includes
 #include <iostream>
 #include <vector>
-#include "boost/smart_ptr.hpp"
-#include <boost/python.hpp>
 #include "includes/serializer.h"
 
 // External includes
+#include "boost/smart_ptr.hpp"
+#include "boost/python.hpp"
 
 // Project includes
 
@@ -44,7 +44,12 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
 
-/** @brief This is a experimental process factory utility
+/** 
+ * @class ProcessFactoryUtility
+ * @ingroup ContactStructuralMechanicsApplication
+ * @brief This is a experimental process factory utility
+ * @details This class is used in order to interoperate between c++ and python
+ * @author Vicente Mataix Ferrandiz
  */
 class ProcessFactoryUtility
 {
@@ -55,9 +60,11 @@ public:
     
     /// Counted pointer of ProcessFactoryUtility
     KRATOS_CLASS_POINTER_DEFINITION( ProcessFactoryUtility );
-
+    
+    /// The object type in python
     typedef boost::python::object ObjectType;
     
+    /// The list [] of python
     typedef boost::python::list     ListType;
     
     ///@}
@@ -67,12 +74,26 @@ public:
     /// Default constructors
     ProcessFactoryUtility()= default;
     
+    /**
+     * @brief Constructor using a list of processes
+     * @param ProcessesList List of processes that will be used to build the vector of processes
+     */
     ProcessFactoryUtility(ListType& ProcessesList)
     {
-        for (unsigned int iProcess = 0; iProcess < len(ProcessesList); ++iProcess)
-        {
-            mProcesses.push_back(boost::python::extract<ObjectType>(ProcessesList[iProcess]));
-        }
+        const std::size_t size_processes = len(ProcessesList);
+        mProcesses.resize(size_processes);
+        for (std::size_t i_process = 0; i_process < size_processes; ++i_process)
+            mProcesses[i_process] = boost::python::extract<ObjectType>(ProcessesList[i_process]);
+    }
+    
+    /**
+     * @brief Constructor using just one process
+     * @param rProcess The process that will be added  at the begining of the vector of processes
+     */
+    ProcessFactoryUtility(ObjectType& rProcess)
+    {
+        mProcesses.resize(1);
+        mProcesses[0] = rProcess;
     }
 
     /// Destructor.
@@ -92,7 +113,8 @@ public:
     ///@{
     
     /**
-     * It add new process to the existing process list
+     * @brief It add new process to the existing process list
+     * @param rProcess The process that will be appended at the vector of processes
      */
 
     void AddProcess(ObjectType& rProcess)
@@ -101,111 +123,116 @@ public:
     }
     
     /**
-     * It add new processes to the existing process list
+     * @brief It add new processes to the existing process list
+     * @param ProcessesList List of processes that will be appended the vector of processes
      */
 
     void AddProcesses(ListType& ProcessesList)
     {
-        for (unsigned int iProcess = 0; iProcess < len(ProcessesList); ++iProcess)
-        {
-            mProcesses.push_back(boost::python::extract<ObjectType>(ProcessesList[iProcess]));
-        }
+        const std::size_t size_processes = len(ProcessesList);
+        for (std::size_t i_process = 0; i_process < size_processes; ++i_process)
+            mProcesses.push_back(boost::python::extract<ObjectType>(ProcessesList[i_process]));
     }
     
     /**
-     * It executes the ExecuteInitialize() from the list of processes
+     * @brief It executes the method considered in the input
+     * @param rNameMethod The method to be executed
+     */
+
+    void ExecuteMethod(const std::string& rNameMethod)
+    {
+        for (auto& process : mProcesses)
+            process.attr(rNameMethod.c_str())();
+    }
+    
+    /**
+     * @brief It executes the ExecuteInitialize() from the list of processes
      */
 
     void ExecuteInitialize()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteInitialize")();
-        }
+        ExecuteMethod("ExecuteInitialize");
     }
     
     /**
-     * It executes the ExecuteBeforeSolutionLoop() from the list of processes
+     * @brief It executes the ExecuteBeforeSolutionLoop() from the list of processes
      */
         
     void ExecuteBeforeSolutionLoop()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteBeforeSolutionLoop")();
-        }
+        ExecuteMethod("ExecuteBeforeSolutionLoop");
     }
     
     /**
-     * It executes the ExecuteInitializeSolutionStep() from the list of processes
+     * @brief It executes the ExecuteInitializeSolutionStep() from the list of processes
      */
         
     void ExecuteInitializeSolutionStep()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteInitializeSolutionStep")();
-        }
+        ExecuteMethod("ExecuteInitializeSolutionStep");
     }
     
     /**
-     * It executes the ExecuteFinalizeSolutionStep() from the list of processes
+     * @brief It executes the ExecuteFinalizeSolutionStep() from the list of processes
      */
         
     void ExecuteFinalizeSolutionStep()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteFinalizeSolutionStep")();
-        }
+        ExecuteMethod("ExecuteFinalizeSolutionStep");
     }
     
     /**
-     * It executes the ExecuteBeforeOutputStep() from the list of processes
+     * @brief It executes the ExecuteBeforeOutputStep() from the list of processes
      */
         
     void ExecuteBeforeOutputStep()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteBeforeOutputStep")();
-        }
+        ExecuteMethod("ExecuteBeforeOutputStep");
     }
     
     /**
-     * It executes the ExecuteAfterOutputStep() from the list of processes
+     * @brief It executes the ExecuteAfterOutputStep() from the list of processes
      */
         
     void ExecuteAfterOutputStep()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteAfterOutputStep")();
-        }
+        ExecuteMethod("ExecuteAfterOutputStep");
     }
     
     /**
-     * It executes the ExecuteFinalize() from the list of processes
+     * @brief It executes the ExecuteFinalize() from the list of processes
      */
         
     void ExecuteFinalize()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("ExecuteFinalize")();
-        }
+        ExecuteMethod("ExecuteFinalize");
     }
     
     /**
-     * It executes the Clear() from the list of processes
+     * @brief It executes the IsOutputStep() from the list of processes
+     */
+    
+    void IsOutputStep()
+    {
+        ExecuteMethod("IsOutputStep");
+    }
+    
+    /**
+     * @brief It executes the PrintOutput() from the list of processes
+     */
+    
+    void PrintOutput()
+    {
+        ExecuteMethod("PrintOutput");
+    }
+    
+    /**
+     * @brief It executes the Clear() from the list of processes
      */
     
     void Clear()
     {
-        for (auto & mProcesse : mProcesses)
-        {
-            mProcesse.attr("Clear")();
-        }
+        ExecuteMethod("Clear");
     }
 
     ///@}
@@ -284,7 +311,7 @@ private:
     ///@name Member Variables
     ///@{
 
-    std::vector<ObjectType> mProcesses;  
+    std::vector<ObjectType> mProcesses; /// A vector containing the list of processes to be executed
 
     ///@}
     ///@name Private Operators

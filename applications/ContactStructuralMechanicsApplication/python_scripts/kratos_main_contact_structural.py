@@ -93,6 +93,7 @@ solver.SetEchoLevel(echo_level)
 
 if (output_post == True):
     gid_output.ExecuteBeforeSolutionLoop()
+    solver.AddPostProcess(gid_output)
 
 for process in list_of_processes:
     process.ExecuteBeforeSolutionLoop()
