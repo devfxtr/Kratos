@@ -36,6 +36,9 @@ from SmallTests import ALMThreeDPatchComplexGeomTestContact                as TA
 from SmallTests import ALMThreeDPatchMatchingTestContact                   as TALMTThreeDPatchMatchingTestContact
 from SmallTests import ALMThreeDPatchNotMatchingTestContact                as TALMThreeDPatchNotMatchingTestContact
 
+# ALM frictionless tests components
+from SmallTests import ComponentsALMHyperSimplePatchTestContact                      as TComponentsALMHyperSimplePatchTestContact
+
 ## NIGTHLY TESTS
 # ALM frictionless tests
 from NightlyTests import ALMTaylorPatchTestContact           as TALMTaylorPatchTestContact
@@ -107,6 +110,9 @@ def AssambleTestSuites():
     smallSuite.addTest(TALMThreeDPatchComplexGeomTestContact('test_execution'))
     smallSuite.addTest(TALMTThreeDPatchMatchingTestContact('test_execution'))
     smallSuite.addTest(TALMThreeDPatchNotMatchingTestContact('test_execution'))
+    
+    # Components ALM frictionless tests
+    #smallSuite.addTest(TComponentsALMHyperSimplePatchTestContact('test_execution'))
 
     # Create a test suit with the selected tests plus all small tests
     nightSuite = suites['nightly']
@@ -142,6 +148,7 @@ def AssambleTestSuites():
             TSimplestPatchTestThreeDMeshTying,
             TSimplePatchTestThreeDMeshTying,
             TALMHyperSimplePatchTestContact,
+            #TComponentsALMHyperSimplePatchTestContact,
             TALMHyperSimpleSlopePatchTestContact,
             TALMTwoDPatchComplexGeomTestContact,
             TALMTwoDPatchComplexGeomSlopeTestContact,

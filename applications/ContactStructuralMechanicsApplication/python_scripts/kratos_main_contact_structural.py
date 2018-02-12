@@ -61,7 +61,7 @@ if ((parallel_type == "OpenMP") or (mpi.rank == 0)) and (echo_level > 1):
     count = 0
     for properties in main_model_part.Properties:
         count += 1
-        Logger.PrintInfo("Property " + str(count), properties)
+        Logger.PrintInfo("Property " + str(properties.Id), properties)
 
 ## Processes construction
 import process_factory

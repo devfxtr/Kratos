@@ -31,8 +31,14 @@ class StructuralMechanichsTestFactory(KratosUnittest.TestCase):
             parameter_file = open(self.file_name + "_parameters.json", 'r')
             ProjectParameters = Parameters(parameter_file.read())
 
+            # Checking if frictionless_by_components is defined
+            try:
+                self.frictionless_by_components
+            except AttributeError:
+                self.frictionless_by_components = False
+
             # Creating the model part
-            self.test = Execute_Test.Kratos_Execute_Test(ProjectParameters)
+            self.test = Execute_Test.Kratos_Execute_Test(ProjectParameters, self.frictionless_by_components)
 
     def test_execution(self):
         # Within this location context:
@@ -95,3 +101,7 @@ class ALMThreeDPatchMatchingTestContact(StructuralMechanichsTestFactory):
 
 class ALMThreeDPatchNotMatchingTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_nonmatching_test"
+
+class ComponentsALMHyperSimplePatchTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/hyper_simple_patch_test"

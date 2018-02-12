@@ -32,8 +32,14 @@ class StructuralMechanichsTestFactory(KratosUnittest.TestCase):
             parameter_file = open(self.file_name + "_parameters.json", 'r')
             ProjectParameters = Parameters(parameter_file.read())
 
+            # Checking if frictionless_by_components is defined
+            try:
+                self.frictionless_by_components
+            except AttributeError:
+                self.frictionless_by_components = False
+
             # Creating the model part
-            self.test = Execute_Test.Kratos_Execute_Test(ProjectParameters)
+            self.test = Execute_Test.Kratos_Execute_Test(ProjectParameters, self.frictionless_by_components)
 
     def test_execution(self):
         # Within this location context:
