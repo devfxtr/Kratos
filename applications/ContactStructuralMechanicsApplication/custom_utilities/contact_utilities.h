@@ -135,7 +135,10 @@ public:
         #pragma omp parallel for private(new_delta_disp)
         for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i)  {
             auto it_node = nodes_array.begin() + i;
-            new_delta_disp = velocity_constant * DeltaTime * (it_node->FastGetSolutionStepValue(VELOCITY) + it_node->FastGetSolutionStepValue(VELOCITY, 1)) + acceleration_constant * std::pow(DeltaTime, 2) * it_node->FastGetSolutionStepValue(ACCELERATION, 1);
+            const array_1d<double, 3>& current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
+            const array_1d<double, 3>& previous_velocity = it_node->FastGetSolutionStepValue(VELOCITY, 1);
+            const array_1d<double, 3>& previous_acceleration = it_node->FastGetSolutionStepValue(ACCELERATION, 1);
+            new_delta_disp = velocity_constant * DeltaTime * (current_velocity + previous_velocity) + acceleration_constant * std::pow(DeltaTime, 2) * previous_acceleration;
             if (it_node->IsFixed(DISPLACEMENT_X)) new_delta_disp[0] = 0.0;
             if (it_node->IsFixed(DISPLACEMENT_Y)) new_delta_disp[1] = 0.0;
             if (it_node->IsFixed(DISPLACEMENT_Z)) new_delta_disp[2] = 0.0;
