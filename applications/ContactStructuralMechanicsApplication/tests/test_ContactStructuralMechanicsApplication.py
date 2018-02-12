@@ -75,23 +75,23 @@ def AssambleTestSuites():
     smallSuite.addTest(TTestDoubleCurvatureIntegration('test_double_curvature_integration_triangle'))
     smallSuite.addTest(TTestDoubleCurvatureIntegration('test_double_curvature_integration_quad'))
     smallSuite.addTest(TTestDoubleCurvatureIntegration('test_moving_mesh_integration_quad'))
-    
+
     # Dynamic search
     smallSuite.addTest(TTestDynamicSearch('test_dynamic_search_triangle'))
     smallSuite.addTest(TTestDynamicSearch('test_dynamic_search_quad'))
-    
+
     # Mortar mapping
     smallSuite.addTest(TTestMortarMapping('test_less_basic_mortar_mapping_triangle'))
     smallSuite.addTest(TTestMortarMapping('test_simple_curvature_mortar_mapping_triangle'))
     smallSuite.addTest(TTestMortarMapping('test_mortar_mapping_triangle'))
     smallSuite.addTest(TTestMortarMapping('test_mortar_mapping_quad'))
-    
-    # Mesh tying tests 
+
+    # Mesh tying tests
     smallSuite.addTest(TSimplePatchTestTwoDMeshTying('test_execution'))
     smallSuite.addTest(TSimpleSlopePatchTestTwoDMeshTying('test_execution'))
     smallSuite.addTest(TSimplestPatchTestThreeDMeshTying('test_execution'))
     smallSuite.addTest(TSimplePatchTestThreeDMeshTying('test_execution'))
-    
+
     # ALM frictionless tests
     smallSuite.addTest(TALMHyperSimplePatchTestContact('test_execution'))
     smallSuite.addTest(TALMHyperSimpleSlopePatchTestContact('test_execution'))
@@ -116,8 +116,8 @@ def AssambleTestSuites():
     #nightSuite.addTest(TALMHertzSphereTestContact('test_execution'))
     nightSuite.addTest(TALMHertzSimpleTestContact('test_execution'))
     nightSuite.addTest(TALMHertzCompleteTestContact('test_execution'))
-    
-    # For very long tests that should not be in nighly and you can use to validate 
+
+    # For very long tests that should not be in nighly and you can use to validate
     validationSuite = suites['validation']
     validationSuite.addTests(nightSuite)
     validationSuite.addTest(TALMTaylorPatchDynamicTestContact('test_execution'))
@@ -128,7 +128,7 @@ def AssambleTestSuites():
     validationSuite.addTest(TLargeDisplacementPatchTestHexa('test_execution'))
     validationSuite.addTest(TALMLargeDisplacementPatchTestTetra('test_execution'))
     validationSuite.addTest(TALMLargeDisplacementPatchTestHexa('test_execution'))
-    
+
     # Create a test suit that contains all the tests:
     allSuite = suites['all']
     allSuite.addTests(
@@ -146,7 +146,7 @@ def AssambleTestSuites():
             TALMTwoDPatchComplexGeomTestContact,
             TALMTwoDPatchComplexGeomSlopeTestContact,
             TALMSimplePatchTestContact,
-            TALMSimpleSlopePatchTestContact, 
+            TALMSimpleSlopePatchTestContact,
             TALMSimplePatchNotMatchingATestContact,
             TALMSimplePatchNotMatchingBTestContact,
             TALMThreeDSimplestPatchMatchingTestContact,
@@ -163,7 +163,7 @@ def AssambleTestSuites():
             TALMHertzCompleteTestContact,
             ### VALIDATION
             TALMTaylorPatchDynamicTestContact,
-            TALMMeshMovingMatchingTestContact, 
+            TALMMeshMovingMatchingTestContact,
             TALMMeshMovingNotMatchingTestContact,
             ##TALMIroningTestContact,
             ##TALMIroningDieTestContact,

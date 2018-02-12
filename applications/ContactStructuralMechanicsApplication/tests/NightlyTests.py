@@ -42,18 +42,18 @@ class StructuralMechanichsTestFactory(KratosUnittest.TestCase):
 
     def tearDown(self):
         pass
-    
+
 class ALMTaylorPatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/taylor_patch_test"
-    
+
 class ALMHertzSimpleSphereTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/simple_hertz_sphere_plate_test"
-    
+
 class ALMHertzSimpleTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hertz_simple_test"
-    
+
 class ALMHertzSphereTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hertz_sphere_plate_test"
-    
+
 class ALMHertzCompleteTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hertz_complete_test"

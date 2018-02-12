@@ -41,55 +41,55 @@ class StructuralMechanichsTestFactory(KratosUnittest.TestCase):
 
     def tearDown(self):
         pass
-    
+
 class SimplePatchTestTwoDMeshTying(StructuralMechanichsTestFactory):
     file_name = "mesh_tying_test/simple_patch_test_2D"
-    
+
 class SimpleSlopePatchTestTwoDMeshTying(StructuralMechanichsTestFactory):
     file_name = "mesh_tying_test/hyper_simple_slope_patch_test_2D"
-    
+
 class SimplestPatchTestThreeDMeshTying(StructuralMechanichsTestFactory):
     file_name = "mesh_tying_test/3D_contact_simplest_patch_matching_test"
-    
+
 class SimplePatchTestThreeDMeshTying(StructuralMechanichsTestFactory):
     file_name = "mesh_tying_test/simple_patch_test_3D"
-    
+
 class ALMHyperSimplePatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hyper_simple_patch_test"
-    
+
 class ALMHyperSimpleSlopePatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hyper_simple_slope_patch_test"
-    
+
 class ALMTwoDPatchComplexGeomTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/contact_patch_complex_geom_test"
-    
+
 class ALMTwoDPatchComplexGeomSlopeTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/contact_patch_complex_geom_slope_test"
-    
+
 class ALMSimplePatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/simple_patch_test"
-    
+
 class ALMSimpleSlopePatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hyper_simple_slope_patch_test"
-    
+
 class ALMSimplePatchNotMatchingATestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/simple_patch_notmatching_a_test"
-    
+
 class ALMSimplePatchNotMatchingBTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/simple_patch_notmatching_b_test"
 
 class ALMThreeDSimplestPatchMatchingTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_test"
-    
+
 class ALMThreeDSimplestPatchMatchingAdaptativeTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_adaptative_test"
-    
+
 class ALMThreeDPatchComplexGeomTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_complex_geom_test"
-    
+
 class ALMThreeDSimplestPatchMatchingSlopeTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_simplest_patch_matching_slope_test"
-    
+
 class ALMThreeDPatchMatchingTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_matching_test"
 
