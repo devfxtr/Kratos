@@ -23,7 +23,9 @@ class Kratos_Execute_Test:
                 for i in range(0, list_nodal_var.size()):
                     if (list_nodal_var[i].GetString() == "NORMAL_CONTACT_STRESS"):
                         list_nodal_var[i].SetString("VECTOR_LAGRANGE_MULTIPLIER")
-                self.ProjectParameters["output_configuration"]["result_file_configuration"]["nodal_results"] = list_nodal_var
+                new_list = list_nodal_var.Clone()
+                self.ProjectParameters["output_configuration"]["result_file_configuration"].RemoveValue("nodal_results")
+                self.ProjectParameters["output_configuration"]["result_file_configuration"].AddValue("nodal_results", new_list)
             self.ProjectParameters["solver_settings"]["contact_settings"]["mortar_type"].SetString("ALMContactFrictionlessComponents")
             for i in range(self.ProjectParameters["contact_process_list"].size()):
                 self.ProjectParameters["contact_process_list"][i]["Parameters"]["contact_type"].SetString("FrictionlessComponents")
