@@ -20,7 +20,7 @@ import python_process
 class ALMContactProcess(python_process.PythonProcess):
     """This class is used in order to compute the contact using a mortar ALM formulation
 
-    This class constructs the model parts containing the contact conditions and 
+    This class constructs the model parts containing the contact conditions and
     initializes parameters and variables related with the contact. The class creates
     search utilities to be used to create the contact pairs
 
@@ -30,28 +30,28 @@ class ALMContactProcess(python_process.PythonProcess):
     model_part -- the model part used to construct the process.
     settings -- Kratos parameters containing solver settings.
     """
-    
+
     __normal_computation = {
         # JSON input
         "NO_DERIVATIVES_COMPUTATION": CSMA.NormalDerivativesComputation.NO_DERIVATIVES_COMPUTATION,
         "ELEMENTAL_DERIVATIVES":  CSMA.NormalDerivativesComputation.ELEMENTAL_DERIVATIVES,
         "NODAL_ELEMENTAL_DERIVATIVES": CSMA.NormalDerivativesComputation.NODAL_ELEMENTAL_DERIVATIVES
         }
-    
+
     __type_search = {
         # JSON input
         "KdtreeInRadius": CSMA.SearchTreeType.KdtreeInRadius,
         "KdtreeInBox":  CSMA.SearchTreeType.KdtreeInBox,
         "Kdop": CSMA.SearchTreeType.Kdop
         }
-    
+
     __check_gap = {
         # JSON input
         "NoCheck": CSMA.CheckGap.NoCheck,
         "DirectCheck":  CSMA.CheckGap.DirectCheck,
         "MappingCheck": CSMA.CheckGap.MappingCheck
         }
-    
+
     def __init__(self, model_part, settings):
         """ The default constructor of the class
 
@@ -60,7 +60,7 @@ class ALMContactProcess(python_process.PythonProcess):
         model_part -- the model part used to construct the process.
         settings -- Kratos parameters containing solver settings.
         """
-        
+
         # Settings string in json format
         default_parameters = KM.Parameters("""
         {
@@ -99,24 +99,24 @@ class ALMContactProcess(python_process.PythonProcess):
         # Overwrite the default settings with user-provided parameters
         self.settings = settings
         self.settings.ValidateAndAssignDefaults(default_parameters)
-   
+
         self.main_model_part = model_part[self.settings["model_part_name"].GetString()]
         self.computing_model_part_name = self.settings["computing_model_part_name"].GetString()
 
         self.dimension = self.main_model_part.ProcessInfo[KM.DOMAIN_SIZE]
 
         self.contact_model_part = model_part[self.settings["contact_model_part"].GetString()]
-        
+
         # A check necessary for axisymmetric cases (the domain can not be 3D)
         if (self.settings["axisymmetric"].GetBool() == True) and (self.dimension == 3):
             raise NameError("3D and axisymmetric makes no sense")
-        
+
         # Getting the normal variation flag
         self.normal_variation = self.__get_enum_flag(self.settings, "normal_variation", self.__normal_computation)
-        
+
         self.database_step = 0
         self.frictional_law = self.settings["frictional_law"].GetString()
-        
+
         # Debug
         if (self.settings["debug_mode"].GetBool() == True):
             self.output_file = "POSTSEARCH"
@@ -125,24 +125,24 @@ class ALMContactProcess(python_process.PythonProcess):
             self.singlefile = KM.MultiFileFlag.SingleFile
             self.deformed_mesh_flag = KM.WriteDeformedMeshFlag.WriteUndeformed
             self.write_conditions = KM.WriteConditionsFlag.WriteElementsOnly
-        
+
     def ExecuteInitialize(self):
         """ This method is executed at the begining to initialize the process
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         # The computing model part
         computing_model_part = self.main_model_part.GetSubModelPart(self.computing_model_part_name)
-        
+
         # We compute NODAL_H that can be used in the search and some values computation
         self.find_nodal_h = KM.FindNodalHProcess(computing_model_part)
         self.find_nodal_h.Execute()
-        
+
         # Assigning master and slave sides
         self._assign_slave_nodes()
-        
+
         # Appending the conditions created to the self.main_model_part
         if (computing_model_part.HasSubModelPart("Contact")):
             preprocess = False
@@ -153,13 +153,13 @@ class ALMContactProcess(python_process.PythonProcess):
 
         # We consider frictional contact (We use the SLIP flag because was the easiest way)
         if self.settings["contact_type"].GetString() == "Frictional":
-            computing_model_part.Set(KM.SLIP, True) 
+            computing_model_part.Set(KM.SLIP, True)
         else:
-            computing_model_part.Set(KM.SLIP, False) 
-            
+            computing_model_part.Set(KM.SLIP, False)
+
         # We call the process info
         process_info = self.main_model_part.ProcessInfo
-            
+
         # We recompute the normal at each iteration (false by default)
         process_info[CSMA.CONSIDER_NORMAL_VARIATION] = self.normal_variation
         # We set the max gap factor for the gap adaptation
@@ -167,28 +167,28 @@ class ALMContactProcess(python_process.PythonProcess):
         process_info[CSMA.ADAPT_PENALTY] = (max_gap_factor > 0.0)
         process_info[CSMA.MAX_GAP_FACTOR] = max_gap_factor
         process_info[CSMA.ACTIVE_CHECK_FACTOR] = self.settings["active_check_factor"].GetDouble()
-        
+
         # We set the value that scales in the tangent direction the penalty and scale parameter
         if self.settings["contact_type"].GetString() == "Frictional":
             process_info[CSMA.TANGENT_FACTOR] = self.settings["tangent_factor"].GetDouble()
-        
+
         # Copying the properties in the contact model part
         self.contact_model_part.SetProperties(computing_model_part.GetProperties())
-        
+
         # Setting the integration order and active check factor
         for prop in computing_model_part.GetProperties():
             prop[CSMA.INTEGRATION_ORDER_CONTACT] = self.settings["integration_order"].GetInt()
-            
+
         # We set the interface flag
         KM.VariableUtils().SetFlag(KM.INTERFACE, True, self.contact_model_part.Nodes)
-        
+
         #If the conditions doesn't exist we create them
         if (preprocess == True):
             self._interface_preprocess(computing_model_part)
         else:
-            master_slave_process = CSMA.MasterSlaveProcess(computing_model_part) 
+            master_slave_process = CSMA.MasterSlaveProcess(computing_model_part)
             master_slave_process.Execute()
-        
+
         # We initialize the contact values
         self._initialize_contact_values(computing_model_part)
 
@@ -201,23 +201,23 @@ class ALMContactProcess(python_process.PythonProcess):
         # We copy the conditions to the ContactSubModelPart
         if (preprocess == True):
             for cond in self.contact_model_part.Conditions:
-                interface_model_part.AddCondition(cond)    
+                interface_model_part.AddCondition(cond)
             del(cond)
             for node in self.contact_model_part.Nodes:
-                interface_model_part.AddNode(node, 0)   
+                interface_model_part.AddNode(node, 0)
             del(node)
 
         # Creating the search
         self._create_main_search(computing_model_part)
-        
-        # We initialize the conditions    
-        alm_init_var = CSMA.ALMFastInit(self.contact_model_part) 
+
+        # We initialize the conditions
+        alm_init_var = CSMA.ALMFastInit(self.contact_model_part)
         alm_init_var.Execute()
-        
+
         # We initialize the search utility
         self.contact_search.CreatePointListMortar()
         self.contact_search.InitializeMortarConditions()
-        
+
     def ExecuteBeforeSolutionLoop(self):
         """ This method is executed before starting the time loop
 
@@ -225,17 +225,17 @@ class ALMContactProcess(python_process.PythonProcess):
         self -- It signifies an instance of a class.
         """
         pass
-    
+
     def ExecuteInitializeSolutionStep(self):
         """ This method is executed in order to initialize the current step
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         self.database_step += 1
         self.global_step = self.main_model_part.ProcessInfo[KM.STEP]
-        
+
         if (self.database_step >= self.settings["database_step_update"].GetInt() or self.global_step == 1):
             # We solve one linear step with a linear strategy if needed
             # Clear current pairs
@@ -243,18 +243,18 @@ class ALMContactProcess(python_process.PythonProcess):
             # Update database
             self.contact_search.UpdateMortarConditions()
             #self.contact_search.CheckMortarConditions()
-                
+
             # Debug
             if (self.settings["debug_mode"].GetBool() == True):
                self._debug_output(self.global_step, "")
-        
+
     def ExecuteFinalizeSolutionStep(self):
         """ This method is executed in order to finalize the current step
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         if (self.settings["remeshing_with_contact_bc"].GetBool() == True):
             self._transfer_slave_to_master()
 
@@ -272,12 +272,12 @@ class ALMContactProcess(python_process.PythonProcess):
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         modified = self.main_model_part.Is(KM.MODIFIED)
         if (modified == False and (self.database_step >= self.settings["database_step_update"].GetInt() or self.global_step == 1)):
             self.contact_search.ClearMortarConditions()
             self.database_step = 0
-            
+
     def ExecuteFinalize(self):
         """ This method is executed in order to finalize the current computation
 
@@ -292,7 +292,7 @@ class ALMContactProcess(python_process.PythonProcess):
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         if (self.settings["assume_master_slave"].GetString() == ""):
             KM.VariableUtils().SetFlag(KM.SLAVE, True, self.contact_model_part.Conditions)
 
@@ -302,14 +302,14 @@ class ALMContactProcess(python_process.PythonProcess):
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         if (self.settings["assume_master_slave"].GetString() != ""):
             KM.VariableUtils().SetFlag(KM.SLAVE, False, self.contact_model_part.Nodes)
             KM.VariableUtils().SetFlag(KM.MASTER, True, self.contact_model_part.Nodes)
             model_part_slave = self.main_model_part.GetSubModelPart(self.settings["assume_master_slave"].GetString())
             KM.VariableUtils().SetFlag(KM.SLAVE, True, model_part_slave.Nodes)
             KM.VariableUtils().SetFlag(KM.MASTER, False, model_part_slave.Nodes)
-            
+
     def _interface_preprocess(self, computing_model_part):
         """ This method creates the process used to compute the contact interface
 
@@ -317,17 +317,17 @@ class ALMContactProcess(python_process.PythonProcess):
         self -- It signifies an instance of a class.
         computing_model_part -- The model part that contains the structural problem to be solved
         """
-        
+
         # We create the process for creating the interface
         self.interface_preprocess = CSMA.InterfacePreprocessCondition(computing_model_part)
-        
+
         # It should create the conditions automatically
         interface_parameters = KM.Parameters("""{"simplify_geometry": false}""")
         if (self.dimension == 2):
-            self.interface_preprocess.GenerateInterfacePart2D(computing_model_part, self.contact_model_part, interface_parameters) 
+            self.interface_preprocess.GenerateInterfacePart2D(computing_model_part, self.contact_model_part, interface_parameters)
         else:
-            self.interface_preprocess.GenerateInterfacePart3D(computing_model_part, self.contact_model_part, interface_parameters) 
-            
+            self.interface_preprocess.GenerateInterfacePart3D(computing_model_part, self.contact_model_part, interface_parameters)
+
     def _initialize_contact_values(self, computing_model_part):
         """ This method initializes some values and variables used during contact computations
 
@@ -335,7 +335,7 @@ class ALMContactProcess(python_process.PythonProcess):
         self -- It signifies an instance of a class.
         computing_model_part -- The model part that contains the structural problem to be solved
         """
-        
+
         # We set the CONTACT flag
         computing_model_part.Set(KM.CONTACT, True)
         # We consider frictional contact (We use the SLIP flag because was the easiest way)
@@ -343,10 +343,10 @@ class ALMContactProcess(python_process.PythonProcess):
             computing_model_part.Set(KM.SLIP, True)
         else:
             computing_model_part.Set(KM.SLIP, False)
-            
+
         # We call the process info
         process_info = self.main_model_part.ProcessInfo
-            
+
         # We recompute the normal at each iteration (false by default)
         process_info[CSMA.DISTANCE_THRESHOLD] = 1.0e24
         process_info[CSMA.CONSIDER_NORMAL_VARIATION] = self.normal_variation
@@ -354,30 +354,30 @@ class ALMContactProcess(python_process.PythonProcess):
         max_gap_factor = self.settings["max_gap_factor"].GetDouble()
         process_info[CSMA.ADAPT_PENALTY] = (max_gap_factor > 0.0)
         process_info[CSMA.MAX_GAP_FACTOR] = max_gap_factor
-        
+
         # We set the value that scales in the tangent direction the penalty and scale parameter
         if self.settings["contact_type"].GetString() == "Frictional":
             process_info[CSMA.TANGENT_FACTOR] = self.settings["tangent_factor"].GetDouble()
-        
+
         # Copying the properties in the contact model part
         self.contact_model_part.SetProperties(computing_model_part.GetProperties())
-        
+
         # Setting the integration order and active check factor
         for prop in computing_model_part.GetProperties():
-            prop[CSMA.INTEGRATION_ORDER_CONTACT] = self.settings["integration_order"].GetInt() 
+            prop[CSMA.INTEGRATION_ORDER_CONTACT] = self.settings["integration_order"].GetInt()
             prop[CSMA.ACTIVE_CHECK_FACTOR] = self.settings["active_check_factor"].GetDouble()
-            
+
     def _initialize_alm_parameters(self, computing_model_part):
-        """ This method initializes the ALM parameters from the process info 
+        """ This method initializes the ALM parameters from the process info
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         computing_model_part -- The model part that contains the structural problem to be solved
         """
-        
+
         # We call the process info
         process_info = self.main_model_part.ProcessInfo
-        
+
         if (self.settings["manual_ALM"].GetBool() == False):
             # Computing the scale factors or the penalty parameters (StiffnessFactor * E_mean/h_mean)
             alm_var_parameters = KM.Parameters("""{}""")
@@ -392,12 +392,11 @@ class ALMContactProcess(python_process.PythonProcess):
             # We set the values in the process info
             process_info[KM.INITIAL_PENALTY] = self.settings["penalty"].GetDouble()
             process_info[KM.SCALE_FACTOR] = self.settings["scale_factor"].GetDouble()
-            
+
         # We print the parameters considered
-        KM.Logger.PrintInfo("The parameters considered finally are: ")            
-        KM.Logger.PrintInfo("SCALE_FACTOR: {:.2e}".format(process_info[KM.SCALE_FACTOR]))
-        KM.Logger.PrintInfo("INITIAL_PENALTY: {:.2e}".format(process_info[KM.INITIAL_PENALTY]))
-            
+        KM.Logger.PrintInfo("SCALE_FACTOR: ", "{:.2e}".format(process_info[KM.SCALE_FACTOR]))
+        KM.Logger.PrintInfo("INITIAL_PENALTY: ", "{:.2e}".format(process_info[KM.INITIAL_PENALTY]))
+
     def _create_main_search(self, computing_model_part):
         """ This method creates the search process that will be use during contact search
 
@@ -405,7 +404,7 @@ class ALMContactProcess(python_process.PythonProcess):
         self -- It signifies an instance of a class.
         computing_model_part -- The model part that contains the structural problem to be solved
         """
-        
+
         # We define the condition name to be used
         if self.settings["contact_type"].GetString() == "Frictionless":
             if self.normal_variation == CSMA.NormalDerivativesComputation.NODAL_ELEMENTAL_DERIVATIVES:
@@ -447,10 +446,10 @@ class ALMContactProcess(python_process.PythonProcess):
         search_parameters.AddValue("double_formulation",self.settings["double_formulation"])
         search_parameters.AddValue("dynamic_search",self.settings["dynamic_search"])
         search_parameters["condition_name"].SetString(condition_name)
-        
+
         # We compute the number of nodes of the geometry
         number_nodes = len(computing_model_part.Conditions[1].GetNodes())
-        
+
         # We create the search process
         if (self.dimension == 2):
             self.contact_search = CSMA.TreeContactSearch2D2N(computing_model_part, search_parameters)
@@ -459,22 +458,22 @@ class ALMContactProcess(python_process.PythonProcess):
                 self.contact_search = CSMA.TreeContactSearch3D3N(computing_model_part, search_parameters)
             else:
                 self.contact_search = CSMA.TreeContactSearch3D4N(computing_model_part, search_parameters)
-    
+
     def _transfer_slave_to_master(self):
         """ This method to transfer information from the slave side to the master side
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         # We compute the number of nodes of the geometry
         num_nodes = len(self.contact_model_part.Conditions[1].GetNodes())
-    
+
         # We use the search utility
         self._reset_search()
         self.contact_search.UpdateMortarConditions()
         #self.contact_search.CheckMortarConditions()
-        
+
         map_parameters = KM.Parameters("""
         {
             "echo_level"                       : 0,
@@ -485,17 +484,17 @@ class ALMContactProcess(python_process.PythonProcess):
             "inverted_master_slave_pairing"    : true
         }
         """)
-        
+
         computing_model_part = self.main_model_part.GetSubModelPart(self.computing_model_part_name)
         interface_model_part = computing_model_part.GetSubModelPart("Contact")
-        if (self.dimension == 2): 
+        if (self.dimension == 2):
             #if self.settings["contact_type"].GetString() == "Frictional":
                 #mortar_mapping0 = KM.SimpleMortarMapperProcess2D2NVectorHistorical(interface_model_part, KM.VECTOR_LAGRANGE_MULTIPLIER, map_parameters)
             #else:
                 #mortar_mapping0 = KM.SimpleMortarMapperProcess2D2NDoubleHistorical(interface_model_part, KM.NORMAL_CONTACT_STRESS, map_parameters)
             mortar_mapping1 = KM.SimpleMortarMapperProcess2D2NDoubleNonHistorical(interface_model_part, CSMA.AUGMENTED_NORMAL_CONTACT_PRESSURE, map_parameters)
         else:
-            if (num_nodes == 3): 
+            if (num_nodes == 3):
                 #if self.settings["contact_type"].GetString() == "Frictional":
                     #mortar_mapping0 = KM.SimpleMortarMapperProcess3D3NVectorHistorical(interface_model_part, KM.VECTOR_LAGRANGE_MULTIPLIER, map_parameters)
                 #else:
@@ -507,27 +506,27 @@ class ALMContactProcess(python_process.PythonProcess):
                 #else:
                     #mortar_mapping0 = KM.SimpleMortarMapperProcess3D4NDoubleHistorical(interface_model_part, KM.NORMAL_CONTACT_STRESS, map_parameters)
                 mortar_mapping1 = KM.SimpleMortarMapperProcess3D4NDoubleNonHistorical(interface_model_part, CSMA.AUGMENTED_NORMAL_CONTACT_PRESSURE, map_parameters)
-                    
+
         #mortar_mapping0.Execute()
         mortar_mapping1.Execute()
-        
+
         # Transfering the AUGMENTED_NORMAL_CONTACT_PRESSURE to NORMAL_CONTACT_STRESS
         KM.VariableUtils().CopyScalarVar(CSMA.AUGMENTED_NORMAL_CONTACT_PRESSURE, KM.NORMAL_CONTACT_STRESS, interface_model_part.Nodes)
-    
+
         self._reset_search()
-    
+
     def _reset_search(self):
         """ It resets the search process.
-        
+
         Keyword arguments:
         self -- It signifies an instance of a class.
         """
-        
+
         self.contact_search.InvertSearch()
         self.contact_search.ResetContactOperators()
         self.contact_search.CreatePointListMortar()
         self.contact_search.InitializeMortarConditions()
-        
+
     def __get_enum_flag(self, param, label, dictionary):
         """ Parse enums settings using an auxiliary dictionary of acceptable values.
 
@@ -537,7 +536,7 @@ class ALMContactProcess(python_process.PythonProcess):
         label -- The label used to get the string
         dictionary -- The dictionary containing the list of possible candidates
         """
-        
+
         keystring = param[label].GetString()
         try:
             value = dictionary[keystring]
@@ -546,22 +545,22 @@ class ALMContactProcess(python_process.PythonProcess):
             raise Exception(msg)
 
         return value
-        
+
     def _debug_output(self, label, name):
         """ This method is used for debugging pourposes, it creates a postprocess file when called, in sucha  way that it can.
 
         Keyword arguments:
         self -- It signifies an instance of a class.
         label -- The label to add to the postprocess file
-        name -- The name to append to the file 
+        name -- The name to append to the file
         """
         gid_io = KM.GidIO(self.output_file + name + "_STEP_" + str(label), self.gid_mode, self.singlefile, self.deformed_mesh_flag, self.write_conditions)
-        
+
         gid_io.InitializeMesh(label)
         gid_io.WriteMesh(self.main_model_part.GetMesh())
         gid_io.FinalizeMesh()
         gid_io.InitializeResults(label, self.main_model_part.GetMesh())
-        
+
         gid_io.WriteNodalFlags(KM.INTERFACE, "INTERFACE", self.main_model_part.Nodes, label)
         gid_io.WriteNodalFlags(KM.ACTIVE, "ACTIVE", self.main_model_part.Nodes, label)
         gid_io.WriteNodalFlags(KM.ISOLATED, "ISOLATED", self.main_model_part.Nodes, label)
@@ -578,7 +577,7 @@ class ALMContactProcess(python_process.PythonProcess):
         gid_io.WriteNodalResultsNonHistorical(CSMA.NORMAL_GAP, self.main_model_part.Nodes, label)
         gid_io.WriteNodalResultsNonHistorical(CSMA.AUXILIAR_COORDINATES, self.main_model_part.Nodes, label)
         gid_io.WriteNodalResultsNonHistorical(CSMA.DELTA_COORDINATES, self.main_model_part.Nodes, label)
-        
+
         gid_io.FinalizeResults()
-        
+
         #raise NameError("DEBUG")

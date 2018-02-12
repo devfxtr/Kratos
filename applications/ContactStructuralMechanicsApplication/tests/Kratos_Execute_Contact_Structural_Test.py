@@ -13,9 +13,13 @@ class Kratos_Execute_Test:
     def __init__(self, ProjectParameters):
 
         self.ProjectParameters = ProjectParameters
-        
+
         self.echo_level = self.ProjectParameters["problem_data"]["echo_level"].GetInt()
         self.parallel_type = self.ProjectParameters["problem_data"]["parallel_type"].GetString()
+
+        # To avoid many prints
+        if (self.echo_level == 0):
+            KratosMultiphysics.Logger.GetDefaultOutput().SetSeverity(KratosMultiphysics.Logger.Severity.WARNING)
 
         ## Import parallel modules if needed
         if (self.parallel_type == "MPI"):
@@ -56,7 +60,7 @@ class Kratos_Execute_Test:
             self.list_of_processes += process_factory.KratosProcessFactory(self.Model).ConstructListOfProcesses(self.ProjectParameters["json_output_process"])
         if (ProjectParameters.Has("contact_process_list") == True): # NOTE: Always add the contact processes the last one (to avoid problems imposing displacements)
             self.list_of_processes += process_factory.KratosProcessFactory(self.Model).ConstructListOfProcesses(self.ProjectParameters["contact_process_list"])
-        
+
         for process in self.list_of_processes:
             process.ExecuteInitialize()
 
@@ -85,11 +89,11 @@ class Kratos_Execute_Test:
                                                       self.problem_name,
                                                       output_settings)
             self.gid_output.ExecuteInitialize()
-            
+
         # Sets strategies, builders, linear solvers, schemes and solving info, and fills the buffer
         self.solver.Initialize()
-        self.solver.SetEchoLevel(0) # Avoid to print anything 
-        
+        self.solver.SetEchoLevel(0) # Avoid to print anything
+
         if (self.output_post == True):
             self.gid_output.ExecuteBeforeSolutionLoop()
 
@@ -115,13 +119,13 @@ class Kratos_Execute_Test:
 
             for process in self.list_of_processes:
                 process.ExecuteInitializeSolutionStep()
-                
+
             if (self.output_post == True):
                 self.gid_output.ExecuteInitializeSolutionStep()
-                        
+
             self.solver.Clear()
             self.solver.Solve()
-            
+
             if (self.output_post == True):
                 self.gid_output.ExecuteFinalizeSolutionStep()
 
@@ -134,7 +138,7 @@ class Kratos_Execute_Test:
             if (self.output_post == True):
                 if self.gid_output.IsOutputStep():
                     self.gid_output.PrintOutput()
-                    
+
             for process in self.list_of_processes:
                 process.ExecuteAfterOutputStep()
 
