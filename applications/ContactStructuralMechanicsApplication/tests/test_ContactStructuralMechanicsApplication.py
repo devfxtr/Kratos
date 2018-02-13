@@ -210,6 +210,7 @@ def AssambleTestSuites():
     allSuite.addTests(
         KratosUnittest.TestLoader().loadTestsFromTestCases([
             ### STANDALONE
+            TTestProcessFactory,
             TTestDoubleCurvatureIntegration,
             TTestDynamicSearch,
             TTestMortarMapping,
