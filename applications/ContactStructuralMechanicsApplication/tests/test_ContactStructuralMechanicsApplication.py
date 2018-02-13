@@ -163,7 +163,7 @@ def AssambleTestSuites():
     nightSuite.addTest(TComponentsALMTaylorPatchTestContact('test_execution'))
     nightSuite.addTest(TComponentsALMHertzSimpleSphereTestContact('test_execution'))
     #nightSuite.addTest(TComponentsALMHertzSphereTestContact('test_execution'))
-    #nightSuite.addTest(TComponentsALMHertzSimpleTestContact('test_execution'))
+    nightSuite.addTest(TComponentsALMHertzSimpleTestContact('test_execution'))
     nightSuite.addTest(TComponentsALMHertzCompleteTestContact('test_execution'))
 
     # For very long tests that should not be in nighly and you can use to validate
@@ -249,7 +249,7 @@ def AssambleTestSuites():
             ####TALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
             TALMHertzCompleteTestContact,
             TComponentsALMTaylorPatchTestContact,
-            ###TComponentsALMHertzSimpleTestContact,  # TODO: Check why is not working
+            TComponentsALMHertzSimpleTestContact,
             TComponentsALMHertzSimpleSphereTestContact,
             ###TComponentsALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
             TComponentsALMHertzCompleteTestContact,
