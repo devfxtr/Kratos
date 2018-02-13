@@ -32,8 +32,6 @@
 #include "utilities/math_utils.h"
 #include "custom_utilities/process_factory_utility.h"
 
-// TODO: Extend the descriptions
-
 namespace Kratos {
 
 ///@name Kratos Globals
