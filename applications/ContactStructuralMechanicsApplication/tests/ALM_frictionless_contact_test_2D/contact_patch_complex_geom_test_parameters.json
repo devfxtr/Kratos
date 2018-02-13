@@ -100,7 +100,7 @@
             "normal_variation"            : "NO_DERIVATIVES_COMPUTATION",
             "stiffness_factor"            : 10.0,
             "penalty_scale_factor"        : 1.0,
-            "manual_ALM"                  : false,
+            "manual_ALM"                  : true,
             "penalty"                     : 1.0e0,
             "scale_factor"                : 1.0e0,
             "debug_mode"                  : false
