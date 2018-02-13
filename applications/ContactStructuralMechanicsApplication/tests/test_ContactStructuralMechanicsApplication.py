@@ -138,7 +138,7 @@ def AssambleTestSuites():
     smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDPatchComplexGeomTestContact('test_execution'))
-    #smallSuite.addTest(TComponentsALMTThreeDPatchMatchingTestContact('test_execution'))
+    smallSuite.addTest(TComponentsALMTThreeDPatchMatchingTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDPatchNotMatchingTestContact('test_execution'))
 
     # Create a test suit with the selected tests plus all small tests
@@ -240,7 +240,7 @@ def AssambleTestSuites():
             TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact,
             TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact,
             TComponentsALMThreeDPatchComplexGeomTestContact,
-            ###TComponentsALMTThreeDPatchMatchingTestContact, # TODO: Check why is not working
+            TComponentsALMTThreeDPatchMatchingTestContact,
             TComponentsALMThreeDPatchNotMatchingTestContact,
             ### NIGTHLY
             TALMTaylorPatchTestContact,
