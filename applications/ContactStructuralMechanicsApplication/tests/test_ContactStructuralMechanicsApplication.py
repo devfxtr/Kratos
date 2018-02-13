@@ -233,7 +233,7 @@ def AssambleTestSuites():
             TComponentsALMTwoDPatchComplexGeomTestContact,
             TComponentsALMTwoDPatchComplexGeomSlopeTestContact,
             TComponentsALMSimplePatchTestContact,
-            ###TComponentsALMSimpleSlopePatchTestContact, # TODO: Check why is not working
+            TComponentsALMSimpleSlopePatchTestContact,
             TComponentsALMSimplePatchNotMatchingATestContact,
             TComponentsALMSimplePatchNotMatchingBTestContact,
             TComponentsALMThreeDSimplestPatchMatchingTestContact,
