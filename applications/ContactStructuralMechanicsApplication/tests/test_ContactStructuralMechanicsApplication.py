@@ -127,7 +127,7 @@ def AssambleTestSuites():
     
     # Components ALM frictionless tests
     smallSuite.addTest(TComponentsALMHyperSimplePatchTestContact('test_execution'))
-    #smallSuite.addTest(TComponentsALMHyperSimpleSlopePatchTestContact('test_execution'))
+    smallSuite.addTest(TComponentsALMHyperSimpleSlopePatchTestContact('test_execution'))
     #smallSuite.addTest(TComponentsALMTwoDPatchComplexGeomTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMTwoDPatchComplexGeomSlopeTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMSimplePatchTestContact('test_execution'))
@@ -229,7 +229,7 @@ def AssambleTestSuites():
             TALMTThreeDPatchMatchingTestContact,
             TALMThreeDPatchNotMatchingTestContact,
             TComponentsALMHyperSimplePatchTestContact,
-            ###TComponentsALMHyperSimpleSlopePatchTestContact, # TODO: Check why is not working
+            TComponentsALMHyperSimpleSlopePatchTestContact, # TODO: Check why is not working
             ###TComponentsALMTwoDPatchComplexGeomTestContact,  # TODO: Check why is not working
             TComponentsALMTwoDPatchComplexGeomSlopeTestContact,
             TComponentsALMSimplePatchTestContact,
