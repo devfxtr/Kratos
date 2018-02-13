@@ -192,7 +192,7 @@ int AugmentedLagrangianMethodFrictionlessComponentsMortarContactCondition<TDim,T
     // Check that the element's nodes contain all required SolutionStepData and Degrees of freedom
     for ( unsigned int i = 0; i < TNumNodes; ++i )
     {
-        Node<3> &rnode = this->GetGeometry()[i];
+        NodeType &rnode = this->GetGeometry()[i];
         KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(VECTOR_LAGRANGE_MULTIPLIER,rnode)
 
         KRATOS_CHECK_DOF_IN_NODE(VECTOR_LAGRANGE_MULTIPLIER_X, rnode)

@@ -136,7 +136,7 @@ def AssambleTestSuites():
     smallSuite.addTest(TComponentsALMSimplePatchNotMatchingBTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact('test_execution'))
-    #smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact('test_execution'))
+    smallSuite.addTest(TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact('test_execution'))
     #smallSuite.addTest(TComponentsALMThreeDPatchComplexGeomTestContact('test_execution'))
     #smallSuite.addTest(TComponentsALMTThreeDPatchMatchingTestContact('test_execution'))
     smallSuite.addTest(TComponentsALMThreeDPatchNotMatchingTestContact('test_execution'))
@@ -238,7 +238,7 @@ def AssambleTestSuites():
             TComponentsALMSimplePatchNotMatchingBTestContact,
             TComponentsALMThreeDSimplestPatchMatchingTestContact,
             TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact,
-            ###TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact, # TODO: Check why is not working
+            TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact,
             ###TComponentsALMThreeDPatchComplexGeomTestContact,  # TODO: Check why is not working
             ###TComponentsALMTThreeDPatchMatchingTestContact, # TODO: Check why is not working
             TComponentsALMThreeDPatchNotMatchingTestContact,
