@@ -196,8 +196,8 @@ def AssambleTestSuites():
     
     # Components ALM frictionless tests
     validationSuite.addTest(TComponentsALMTaylorPatchDynamicTestContact('test_execution'))
-    #validationSuite.addTest(TComponentsALMMeshMovingMatchingTestContact('test_execution'))
-    #validationSuite.addTest(TComponentsALMMeshMovingNotMatchingTestContact('test_execution'))
+    validationSuite.addTest(TComponentsALMMeshMovingMatchingTestContact('test_execution'))
+    validationSuite.addTest(TComponentsALMMeshMovingNotMatchingTestContact('test_execution'))
     validationSuite.addTest(TComponentsALMLargeDisplacementPatchTestTetra('test_execution'))
     validationSuite.addTest(TComponentsALMLargeDisplacementPatchTestHexa('test_execution'))
 
@@ -263,8 +263,8 @@ def AssambleTestSuites():
             TALMLargeDisplacementPatchTestTetra,
             TALMLargeDisplacementPatchTestHexa,
             TComponentsALMTaylorPatchDynamicTestContact,
-            ###TComponentsALMMeshMovingMatchingTestContact, # TODO: Check why is not working
-            ###TComponentsALMMeshMovingNotMatchingTestContact, # TODO: Check why is not working
+            TComponentsALMMeshMovingMatchingTestContact,
+            TComponentsALMMeshMovingNotMatchingTestContact,
             TComponentsALMLargeDisplacementPatchTestTetra,
             TComponentsALMLargeDisplacementPatchTestHexa,
         ])
