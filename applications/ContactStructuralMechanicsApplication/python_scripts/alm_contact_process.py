@@ -6,12 +6,12 @@ import KratosMultiphysics.ContactStructuralMechanicsApplication as CSMA
 
 KM.CheckForPreviousImport()
 
-
 def Factory(settings, Model):
     if(type(settings) != KM.Parameters):
         raise Exception("Expected input shall be a Parameters object, encapsulating a json string")
     return ALMContactProcess(Model, settings["Parameters"])
 
+import sys
 import python_process
 
 # All the processes python processes should be derived from "python_process"
@@ -393,6 +393,12 @@ class ALMContactProcess(python_process.PythonProcess):
             process_info[KM.INITIAL_PENALTY] = self.settings["penalty"].GetDouble()
             process_info[KM.SCALE_FACTOR] = self.settings["scale_factor"].GetDouble()
 
+        # We set a minimum value
+        if (process_info[KM.INITIAL_PENALTY] < sys.float_info.epsilon):
+            process_info[KM.INITIAL_PENALTY] = 1.0e0
+        if (process_info[KM.SCALE_FACTOR] < sys.float_info.epsilon):
+            process_info[KM.SCALE_FACTOR] = 1.0e0
+            
         # We print the parameters considered
         KM.Logger.PrintInfo("SCALE_FACTOR: ", "{:.2e}".format(process_info[KM.SCALE_FACTOR]))
         KM.Logger.PrintInfo("INITIAL_PENALTY: ", "{:.2e}".format(process_info[KM.INITIAL_PENALTY]))
