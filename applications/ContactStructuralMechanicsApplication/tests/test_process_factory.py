@@ -20,6 +20,16 @@ class TestProcessFactory(KratosUnittest.TestCase):
         #dummy_class.DummyMethod()
         process_factory.ExecuteMethod("DummyMethod")
         self.assertTrue(dummy_class.this_assert)
+        
+    def test_processes_list_factory(self):
+        dummy_class1 = DummyClass()
+        dummy_class2 = DummyClass()
+        dummy_list = [dummy_class1, dummy_class2] 
+        process_factory = ContactStructuralMechanicsApplication.ProcessFactoryUtility(dummy_list)
+        #dummy_class.DummyMethod()
+        process_factory.ExecuteMethod("DummyMethod")
+        self.assertTrue(dummy_class1.this_assert)
+        self.assertTrue(dummy_class2.this_assert)
 
 if __name__ == '__main__':
     KratosUnittest.main()
