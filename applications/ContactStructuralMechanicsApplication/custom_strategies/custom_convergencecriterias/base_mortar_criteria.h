@@ -99,7 +99,7 @@ public:
           mpGidIO(nullptr)
     {
         if (mIODebug)
-            mpGidIO = Kratos::make_shared<GidIOBaseType>("POST_LINEAR_ITER", GiD_PostBinary, SingleFile, WriteUndeformed,  WriteConditions);
+            mpGidIO = Kratos::make_shared<GidIOBaseType>("POST_LINEAR_ITER", GiD_PostBinary, SingleFile, WriteUndeformed,  WriteElementsOnly);
     }
 
     ///Copy constructor 
