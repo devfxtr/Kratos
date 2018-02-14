@@ -106,6 +106,7 @@ def AssambleTestSuites():
 
     # Test ProcessFactoryUtility
     smallSuite.addTest(TTestProcessFactory('test_process_factory'))
+    smallSuite.addTest(TTestProcessFactory('test_processes_list_factory'))
 
     # Mesh tying tests
     smallSuite.addTest(TSimplePatchTestTwoDMeshTying('test_execution'))
