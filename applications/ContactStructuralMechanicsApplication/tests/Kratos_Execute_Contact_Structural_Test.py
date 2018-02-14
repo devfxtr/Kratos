@@ -102,6 +102,7 @@ class Kratos_Execute_Test:
                                                       self.problem_name,
                                                       output_settings)
             self.gid_output.ExecuteInitialize()
+            self.solver.AddPostProcess(self.gid_output)
 
         # Sets strategies, builders, linear solvers, schemes and solving info, and fills the buffer
         self.solver.Initialize()
@@ -109,7 +110,6 @@ class Kratos_Execute_Test:
 
         if (self.output_post == True):
             self.gid_output.ExecuteBeforeSolutionLoop()
-            self.solver.AddPostProcess(self.gid_output)
 
     def Solve(self):
         for process in self.list_of_processes:

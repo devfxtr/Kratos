@@ -86,6 +86,8 @@ for process in list_of_processes:
 
 ## Add the processes to the solver
 solver.AddProcessesList(list_of_processes)
+if (output_post == True):
+    solver.AddPostProcess(gid_output)
 
 ## Solver initialization
 solver.Initialize()
@@ -93,7 +95,6 @@ solver.SetEchoLevel(echo_level)
 
 if (output_post == True):
     gid_output.ExecuteBeforeSolutionLoop()
-    solver.AddPostProcess(gid_output)
 
 for process in list_of_processes:
     process.ExecuteBeforeSolutionLoop()
