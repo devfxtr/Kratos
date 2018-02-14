@@ -541,6 +541,7 @@ inline double TreeContactSearch<TDim, TNumNodes>::GetMaxNodalH()
     #pragma omp parallel for private(nodal_h)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
+        KRATOS_DEBUG_ERROR_IF_NOT(it_node->SolutionStepsDataHas(NODAL_H)) << "ERROR:: NODAL_H not added" << std::endl; 
         nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
 
         const int id = OpenMPUtils::ThisThread();
@@ -567,6 +568,7 @@ inline double TreeContactSearch<TDim, TNumNodes>::GetMeanNodalH()
     #pragma omp parallel for  private(nodal_h) reduction(+:sum_nodal_h)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
         auto it_node = nodes_array.begin() + i;
+        KRATOS_DEBUG_ERROR_IF_NOT(it_node->SolutionStepsDataHas(NODAL_H)) << "ERROR:: NODAL_H not added" << std::endl; 
         nodal_h = it_node->FastGetSolutionStepValue(NODAL_H);
         sum_nodal_h += nodal_h;
     }
@@ -729,8 +731,8 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     )
 {
     // We compute the maximal nodal h and some auxiliar values  // TODO: Think about this criteria
-    const double distance_threshold = 2.0/3.0 * GetMeanNodalH(); 
-//     const double distance_threshold = GetMeanNodalH(); 
+//     const double distance_threshold = 2.0/3.0 * GetMeanNodalH(); 
+    const double distance_threshold = GetMeanNodalH(); 
 //     const double distance_threshold = GetMaxNodalH(); 
 //     const double distance_threshold = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR] * GetMaxNodalH();
     
@@ -753,8 +755,10 @@ inline void TreeContactSearch<TDim, TNumNodes>::CheckPairing(
     if (mThisParameters["dynamic_search"].GetBool() == true) {
         if (mrMainModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X) == true) {
             #pragma omp parallel for
-            for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
-                noalias((nodes_array.begin() + i)->Coordinates()) -= (nodes_array.begin() + i)->GetValue(DELTA_COORDINATES);
+            for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+                auto it_node = nodes_array.begin() + i;
+                noalias(it_node->Coordinates()) -= it_node->GetValue(DELTA_COORDINATES);
+            }
         }
     }
     
@@ -845,6 +849,7 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
 {
     // Some auxiliar values
     const double active_check_factor = mrMainModelPart.GetProcessInfo()[ACTIVE_CHECK_FACTOR];
+    const double distance_threshold = mrMainModelPart.GetProcessInfo()[DISTANCE_THRESHOLD];
     
     // Compute linear regression 
     double a, b;
@@ -855,15 +860,16 @@ inline void TreeContactSearch<TDim, TNumNodes>::ComputeActiveInactiveNodes()
     NodesArrayType& nodes_array = rcontact_model_part.Nodes();
     
     // We compute now the normal gap and set the nodes under certain threshold as active
-    #pragma omp parallel for 
+    bool auxiliar_check;
+    #pragma omp parallel for private(auxiliar_check)
     for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {        
         auto it_node = nodes_array.begin() + i;
 
-    #ifdef KRATOS_DEBUG
-        KRATOS_ERROR_IF(!(it_node->SolutionStepsDataHas(NODAL_H))) << "ERROR:: NODAL_H not added" << std::endl; 
-    #endif
-        const double auxiliar_length = it_node->FastGetSolutionStepValue(NODAL_H) * active_check_factor;
-        if (it_node->GetValue(NORMAL_GAP) < auxiliar_length)
+        const double auxiliar_length = distance_threshold * active_check_factor;
+        auxiliar_check = false;
+        if (it_node->SolutionStepsDataHas(WEIGHTED_GAP))
+            auxiliar_check = (it_node->FastGetSolutionStepValue(WEIGHTED_GAP)/it_node->GetValue(NODAL_AREA) < auxiliar_length) ? true : false;
+        if ((it_node->GetValue(NORMAL_GAP) < auxiliar_length) || auxiliar_check)
             SetActiveNode(it_node, a, b);
         else 
             SetInactiveNode(it_node);
