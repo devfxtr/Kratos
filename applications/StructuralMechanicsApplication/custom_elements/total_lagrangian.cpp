@@ -187,30 +187,6 @@ void TotalLagrangian::CalculateKinematicVariables(
 /***********************************************************************************/
 /***********************************************************************************/
 
-void TotalLagrangian::CalculateConstitutiveVariables(
-    KinematicVariables& rThisKinematicVariables, 
-    ConstitutiveVariables& rThisConstitutiveVariables, 
-    ConstitutiveLaw::Parameters& rValues,
-    const unsigned int PointNumber,
-    const GeometryType::IntegrationPointsArrayType& IntegrationPoints,
-    const ConstitutiveLaw::StressMeasure ThisStressMeasure
-    )
-{        
-    // Here we essentially set the input parameters
-    rValues.SetDeterminantF(rThisKinematicVariables.detF); //assuming the determinant is computed somewhere else
-    rValues.SetDeformationGradientF(rThisKinematicVariables.F); //F computed somewhere else
-    
-    // Here we set the space on which the results shall be written
-    rValues.SetConstitutiveMatrix(rThisConstitutiveVariables.D); //assuming the determinant is computed somewhere else
-    rValues.SetStressVector(rThisConstitutiveVariables.StressVector); //F computed somewhere else
-    
-    // Actually do the computations in the ConstitutiveLaw    
-    mConstitutiveLawVector[PointNumber]->CalculateMaterialResponse(rValues, ThisStressMeasure); //here the calculations are actually done 
-}
-
-/***********************************************************************************/
-/***********************************************************************************/
-
 void TotalLagrangian::CalculateB(
     Matrix& rB,
     const Matrix& rF,

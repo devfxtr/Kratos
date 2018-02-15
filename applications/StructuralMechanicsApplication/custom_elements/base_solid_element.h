@@ -500,7 +500,7 @@ protected:
      * @param IntegrationPoints The list of integration points
      * @param ThisStressMeasure The stress measure considered
      */ 
-    virtual void CalculateConstitutiveVariables(
+    void CalculateConstitutiveVariables(
         KinematicVariables& rThisKinematicVariables, 
         ConstitutiveVariables& rThisConstitutiveVariables, 
         ConstitutiveLaw::Parameters& rValues,
