@@ -88,6 +88,9 @@ public:
     /// The dense vector type
     typedef typename TDenseSpaceType::VectorType DenseVectorType;
     
+    /// The node type
+    typedef Node<3> NodeType;
+    
     /// The size type
     typedef std::size_t  SizeType;
     
@@ -201,8 +204,7 @@ public:
             mpSolverDispBlock->Initialize(mK, mDisp, mResidualDisp);
             mpSolverLMBlock->Initialize(mS, mLM, mResidualLM);
             mIsInitialized = true;
-        }
-        else
+        } else
             KRATOS_WARNING("MixedULM Initialize") << "Linear solver intialization is deferred to the moment at which blocks are available" << std::endl;
     }
     
@@ -335,23 +337,6 @@ public:
     }
 
     /** 
-     * @brief Eigenvalue and eigenvector solve method for derived eigensolvers 
-     * @param K The stiffness matrix
-     * @param M The mass matrix
-     * @param Eigenvalues The vector containing the eigen values
-     * @param Eigenvectors The matrix containing the eigen vectors
-     */
-     void Solve (
-         SparseMatrixType& K,
-         SparseMatrixType& M,
-         DenseVectorType& Eigenvalues,
-         DenseMatrixType& Eigenvectors
-         ) override
-    {
-        
-    }
-
-    /** 
      * @brief Some solvers may require a minimum degree of knowledge of the structure of the matrix. To make an example
      * when solving a mixed u-p problem, it is important to identify the row associated to v and p.
      * @details Another example is the automatic prescription of rotation null-space for smoothed-aggregation solvers
@@ -379,26 +364,43 @@ public:
         ) override
     {
         //count LM dofs
-        unsigned int n_lm_dofs = 0;
-        unsigned int tot_active_dofs = 0;
+        SizeType n_lm_dofs = 0, n_master_dofs = 0, n_slave_dofs = 0;
+        SizeType tot_active_dofs = 0;
         for (auto it = rDofSet.begin(); it!=rDofSet.end(); it++) {
             if (it->EquationId() < rA.size1()) {
-                tot_active_dofs += 1;
+                tot_active_dofs++;
                 if (it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
                     it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Y || 
-                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z)
-                    n_lm_dofs += 1;
+                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z) {
+                        n_lm_dofs++;
+                } else if (it->GetVariable().Key() == DISPLACEMENT_X || 
+                    it->GetVariable().Key() == DISPLACEMENT_Y || 
+                    it->GetVariable().Key() == DISPLACEMENT_Z) {
+                    const IndexType node_id = it->Id();
+                    NodeType::Pointer pnode = rModelPart.pGetNode(node_id);
+                    if (pnode->Is(INTERFACE)) {
+                        if (pnode->Is(MASTER)) {
+                            n_master_dofs++;
+                        } else if (pnode->Is(SLAVE)) {
+                            n_slave_dofs++;
+                        }
+                    }
+                }
             }
         }
 
         KRATOS_ERROR_IF(tot_active_dofs != rA.size1()) << "Total system size does not coincide with the free dof map" << std::endl;
 
         // Resize arrays as needed
+        mMasterIndices.resize (n_master_dofs,false);
+        mSlaveIndices.resize (n_slave_dofs,false);
         mLMIndices.resize (n_lm_dofs,false);
 
-        unsigned int other_dof_size = tot_active_dofs - n_lm_dofs;
+        const SizeType other_dof_size = tot_active_dofs - n_lm_dofs - n_master_dofs - n_slave_dofs;
         mOtherIndices.resize (other_dof_size,false);
         mGlobalToLocalIndexing.resize (tot_active_dofs,false);
+        mIsMasterBlock.resize (tot_active_dofs,false);
+        mIsSlaveBlock.resize (tot_active_dofs,false);
         mIsLMBlock.resize (tot_active_dofs,false);
         
         /**
@@ -407,9 +409,9 @@ public:
          * "lm_counter[i]" will contain the in the global system of the i-th NON-LM node
          * mGlobalToLocalIndexing[i] will contain the position in the local blocks of the
          */
-        unsigned int lm_counter = 0;
-        unsigned int other_counter = 0;
-        unsigned int global_pos = 0;
+        SizeType lm_counter = 0, slave_counter = 0, master_counter = 0;
+        SizeType other_counter = 0;
+        IndexType global_pos = 0;
         for (auto it = rDofSet.begin(); it!=rDofSet.end(); it++) {
             if (it->EquationId() < rA.size1()) {
                 if (it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
@@ -419,6 +421,25 @@ public:
                     mGlobalToLocalIndexing[global_pos] = lm_counter;
                     mIsLMBlock[global_pos] = true;
                     lm_counter++;
+                } else if (it->GetVariable().Key() == DISPLACEMENT_X || 
+                    it->GetVariable().Key() == DISPLACEMENT_Y || 
+                    it->GetVariable().Key() == DISPLACEMENT_Z) {
+                    const IndexType node_id = it->Id();
+                    NodeType::Pointer pnode = rModelPart.pGetNode(node_id);
+                    if (pnode->Is(INTERFACE)) {
+                        if (pnode->Is(MASTER)) {
+                            mMasterIndices[master_counter] = global_pos;
+                            mGlobalToLocalIndexing[global_pos] = master_counter;
+                            mIsMasterBlock[global_pos] = true;
+                            master_counter++;
+                            
+                        } else if (pnode->Is(SLAVE)) {
+                            mSlaveIndices[slave_counter] = global_pos;
+                            mGlobalToLocalIndexing[global_pos] = slave_counter;
+                            mIsSlaveBlock[global_pos] = true;
+                            slave_counter++;
+                        }
+                    }
                 } else {
                     mOtherIndices[other_counter] = global_pos;
                     mGlobalToLocalIndexing[global_pos] = other_counter;
@@ -636,11 +657,13 @@ private:
     bool mBlocksAreAllocated;          /// The flag that indicates if the blocks are allocated
     bool mIsInitialized;               /// The flag that indicates if the solution is mIsInitialized
     
-//     vector<IndexType> mMasterIndices;       /// The vector storing the indices of the master nodes in contact
-//     vector<IndexType> mSlaveIndices;        /// The vector storing the indices of the slave nodes in contact
+    vector<IndexType> mMasterIndices;       /// The vector storing the indices of the master nodes in contact
+    vector<IndexType> mSlaveIndices;        /// The vector storing the indices of the slave nodes in contact
     vector<IndexType> mLMIndices;           /// The vector storing the indices of the LM
     vector<IndexType> mOtherIndices;        /// The vector containing the indices for other DoF
     IndexVectorType mGlobalToLocalIndexing; /// This vector stores the correspondance between the local and global
+    IndexVectorType mIsMasterBlock;         /// This vector stores the LM block belongings
+    IndexVectorType mIsSlaveBlock;          /// This vector stores the LM block belongings
     IndexVectorType mIsLMBlock;             /// This vector stores the LM block belongings
     
     SparseMatrixType mK; /// The displacement-displacement block
@@ -852,7 +875,7 @@ private:
      * @param rTotalResidual The total residual of the problem 
      * @param ResidualU The vector containing the residual relative to the displacements
      */
-    void GetUPart (
+    inline void GetUPart (
         const VectorType& rTotalResidual, 
         VectorType& ResidualU
         )
@@ -869,7 +892,7 @@ private:
      * @param rTotalResidual The total residual of the problem 
      * @param ResidualLM The vector containing the residual relative to the LM
      */
-    void GetLMPart (
+    inline void GetLMPart (
         const VectorType& rTotalResidual, 
         VectorType& ResidualLM
         )
@@ -886,7 +909,7 @@ private:
      * @param rTotalResidual The total residual of the problem 
      * @param ResidualU The vector containing the residual relative to the displacements
      */
-    void SetUPart (
+    inline void SetUPart (
         VectorType& rTotalResidual, 
         const VectorType& ResidualU
         )
@@ -901,7 +924,7 @@ private:
      * @param rTotalResidual The total residual of the problem 
      * @param ResidualLM The vector containing the residual relative to the LM
      */
-    void SetLMPart (
+    inline void SetLMPart (
         VectorType& rTotalResidual, 
         const VectorType& ResidualLM
         )
@@ -912,21 +935,23 @@ private:
     }
 
     /**
-     * @brief This method co
+     * @brief This method computes the diagonal by lumping the values
+     * @param rA The matrix to compute the diagonal
+     * @param diagA The resulting diagonal matrix
      */
-    void ComputeDiagonalByLumping (
-        SparseMatrixType& A,
+    inline void ComputeDiagonalByLumping (
+        const SparseMatrixType& rA,
         VectorType& diagA
         )
     {
-        if (diagA.size() != A.size1() )
-            diagA.resize (A.size1() );
+        if (diagA.size() != rA.size1() )
+            diagA.resize (rA.size1() );
         
-        const std::size_t* index1 = A.index1_data().begin();
-        const double* values = A.value_data().begin();
+        const std::size_t* index1 =rA.index1_data().begin();
+        const double* values = rA.value_data().begin();
 
         #pragma omp parallel for
-        for (int i=0; i< static_cast<int>(A.size1()); i++) {
+        for (int i=0; i< static_cast<int>(rA.size1()); i++) {
             unsigned int row_begin = index1[i];
             unsigned int row_end   = index1[i+1];
             double temp = 0.0;
