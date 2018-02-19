@@ -88,7 +88,8 @@ class ALMContactProcess(python_process.PythonProcess):
             "check_gap"                   : "CheckMapping",
             "database_step_update"        : 1,
             "integration_order"           : 3,
-            "max_gap_factor"              : 0.0e0,
+            "adapt_penalty"               : false,
+            "max_gap_factor"              : 1.0e-3,
             "dynamic_search"              : false,
             "double_formulation"          : false,
             "debug_mode"                  : false,
@@ -164,7 +165,7 @@ class ALMContactProcess(python_process.PythonProcess):
         process_info[CSMA.CONSIDER_NORMAL_VARIATION] = self.normal_variation
         # We set the max gap factor for the gap adaptation
         max_gap_factor = self.settings["max_gap_factor"].GetDouble()
-        process_info[CSMA.ADAPT_PENALTY] = (max_gap_factor > 0.0)
+        process_info[CSMA.ADAPT_PENALTY] = self.settings["adapt_penalty"].GetBool()
         process_info[CSMA.MAX_GAP_FACTOR] = max_gap_factor
         process_info[CSMA.ACTIVE_CHECK_FACTOR] = self.settings["active_check_factor"].GetDouble()
 
@@ -350,10 +351,6 @@ class ALMContactProcess(python_process.PythonProcess):
         # We recompute the normal at each iteration (false by default)
         process_info[CSMA.DISTANCE_THRESHOLD] = 1.0e24
         process_info[CSMA.CONSIDER_NORMAL_VARIATION] = self.normal_variation
-        # We set the max gap factor for the gap adaptation
-        max_gap_factor = self.settings["max_gap_factor"].GetDouble()
-        process_info[CSMA.ADAPT_PENALTY] = (max_gap_factor > 0.0)
-        process_info[CSMA.MAX_GAP_FACTOR] = max_gap_factor
 
         # We set the value that scales in the tangent direction the penalty and scale parameter
         if self.settings["contact_type"].GetString() == "Frictional":
