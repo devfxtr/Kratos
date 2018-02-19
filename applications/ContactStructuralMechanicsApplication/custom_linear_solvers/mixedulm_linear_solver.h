@@ -201,8 +201,8 @@ public:
         ) override
     {
         if (mBlocksAreAllocated == true) {
-            mpSolverDispBlock->Initialize(mK, mDisp, mResidualDisp);
-            mpSolverLMBlock->Initialize(mS, mLM, mResidualLM);
+            mpSolverDispBlock->Initialize(mKNN, mDisp, mResidualDisp);
+            mpSolverLMBlock->Initialize(mLMLM, mLM, mResidualLM);
             mIsInitialized = true;
         } else
             KRATOS_WARNING("MixedULM Initialize") << "Linear solver intialization is deferred to the moment at which blocks are available" << std::endl;
@@ -225,18 +225,18 @@ public:
     {     
         // Copy to local matrices
         if (mBlocksAreAllocated == false) {
-            FillBlockMatrices (true, rA, mK, mG, mD, mS);
+            FillBlockMatrices (true, rA, mKNN, mKNM, mKMN, mLMLM);
             mBlocksAreAllocated = true;
         } else {
-            FillBlockMatrices (false, rA, mK, mG, mD, mS);
+            FillBlockMatrices (false, rA, mKNN, mKNM, mKMN, mLMLM);
             mBlocksAreAllocated = true;
         }
         
         if(mIsInitialized == false) this->Initialize(rA,rX,rB);
 
         // Initialize solvers
-        mpSolverDispBlock->InitializeSolutionStep(mK, mDisp, mResidualDisp);
-        mpSolverLMBlock->InitializeSolutionStep(mS, mLM, mResidualLM);
+        mpSolverDispBlock->InitializeSolutionStep(mKNN, mDisp, mResidualDisp);
+        mpSolverLMBlock->InitializeSolutionStep(mLMLM, mLM, mResidualLM);
     }
 
     /** 
@@ -246,7 +246,7 @@ public:
      * @param rX Solution vector. it's also the initial guess for iterative linear solvers.
      * @param rB Right hand side vector.
     */
-    void PerformSolutionStep (
+    void PerformLMLMolutionStep (
         SparseMatrixType& rA, 
         VectorType& rX, 
         VectorType& rB
@@ -271,8 +271,8 @@ public:
         VectorType& rB
         ) override
     {
-        mpSolverDispBlock->FinalizeSolutionStep(mK, mDisp, mResidualDisp);
-        mpSolverLMBlock->FinalizeSolutionStep(mS, mLM, mResidualLM);
+        mpSolverDispBlock->FinalizeSolutionStep(mKNN, mDisp, mResidualDisp);
+        mpSolverLMBlock->FinalizeSolutionStep(mLMLM, mLM, mResidualLM);
     }
     
     /** 
@@ -281,10 +281,10 @@ public:
      */
     void Clear() override
     {
-        mK.clear();
-        mG.clear();
-        mD.clear();
-        mS.clear();
+        mKNN.clear();
+        mKNM.clear();
+        mKMN.clear();
+        mLMLM.clear();
         mBlocksAreAllocated = false;
         mpSolverDispBlock->Clear();
         mpSolverLMBlock->Clear();
@@ -313,7 +313,7 @@ public:
 
         this->InitializeSolutionStep (rA,rX,rB);
 
-        this->PerformSolutionStep (rA,rX,rB);
+        this->PerformLMLMolutionStep (rA,rX,rB);
 
         this->FinalizeSolutionStep (rA,rX,rB);
 
@@ -381,7 +381,7 @@ public:
                     if (pnode->Is(INTERFACE)) {
                         if (pnode->Is(MASTER)) {
                             n_master_dofs++;
-                        } else if (pnode->Is(SLAVE)) {
+                        } else if (pnode->Is(SLAVE) && pnode->Is(ACTIVE)) { // TODO: An alternative is to fix all the INACTIVE slave nodes
                             n_slave_dofs++;
                         }
                     }
@@ -433,12 +433,22 @@ public:
                             mIsMasterBlock[global_pos] = true;
                             master_counter++;
                             
-                        } else if (pnode->Is(SLAVE)) {
+                        } else if (pnode->Is(SLAVE) && pnode->Is(ACTIVE)) { // TODO: An alternative is to fix all the INACTIVE slave nodes
                             mSlaveIndices[slave_counter] = global_pos;
                             mGlobalToLocalIndexing[global_pos] = slave_counter;
                             mIsSlaveBlock[global_pos] = true;
                             slave_counter++;
+                        } else { // We need to consider always an else to ensure that the system size is consistent
+                            mOtherIndices[other_counter] = global_pos;
+                            mGlobalToLocalIndexing[global_pos] = other_counter;
+                            mIsLMBlock[global_pos] = false;
+                            other_counter++;
                         }
+                    } else { // We need to consider always an else to ensure that the system size is consistent
+                        mOtherIndices[other_counter] = global_pos;
+                        mGlobalToLocalIndexing[global_pos] = other_counter;
+                        mIsLMBlock[global_pos] = false;
+                        other_counter++;
                     }
                 } else {
                     mOtherIndices[other_counter] = global_pos;
@@ -503,7 +513,7 @@ protected:
     
     /** 
      * @brief T his function generates the subblocks of matrix A
-     * @details as A = ( K G ) u
+     * @details as A = ( KNN KNM ) u
      *                 ( D S ) LM
      * Subblocks are allocated or nor depending on the value of "NeedAllocation"
      * @param rA System matrix
@@ -666,15 +676,30 @@ private:
     IndexVectorType mIsSlaveBlock;          /// This vector stores the LM block belongings
     IndexVectorType mIsLMBlock;             /// This vector stores the LM block belongings
     
-    SparseMatrixType mK; /// The displacement-displacement block
-    SparseMatrixType mG; /// The displacemen-LM block
-    SparseMatrixType mD; /// The LM-displacemen block
-    SparseMatrixType mS; /// The LM-LM block
+    SparseMatrixType mKNN;  /// The displacement-displacement block
+    SparseMatrixType mKNM;  /// The displacement-master block
+    SparseMatrixType mKMN;  /// The master-displacement block
+    SparseMatrixType mKNS;  /// The slave-displacement block
+    SparseMatrixType mKSN;  /// The displacement-slave block
+    SparseMatrixType mKMM;  /// The master-master block
+    SparseMatrixType mKSM;  /// The slave-master block
+    SparseMatrixType mKMS;  /// The master-slave block
+    SparseMatrixType mKSS;  /// The slave-slave block
+    SparseMatrixType mKMLM; /// The master-LM block (this is the big block of M) 
+    SparseMatrixType mKLMM; /// The LM-master block (this is the contact contribution, which gives the quadratic convergence)
+    SparseMatrixType mKSLM; /// The slave-LM block (this is the big block of D, diagonal) 
+    SparseMatrixType mKLMS; /// The LM-slave block (this is the contact contribution, which gives the quadratic convergence)
+    SparseMatrixType mLMLM; /// The LM-LM block 
     
-    Vector mResidualLM;    /// The residual of the lagrange multipliers
-    Vector mResidualDisp;  /// The residual of the displacements
-    Vector mLM;            /// The solution of the lagrange multiplies
-    Vector mDisp;          /// The solution of the displacements
+    Vector mResidualLM;     /// The residual of the lagrange multipliers
+    Vector mResidualSlave;  /// The residual of the slave displacements
+    Vector mResidualMaster; /// The residual of the master displacements
+    Vector mResidualDisp;   /// The residual of the rest of displacements
+    
+    Vector mLM;             /// The solution of the lagrange multiplies
+    Vector mSlave;          /// The solution of the slave displacements
+    Vector mMaster;         /// The solution of the master displacements
+    Vector mDisp;           /// The solution of the rest of displacements
         
     ///@}
     ///@name Private Operators
@@ -979,27 +1004,27 @@ private:
         
         // Get diagonal of K (to be removed)
         Vector diag_K (mOtherIndices.size() );
-        ComputeDiagonalByLumping (mK,diag_K);
+        ComputeDiagonalByLumping (mKNN,diag_K);
 
         // Get the u and lm residuals
         GetUPart (rTotalResidual, mResidualDisp);
         GetLMPart (rTotalResidual, mResidualLM);
 
         // Solve u block
-        mpSolverDispBlock->Solve (mK,mDisp,mResidualDisp);
+        mpSolverDispBlock->Solve (mKNN,mDisp,mResidualDisp);
 
         // Correct LM block
         // rlm -= D*u
-        TSparseSpaceType::Mult (mD,mDisp,lm_aux);
+        TSparseSpaceType::Mult (mKMN,mDisp,lm_aux);
         TSparseSpaceType::UnaliasedAdd (mResidualLM,-1.0,lm_aux);
 
         // Solve LM
         // LM = S⁻1*rlm
-        mpSolverLMBlock->Solve (mS,mLM,mResidualLM);
+        mpSolverLMBlock->Solve (mLMLM,mLM,mResidualLM);
 
         // Correct u block
         // u = G*lm
-        TSparseSpaceType::Mult (mG,mLM,u_aux);
+        TSparseSpaceType::Mult (mKNM,mLM,u_aux);
         #pragma omp parallel for
         for (int i=0; i< static_cast<int>(mDisp.size()); i++)
             mDisp[i] += u_aux[i]/diag_K[i];
