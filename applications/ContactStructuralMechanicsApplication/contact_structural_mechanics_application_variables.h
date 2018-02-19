@@ -48,23 +48,24 @@ namespace Kratos
 
 // VARIABLES
 /* Mortar method */ 
-KRATOS_DEFINE_VARIABLE( int , INTEGRATION_ORDER_CONTACT )                            // The integration order computed in the contact
-KRATOS_DEFINE_VARIABLE( double, DISTANCE_THRESHOLD )                                 // The distance threshold considered
-KRATOS_DEFINE_VARIABLE( double, ACTIVE_CHECK_FACTOR )                                // The factor employed to search an active/inactive node
-KRATOS_DEFINE_VARIABLE( GeometryType::Pointer, PAIRED_GEOMETRY )                     // The paired geometry with the current condition
-KRATOS_DEFINE_VARIABLE( Vector3, PAIRED_NORMAL )                                     // The normal of the paired geometry
-KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( AUXILIAR_COORDINATES )                    // Auxiliar coordinates used to map
-KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( DELTA_COORDINATES )                       // Delta coordinates used to map
-KRATOS_DEFINE_VARIABLE( double, NORMAL_GAP )                                         // The normal gap employed in contact formulation
+KRATOS_DEFINE_VARIABLE( int , INTEGRATION_ORDER_CONTACT )                           // The integration order computed in the contact
+KRATOS_DEFINE_VARIABLE( double, DISTANCE_THRESHOLD )                                // The distance threshold considered
+KRATOS_DEFINE_VARIABLE( double, ACTIVE_CHECK_FACTOR )                               // The factor employed to search an active/inactive node
+KRATOS_DEFINE_VARIABLE( GeometryType::Pointer, PAIRED_GEOMETRY )                    // The paired geometry with the current condition
+KRATOS_DEFINE_VARIABLE( Vector3, PAIRED_NORMAL )                                    // The normal of the paired geometry
+KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( AUXILIAR_COORDINATES )                   // Auxiliar coordinates used to map
+KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( DELTA_COORDINATES )                      // Delta coordinates used to map
+KRATOS_DEFINE_VARIABLE( double, NORMAL_GAP )                                        // The normal gap employed in contact formulation
 
 /* Weighted values */
-KRATOS_DEFINE_VARIABLE( double, WEIGHTED_GAP )                                       // The integrated gap employed in mortar formulation
-KRATOS_DEFINE_VARIABLE( double, WEIGHTED_SLIP )                                      // The integrated slip employed in mortar formulation
-KRATOS_DEFINE_VARIABLE( double, WEIGHTED_FRICTION )                                  // The integrated friction coefficient
-KRATOS_DEFINE_VARIABLE( double, WEIGHTED_SCALAR_RESIDUAL )                           // The integrated scalar residual  
-KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( WEIGHTED_VECTOR_RESIDUAL )                // The integrated vector residual         
+KRATOS_DEFINE_VARIABLE( double, WEIGHTED_GAP )                                      // The integrated gap employed in mortar formulation
+KRATOS_DEFINE_VARIABLE( double, WEIGHTED_SLIP )                                     // The integrated slip employed in mortar formulation
+KRATOS_DEFINE_VARIABLE( double, WEIGHTED_FRICTION )                                 // The integrated friction coefficient
+KRATOS_DEFINE_VARIABLE( double, WEIGHTED_SCALAR_RESIDUAL )                          // The integrated scalar residual  
+KRATOS_DEFINE_3D_VARIABLE_WITH_COMPONENTS( WEIGHTED_VECTOR_RESIDUAL )               // The integrated vector residual         
 
 /* For ALM mortar condition */
+KRATOS_DEFINE_VARIABLE( double, DYNAMIC_FACTOR )                                    // The factor considered for dynamic problems (in order to take intro account the gap evolution)
 KRATOS_DEFINE_VARIABLE( double, AUGMENTED_NORMAL_CONTACT_PRESSURE )                 // The resultant augmented pressure in the normal direction
 KRATOS_DEFINE_VARIABLE( double, AUGMENTED_TANGENT_CONTACT_PRESSURE )                // The resultant augmented pressure in the tangent direction
 KRATOS_DEFINE_VARIABLE( double, TANGENT_FACTOR )                                    // The proportion between the tangent and normal penalty
