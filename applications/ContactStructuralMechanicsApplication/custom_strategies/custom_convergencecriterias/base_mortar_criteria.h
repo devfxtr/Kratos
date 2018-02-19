@@ -140,7 +140,7 @@ public:
         
         const bool adapt_penalty = rModelPart.GetProcessInfo()[ADAPT_PENALTY];
         const bool dynamic_case = rModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X);
-            
+        
         /* Compute weighthed gap */
         if (adapt_penalty || dynamic_case) {
             // Set to zero the weighted gap
@@ -158,13 +158,13 @@ public:
          
         // In dynamic case
         if ( dynamic_case ) {
-            ComputeDynamicFactorProcess compute_dynamic_factor_process = ComputeDynamicFactorProcess( rModelPart );
+            ComputeDynamicFactorProcess compute_dynamic_factor_process = ComputeDynamicFactorProcess( rModelPart.GetSubModelPart("Contact") );
             compute_dynamic_factor_process.Execute();
         }
         
         // We recalculate the penalty parameter
         if ( adapt_penalty ) {
-            AALMAdaptPenaltyValueProcess aalm_adaptation_of_penalty = AALMAdaptPenaltyValueProcess( rModelPart );
+            AALMAdaptPenaltyValueProcess aalm_adaptation_of_penalty = AALMAdaptPenaltyValueProcess( rModelPart.GetSubModelPart("Contact") );
             aalm_adaptation_of_penalty.Execute();
         }
         
