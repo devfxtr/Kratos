@@ -24,6 +24,7 @@
 #include "utilities/mortar_utilities.h"
 #include "utilities/variable_utils.h"
 #include "custom_processes/aalm_adapt_penalty_value_process.h"
+#include "custom_processes/compute_dynamic_factor_process.h"
 #include "solving_strategies/convergencecriterias/convergence_criteria.h"
 
 // DEBUG
@@ -137,8 +138,11 @@ public:
         if (static_cast<NormalDerivativesComputation>(rModelPart.GetProcessInfo()[CONSIDER_NORMAL_VARIATION]) != NO_DERIVATIVES_COMPUTATION)
             MortarUtilities::ComputeNodesMeanNormalModelPart( rModelPart.GetSubModelPart("Contact") ); // Update normal of the conditions
         
-        // We recalculate the penalty parameter
-        if (rModelPart.GetProcessInfo()[ADAPT_PENALTY] == true) {
+        const bool adapt_penalty = rModelPart.GetProcessInfo()[ADAPT_PENALTY];
+        const bool dynamic_case = rModelPart.NodesBegin()->SolutionStepsDataHas(VELOCITY_X);
+            
+        /* Compute weighthed gap */
+        if (adapt_penalty || dynamic_case) {
             // Set to zero the weighted gap
             ResetWeightedGap(rModelPart);
             
@@ -150,7 +154,16 @@ public:
             #pragma omp parallel for
             for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
                 (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
-            
+        }
+         
+        // In dynamic case
+        if ( dynamic_case ) {
+            ComputeDynamicFactorProcess compute_dynamic_factor_process = ComputeDynamicFactorProcess( rModelPart );
+            compute_dynamic_factor_process.Execute();
+        }
+        
+        // We recalculate the penalty parameter
+        if ( adapt_penalty ) {
             AALMAdaptPenaltyValueProcess aalm_adaptation_of_penalty = AALMAdaptPenaltyValueProcess( rModelPart );
             aalm_adaptation_of_penalty.Execute();
         }
@@ -176,6 +189,15 @@ public:
         const TSystemVectorType& b
         ) override
     {
+        // We save the current WEIGHTED_GAP in the buffer 
+        NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
+        
+        #pragma omp parallel for
+        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
+            auto it_node = nodes_array.begin() + i;
+            it_node->FastGetSolutionStepValue(WEIGHTED_GAP, 1) = it_node->FastGetSolutionStepValue(WEIGHTED_GAP);
+        }
+        
         // Set to zero the weighted gap
         ResetWeightedGap(rModelPart);
         
@@ -205,6 +227,7 @@ public:
             mpGidIO->WriteNodalFlags(SLAVE, "SLAVE", rModelPart.Nodes(), label);
             mpGidIO->WriteNodalFlags(ISOLATED, "ISOLATED", rModelPart.Nodes(), label);
             mpGidIO->WriteNodalResults(NORMAL, rModelPart.Nodes(), label, 0);
+            mpGidIO->WriteNodalResultsNonHistorical(DYNAMIC_FACTOR, rModelPart.Nodes(), label);
             mpGidIO->WriteNodalResultsNonHistorical(AUGMENTED_NORMAL_CONTACT_PRESSURE, rModelPart.Nodes(), label);
             mpGidIO->WriteNodalResults(DISPLACEMENT, rModelPart.Nodes(), label, 0);
             if (rModelPart.Nodes().begin()->SolutionStepsDataHas(VELOCITY_X) == true) {
