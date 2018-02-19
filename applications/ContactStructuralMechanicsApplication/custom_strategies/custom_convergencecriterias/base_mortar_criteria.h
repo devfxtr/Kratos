@@ -156,11 +156,11 @@ public:
                 (conditions_array.begin() + i)->AddExplicitContribution(rModelPart.GetProcessInfo());
         }
          
-        // In dynamic case
-        if ( dynamic_case ) {
-            ComputeDynamicFactorProcess compute_dynamic_factor_process = ComputeDynamicFactorProcess( rModelPart.GetSubModelPart("Contact") );
-            compute_dynamic_factor_process.Execute();
-        }
+//         // In dynamic case
+//         if ( dynamic_case ) {
+//             ComputeDynamicFactorProcess compute_dynamic_factor_process = ComputeDynamicFactorProcess( rModelPart.GetSubModelPart("Contact") );
+//             compute_dynamic_factor_process.Execute();
+//         }
         
         // We recalculate the penalty parameter
         if ( adapt_penalty ) {
