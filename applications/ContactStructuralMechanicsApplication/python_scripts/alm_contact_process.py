@@ -88,7 +88,7 @@ class ALMContactProcess(python_process.PythonProcess):
             "check_gap"                   : "CheckMapping",
             "database_step_update"        : 1,
             "integration_order"           : 3,
-            "max_gap_factor"              : 1.0e-3,
+            "max_gap_factor"              : 0.0e0,
             "dynamic_search"              : false,
             "double_formulation"          : false,
             "debug_mode"                  : false,
