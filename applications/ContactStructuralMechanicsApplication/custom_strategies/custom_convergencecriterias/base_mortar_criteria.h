@@ -144,10 +144,8 @@ public:
             
             ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
-        #ifdef KRATOS_DEBUG
             if (conditions_array.size() == 0) 
-                KRATOS_WARNING("Empty model part") << "YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
-        #endif
+                KRATOS_TRACE("Empty model part") << "YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
             
             #pragma omp parallel for
             for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
@@ -183,10 +181,8 @@ public:
         
         ConditionsArrayType& conditions_array = rModelPart.GetSubModelPart("ComputingContact").Conditions();
         
-    #ifdef KRATOS_DEBUG
         if (conditions_array.size() == 0) 
-            KRATOS_WARNING("Empty model part") << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
-    #endif
+            KRATOS_TRACE("Empty model part") << "WARNING:: YOUR COMPUTING CONTACT MODEL PART IS EMPTY" << std::endl;
         
         #pragma omp parallel for
         for(int i = 0; i < static_cast<int>(conditions_array.size()); ++i)
