@@ -573,10 +573,10 @@ protected:
         SparseMatrixType KSISI(mSlaveInactiveIndices.size(), mSlaveInactiveIndices.size());   /// The slave inactive-inactive slave block
         SparseMatrixType KSASI(mSlaveActiveIndices.size(), mSlaveInactiveIndices.size());     /// The active slave-inactive slave block
         SparseMatrixType KSISA(mSlaveInactiveIndices.size(), mSlaveActiveIndices.size());     /// The inactive slave-active slave block
-        SparseMatrixType KSALMI(mSlaveActiveIndices.size(), mLMInactiveIndices.size());       /// The active slave-inactive LM block (this is the big block of D, diagonal) 
+        SparseMatrixType KSALMI(mSlaveActiveIndices.size(), mLMInactiveIndices.size());       /// The active slave-inactive LM block (this is the big block of D) 
         SparseMatrixType KSALMA(mSlaveActiveIndices.size(), mLMActiveIndices.size());         /// The active slave-active LM block (this is the big block of D, diagonal) 
         SparseMatrixType KSILMI(mSlaveInactiveIndices.size(), mLMInactiveIndices.size());     /// The inactive slave-inactive LM block (this is the big block of D, diagonal) 
-        SparseMatrixType KSILMA(mSlaveInactiveIndices.size(), mLMActiveIndices.size());       /// The inactive slave-active LM block (this is the big block of D, diagonal) 
+        SparseMatrixType KSILMA(mSlaveInactiveIndices.size(), mLMActiveIndices.size());       /// The inactive slave-active LM block (this is the big block of D) 
         SparseMatrixType KSASA(mSlaveActiveIndices.size(), mSlaveActiveIndices.size());       /// The active slave-slave active block
         SparseMatrixType KLMAM(mLMActiveIndices.size(), mMasterIndices.size());               /// The active LM-master block (this is the contact contribution, which gives the quadratic convergence)
         SparseMatrixType KLMASI(mLMActiveIndices.size(), mSlaveInactiveIndices.size());       /// The active LM-inactive slave block (this is the contact contribution, which gives the quadratic convergence)
@@ -637,7 +637,7 @@ protected:
                         KSISI.push_back ( local_row_id, local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE)   // KSISA block
                         KSISA.push_back ( local_row_id, local_col_id, value);
-                    else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)   // KSILMI block
+                    else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)   // KSILMI block (diagonal)
                         KSILMI.push_back ( local_row_id, local_col_id, value);
                     else                                                              // KSILMA block
                         KSILMA.push_back ( local_row_id, local_col_id, value);
@@ -657,7 +657,7 @@ protected:
                         KSASA.push_back ( local_row_id, local_col_id, value);
                     else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)   // KSALMI block
                         KSALMI.push_back ( local_row_id, local_col_id, value);
-                    else                                                              // KSALMA block
+                    else                                                              // KSALMA block (diagonal)
                         KSALMA.push_back ( local_row_id, local_col_id, value);
                 }
             } else if ( mWhichBlockType[i] == BlockType::LM_INACTIVE) { // KLMILMI
@@ -665,7 +665,7 @@ protected:
                     unsigned int col_index = index2[j];
                     double value = values[j];
                     unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
-                    if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) // KLMILMI block
+                    if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) // KLMILMI block (diagonal)
                         KLMILMI.push_back ( local_row_id, local_col_id, value);
                 }
             } else { //either KLMAM or KLMASI or KLMASA
