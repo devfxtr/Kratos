@@ -817,6 +817,14 @@ private:
         for (int i = 0; i<static_cast<int>(mOtherIndices.size()); i++)
             ResidualU[i] = rTotalResidual[mOtherIndices[i]];
         
+        VectorType aux_res(mSlaveActiveIndices.size());
+        #pragma omp parallel for
+        for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
+            aux_res[i] = rTotalResidual[mSlaveActiveIndices[i]];
+        
+        SparseMatrixType aux_matrix();
+//         TSparseSpaceType::Mult(
+        
         #pragma omp parallel for
         for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
             ResidualU[mOtherIndices.size() + i] = rTotalResidual[mMasterIndices[i]];
@@ -827,7 +835,7 @@ private:
         
         #pragma omp parallel for
         for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
-            ResidualU[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i] = rTotalResidual[mSlaveActiveIndices[i]];
+            ResidualU[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i] = rTotalResidual[mLMActiveIndices[i]];
     }
 
     /**
