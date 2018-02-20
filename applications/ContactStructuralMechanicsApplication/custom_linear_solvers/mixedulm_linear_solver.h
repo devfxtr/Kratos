@@ -17,16 +17,18 @@
 #include <iostream>
 #include <sstream>
 #include <cstddef>
+
 // External includes
 #include <boost/numeric/ublas/vector.hpp>
 
 // Project includes
 #include "includes/define.h"
-#include "linear_solvers/reorderer.h"
-#include "solving_strategies/builder_and_solvers/builder_and_solver.h"
 #include "includes/model_part.h"
+#include "linear_solvers/reorderer.h"
 #include "linear_solvers/iterative_solver.h"
+#include "solving_strategies/builder_and_solvers/builder_and_solver.h"
 #include "utilities/openmp_utils.h"
+#include "contact_structural_mechanics_application_variables.h"
 
 namespace Kratos
 {
@@ -90,6 +92,15 @@ public:
     /// The node type
     typedef Node<3> NodeType;
     
+    /// The array containing the dofs
+    typedef typename ModelPart::DofsArrayType DofsArrayType;
+    
+    /// An array of conditions
+    typedef ModelPart::ConditionsContainerType ConditionsArrayType;
+    
+    /// An array of nodes
+    typedef ModelPart::NodesContainerType NodesArrayType;
+    
     /// The size type
     typedef std::size_t  SizeType;
     
@@ -120,14 +131,17 @@ public:
      * @brief Default constructor
      * @param pSolverDispBlock The linear solver used for the displacement block
      * @param MaxTolerance The maximal tolrance considered
+     * @param rModelPart The the model part of the problem to solve 
      * @param MaxIterationNumber The maximal number of iterations
      */
     MixedULMLinearSolver (
         LinearSolverPointerType pSolverDispBlock,
+        ModelPart& rModelPart,
         const double MaxTolerance,
         const std::size_t MaxIterationNumber
         ) : BaseType (MaxTolerance, MaxIterationNumber),
-            mpSolverDispBlock(pSolverDispBlock)
+            mpSolverDispBlock(pSolverDispBlock),
+            mrModelPart(rModelPart)
     {
         // Initializing the remaining variables
         mBlocksAreAllocated = false;
@@ -137,14 +151,17 @@ public:
     /**
      * @brief Second constructor, it uses a Kratos parameters as input instead of direct input
      * @param pSolverDispBlock The linear solver used for the displacement block
+     * @param rModelPart The the model part of the problem to solve 
      * @param ThisParameters The configuration parameters considered
      */
     
     MixedULMLinearSolver(
             LinearSolverPointerType pSolverDispBlock,
+            ModelPart& rModelPart,
             Parameters ThisParameters =  Parameters(R"({})")
             ): BaseType (),
-               mpSolverDispBlock(pSolverDispBlock)
+               mpSolverDispBlock(pSolverDispBlock),
+               mrModelPart(rModelPart)
 
     {
         KRATOS_TRY
@@ -371,7 +388,7 @@ public:
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rDofSet,
+        DofsArrayType& rDofSet,
         ModelPart& rModelPart
         ) override
     {
@@ -384,21 +401,21 @@ public:
         SizeType n_master_dofs = 0;
         SizeType n_slave_inactive_dofs = 0, n_slave_active_dofs = 0;
         SizeType tot_active_dofs = 0;
-        for (auto it = rDofSet.begin(); it!=rDofSet.end(); it++) {
-            node_id = it->Id();
+        for (auto& i_dof : rDofSet) {
+            node_id = i_dof.Id();
             pnode = rModelPart.pGetNode(node_id);
-            if (it->EquationId() < rA.size1()) {
+            if (i_dof.EquationId() < rA.size1()) {
                 tot_active_dofs++;
-                if (it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
-                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Y || 
-                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z) {
+                if (i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
+                    i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Y || 
+                    i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z) {
                     if (pnode->Is(ACTIVE))
                         n_lm_active_dofs++;
                     else
                         n_lm_inactive_dofs++;
-                } else if (it->GetVariable().Key() == DISPLACEMENT_X || 
-                    it->GetVariable().Key() == DISPLACEMENT_Y || 
-                    it->GetVariable().Key() == DISPLACEMENT_Z) {
+                } else if (i_dof.GetVariable().Key() == DISPLACEMENT_X || 
+                    i_dof.GetVariable().Key() == DISPLACEMENT_Y || 
+                    i_dof.GetVariable().Key() == DISPLACEMENT_Z) {
                     if (pnode->Is(INTERFACE)) {
                         if (pnode->Is(MASTER)) {
                             n_master_dofs++;
@@ -438,13 +455,13 @@ public:
         SizeType slave_inactive_counter = 0, slave_active_counter = 0;
         SizeType other_counter = 0;
         IndexType global_pos = 0;
-        for (auto it = rDofSet.begin(); it!=rDofSet.end(); it++) {
-            node_id = it->Id();
+        for (auto& i_dof : rDofSet) {
+            node_id = i_dof.Id();
             pnode = rModelPart.pGetNode(node_id);
-            if (it->EquationId() < rA.size1()) {
-                if (it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
-                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Y || 
-                    it->GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z) {
+            if (i_dof.EquationId() < rA.size1()) {
+                if (i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_X || 
+                    i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Y || 
+                    i_dof.GetVariable().Key() == VECTOR_LAGRANGE_MULTIPLIER_Z) {
                     if (pnode->Is(ACTIVE)) {
                         mLMActiveIndices[lm_active_counter] = global_pos;
                         mGlobalToLocalIndexing[global_pos] = lm_active_counter;
@@ -456,9 +473,9 @@ public:
                         mWhichBlockType[global_pos] = BlockType::LM_INACTIVE;
                         lm_inactive_counter++;
                     }
-                } else if (it->GetVariable().Key() == DISPLACEMENT_X || 
-                    it->GetVariable().Key() == DISPLACEMENT_Y || 
-                    it->GetVariable().Key() == DISPLACEMENT_Z) {
+                } else if (i_dof.GetVariable().Key() == DISPLACEMENT_X || 
+                    i_dof.GetVariable().Key() == DISPLACEMENT_Y || 
+                    i_dof.GetVariable().Key() == DISPLACEMENT_Z) {
                     if (pnode->Is(INTERFACE)) {
                         if (pnode->Is(MASTER)) {
                             mMasterIndices[master_counter] = global_pos;
@@ -605,6 +622,9 @@ protected:
         SparseMatrixType KLMASA(mLMActiveIndices.size(), mSlaveActiveIndices.size());         /// The active LM-active slave block (this is the contact contribution, which gives the quadratic convergence)
 //         SparseMatrixType KLMILMI(mLMInactiveIndices.size(), mLMInactiveIndices.size());       /// The inactive LM- inactive LM block (diagonal) // NOTE: Not necessary, you can fix the value directly
         
+        if (!mrModelPart.GetProcessInfo()[ACTIVE_SET_CONVERGED])
+            RebuildActiveSet();
+        
         if (NeedAllocation)
             AllocateBlocks();
 
@@ -735,6 +755,8 @@ private:
     ///@{
     
     LinearSolverPointerType mpSolverDispBlock; /// The pointer to the displacement linear solver 
+    
+    ModelPart& mrModelPart; /// The the model part of the problem to solve 
      
     bool mBlocksAreAllocated; /// The flag that indicates if the blocks are allocated
     bool mIsInitialized;      /// The flag that indicates if the solution is mIsInitialized
@@ -770,6 +792,20 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
+    
+    /**
+     * @brief This method rebuilds the active/inactive set
+     */
+    inline void RebuildActiveSet() 
+    {
+        NodesArrayType& nodes_array = mrModelPart.GetSubModelPart("Contact").Nodes();
+        for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) 
+        {
+            auto it_node = nodes_array.begin() + i;
+            
+//             if // TODO: FINISH ME!!!!!
+        }
+    }
     
     /**
      * @brief It allocates all the blocks and operators
@@ -821,7 +857,7 @@ private:
         for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
             aux_res[i] = rTotalResidual[mSlaveActiveIndices[i]];
         
-        SparseMatrixType aux_matrix();
+//         SparseMatrixType aux_matrix();
 //         TSparseSpaceType::Mult(
         
         #pragma omp parallel for
