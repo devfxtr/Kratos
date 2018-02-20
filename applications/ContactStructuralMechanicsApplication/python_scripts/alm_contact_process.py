@@ -163,6 +163,8 @@ class ALMContactProcess(python_process.PythonProcess):
 
         # We recompute the normal at each iteration (false by default)
         process_info[CSMA.CONSIDER_NORMAL_VARIATION] = self.normal_variation
+        # Initialize ACTIVE_SET_CONVERGED
+        process_info[CSMA.ACTIVE_SET_CONVERGED] = True
         # We set the max gap factor for the gap adaptation
         max_gap_factor = self.settings["max_gap_factor"].GetDouble()
         process_info[CSMA.ADAPT_PENALTY] = self.settings["adapt_penalty"].GetBool()

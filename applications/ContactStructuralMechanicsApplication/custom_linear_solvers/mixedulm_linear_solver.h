@@ -1,13 +1,12 @@
-//    |  /           |
-//    ' /   __| _` | __|  _ \   __|
-//    . \  |   (   | |   (   |\__ `
-//   _|\_\_|  \__,_|\__|\___/ ____/
-//                   Multi-Physics
+// KRATOS  ___|  |                   |                   |
+//       \___ \  __|  __| |   |  __| __| |   |  __| _` | |
+//             | |   |    |   | (    |   |   | |   (   | |
+//       _____/ \__|_|   \__,_|\___|\__|\__,_|_|  \__,_|_| MECHANICS
 //
-//  License:                 BSD License
-//                                         Kratos default license: kratos/license.txt
+//  License:             BSD License
+//                                       license: StructuralMechanicsApplication/license.txt
 //
-//  Main authors:    Riccardo Rossi
+//  Main authors:    Vicente Mataix Ferrandiz
 //
 
 #if !defined(KRATOS_MIXEDULM_SOLVER_H_INCLUDED )
@@ -52,7 +51,7 @@ namespace Kratos
  * @brief This solver is designed for the solution of mixed U-LM problems (this solver in particular is optimized for dual LM, to avoid the resolution).
  * @details It uses a block structure diving the matrix in UU LMLM ULM LMU blocks
  * and uses "standard" linear solvers for the different blocks as well as a GMRES for the outer part
- * @author Vicente Mataix Ferrándiz
+ * @author Vicente Mataix Ferrandiz
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
          class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,

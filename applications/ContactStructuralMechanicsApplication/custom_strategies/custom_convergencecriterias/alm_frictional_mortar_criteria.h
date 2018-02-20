@@ -114,7 +114,7 @@ public:
     ///@{
     
     /**
-     * Criterias that need to be called before getting the solution
+     * @brief Criterias that need to be called before getting the solution
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -137,7 +137,7 @@ public:
     }
     
     /**
-     * Compute relative and absolute error.
+     * @brief Compute relative and absolute error.
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -221,6 +221,10 @@ public:
             }
         }
         
+        // We save to the process info if the active set has converged
+        const bool active_set_converged = (is_converged_active + is_converged_slip) == 0 ? true : false;
+        rModelPart.GetProcessInfo()[ACTIVE_SET_CONVERGED] = active_set_converged;
+        
         if (rModelPart.GetCommunicator().MyPID() == 0 && this->GetEchoLevel() > 0) {
             if (mpTable != nullptr) {
                 auto& table = mpTable->GetTable();
@@ -273,11 +277,11 @@ public:
             }
         }
         
-        return ((is_converged_active + is_converged_slip) == 0 ? true : false);
+        return active_set_converged;
     }
     
     /**
-     * This function initialize the convergence criteria
+     * @brief This function initialize the convergence criteria
      * @param rModelPart The model part of interest
      */ 
     
@@ -327,7 +331,7 @@ protected:
     ///@{
     
     /**
-     * This method resets the weighted gap in the nodes of the problem
+     * @brief This method resets the weighted gap in the nodes of the problem
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      */
     

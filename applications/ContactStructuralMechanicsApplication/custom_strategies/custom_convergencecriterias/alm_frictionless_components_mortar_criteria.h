@@ -114,7 +114,7 @@ public:
     ///@{
     
     /**
-     * Criterias that need to be called before getting the solution
+     * @brief Criterias that need to be called before getting the solution
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -137,7 +137,7 @@ public:
     }
     
     /**
-     * Compute relative and absolute error.
+     * @brief Compute relative and absolute error.
      * @param rModelPart Reference to the ModelPart containing the contact problem.
      * @param rDofSet Reference to the container of the problem's degrees of freedom (stored by the BuilderAndSolver)
      * @param A System matrix (unused)
@@ -158,14 +158,14 @@ public:
         BaseType::PostCriteria(rModelPart, rDofSet, A, Dx, b);
         
         // Defining the convergence
-        unsigned int is_converged_active = 0;
+        unsigned int is_converged = 0;
         
 //         const double epsilon = rModelPart.GetProcessInfo()[INITIAL_PENALTY]; 
         const double scale_factor = rModelPart.GetProcessInfo()[SCALE_FACTOR];
         
         NodesArrayType& nodes_array = rModelPart.GetSubModelPart("Contact").Nodes();
 
-        #pragma omp parallel for reduction(+:is_converged_active)
+        #pragma omp parallel for reduction(+:is_converged)
         for(int i = 0; i < static_cast<int>(nodes_array.size()); ++i) {
             auto it_node = nodes_array.begin() + i;
             
@@ -182,20 +182,24 @@ public:
             if (augmented_normal_pressure < 0.0) { // NOTE: This could be conflictive (< or <=)
                 if (it_node->Is(ACTIVE) == false ) {
                     it_node->Set(ACTIVE, true);
-                    is_converged_active += 1;
+                    is_converged += 1;
                 }
             } else {
                 if (it_node->Is(ACTIVE) == true ) {
                     it_node->Set(ACTIVE, false);
-                    is_converged_active += 1;
+                    is_converged += 1;
                 }
             }
         }
         
+        // We save to the process info if the active set has converged
+        const bool active_set_converged = (is_converged == 0 ? true : false);
+        rModelPart.GetProcessInfo()[ACTIVE_SET_CONVERGED] = active_set_converged;
+        
         if (rModelPart.GetCommunicator().MyPID() == 0 && this->GetEchoLevel() > 0) {
             if (mpTable != nullptr) {
                 auto& table = mpTable->GetTable();
-                if (is_converged_active == 0) {
+                if (active_set_converged) {
                     if (mPrintingOutput == false)
                         table << BOLDFONT(FGRN("       Achieved"));
                     else
@@ -207,7 +211,7 @@ public:
                         table << "Not achieved";
                 }
             } else {
-                if (is_converged_active == 0) {
+                if (active_set_converged) {
                     if (mPrintingOutput == false)
                         std::cout << BOLDFONT("\tActive set") << " convergence is " << BOLDFONT(FGRN("achieved")) << std::endl;
                     else
@@ -221,11 +225,11 @@ public:
             }
         }
         
-        return (is_converged_active == 0 ? true : false);
+        return active_set_converged;
     }
     
     /**
-     * This function initialize the convergence criteria
+     * @brief This function initialize the convergence criteria
      * @param rModelPart The model part of interest
      */ 
     
