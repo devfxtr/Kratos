@@ -120,18 +120,15 @@ public:
     /**
      * @brief Default constructor
      * @param pSolverDispBlock The linear solver used for the displacement block
-     * @param pSolverLMBlock The linear solver for the LM block
      * @param MaxTolerance The maximal tolrance considered
      * @param MaxIterationNumber The maximal number of iterations
      */
     MixedULMLinearSolver (
         LinearSolverPointerType pSolverDispBlock,
-        LinearSolverPointerType pSolverLMBlock,
         const double MaxTolerance,
         const std::size_t MaxIterationNumber
         ) : BaseType (MaxTolerance, MaxIterationNumber),
-            mpSolverDispBlock(pSolverDispBlock),
-            mpSolverLMBlock(pSolverLMBlock)
+            mpSolverDispBlock(pSolverDispBlock)
     {
         // Initializing the remaining variables
         mBlocksAreAllocated = false;
@@ -141,17 +138,14 @@ public:
     /**
      * @brief Second constructor, it uses a Kratos parameters as input instead of direct input
      * @param pSolverDispBlock The linear solver used for the displacement block
-     * @param pSolverLMBlock The linear solver for the LM block
      * @param ThisParameters The configuration parameters considered
      */
     
     MixedULMLinearSolver(
             LinearSolverPointerType pSolverDispBlock,
-            LinearSolverPointerType pSolverLMBlock,
             Parameters ThisParameters =  Parameters(R"({})")
             ): BaseType (),
-               mpSolverDispBlock(pSolverDispBlock),
-               mpSolverLMBlock(pSolverLMBlock)
+               mpSolverDispBlock(pSolverDispBlock)
 
     {
         KRATOS_TRY
@@ -210,7 +204,6 @@ public:
     {
         if (mBlocksAreAllocated == true) {
             mpSolverDispBlock->Initialize(mKDispModified, mDisp, mResidualDisp);
-            mpSolverLMBlock->Initialize(mKLMAModified, mLM, mResidualLM);
             mIsInitialized = true;
         } else
             KRATOS_WARNING("MixedULM Initialize") << "Linear solver intialization is deferred to the moment at which blocks are available" << std::endl;
@@ -240,12 +233,47 @@ public:
             mBlocksAreAllocated = true;
         }
         
-        if(mIsInitialized == false) this->Initialize(rA,rX,rB);
+        if(mIsInitialized == false) 
+            this->Initialize(rA,rX,rB);
 
         mpSolverDispBlock->InitializeSolutionStep(mKDispModified, mDisp, mResidualDisp);
-        mpSolverLMBlock->InitializeSolutionStep(mKLMAModified, mLM, mResidualLM);
     }
 
+    /** 
+     * @brief This function actually performs the solution work, eventually taking advantage of what was done before in the
+     * @details Initialize and InitializeSolutionStep functions.
+     * @param rA System matrix
+     * @param rX Solution vector. it's also the initial guess for iterative linear solvers.
+     * @param rB Right hand side vector.
+    */
+    void PerformSolutionStep (
+        SparseMatrixType& rA, 
+        VectorType& rX, 
+        VectorType& rB
+        ) override
+    {
+        const SizeType total_size = mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + mSlaveActiveIndices.size();
+        noalias(mLM) = ZeroVector(mLMActiveIndices.size());
+        noalias(mDisp)  = ZeroVector(total_size);
+
+        // Get the u and lm residuals
+        GetUPart (rB, mResidualDisp);
+
+        // Solve u block
+        mpSolverDispBlock->Solve (mKDispModified, mDisp, mResidualDisp);
+
+        // Now we compute the residual of the LM
+        GetLMPart (rB, mResidualLM);
+
+        // Solve LM
+        // LM = D⁻1*rLM
+        TSparseSpaceType::Mult (mKLMAModified, mResidualLM, mLM);
+
+        // Write back solution
+        SetUPart(rX, mDisp);
+        SetLMPart(rX, mLM);
+    }
+    
     /** 
      * @brief This function is designed to be called at the end of the solve step.
      * @details For example this is the place to remove any data that we do not want to save for later
@@ -260,7 +288,6 @@ public:
         ) override
     {
         mpSolverDispBlock->FinalizeSolutionStep(mKDispModified, mDisp, mResidualDisp);
-        mpSolverLMBlock->FinalizeSolutionStep(mKLMAModified, mLM, mResidualLM);
     }
     
     /** 
@@ -269,11 +296,10 @@ public:
      */
     void Clear() override
     {        
-        mKDispModified.clear();  /// The modified displacement block
+        mKDispModified.clear(); /// The modified displacement block
         mKLMAModified.clear();  /// The modified LM block (diagonal)
         mBlocksAreAllocated = false;
         mpSolverDispBlock->Clear();
-        mpSolverLMBlock->Clear();
         mDisp.clear();
         mLM.clear();
         mResidualDisp.clear();
@@ -299,7 +325,7 @@ public:
 
         this->InitializeSolutionStep (rA,rX,rB);
 
-        this->PerformLMLMolutionStep (rA,rX,rB);
+        this->PerformSolutionStep (rA,rX,rB);
 
         this->FinalizeSolutionStep (rA,rX,rB);
 
@@ -340,6 +366,7 @@ public:
      * @param rA System matrix
      * @param rX Solution vector. It's also the initial guess for iterative linear solvers.
      * @param rB Right hand side vector.
+     * @todo If there are problems with active/inactive just fix dofs
      */
     void ProvideAdditionalData (
         SparseMatrixType& rA,
@@ -562,26 +589,22 @@ protected:
         SparseMatrixType KNSI(mOtherIndices.size(), mSlaveInactiveIndices.size());            /// The displacement-slave inactive block 
         SparseMatrixType KNSA(mOtherIndices.size(), mSlaveActiveIndices.size());              /// The displacement-slave active block 
         SparseMatrixType KSIN(mSlaveInactiveIndices.size(), mOtherIndices.size());            /// The slave inactive-displacement block
-        SparseMatrixType KSAN(mSlaveActiveIndices.size(), mOtherIndices.size());              /// The slave active-displacement block
         SparseMatrixType KMM(mMasterIndices.size(), mMasterIndices.size());                   /// The master-master block
-        SparseMatrixType KSIM(mSlaveInactiveIndices.size(), mMasterIndices.size());           /// The slave inactive-master block
-        SparseMatrixType KSAM(mSlaveActiveIndices.size(), mMasterIndices.size());             /// The active slave-master block
+        SparseMatrixType KSIM(mSlaveInactiveIndices.size(), mMasterIndices.size());           /// The slave inactive-master block        
         SparseMatrixType KMSI(mMasterIndices.size(), mSlaveInactiveIndices.size());           /// The master-inactive slave block
         SparseMatrixType KMSA(mMasterIndices.size(), mSlaveActiveIndices.size());             /// The master-active slave block
-        SparseMatrixType KMLMI(mMasterIndices.size(), mLMInactiveIndices.size());             /// The master-inactive LM block (this is the big block of M) 
-        SparseMatrixType KMLMA(mMasterIndices.size(), mLMActiveIndices.size());               /// The master-active LM block (this is the big block of M) 
+        SparseMatrixType KMLMI(mMasterIndices.size(), mLMInactiveIndices.size());             /// The master-inactive LM block (this is the big block of M)
         SparseMatrixType KSISI(mSlaveInactiveIndices.size(), mSlaveInactiveIndices.size());   /// The slave inactive-inactive slave block
-        SparseMatrixType KSASI(mSlaveActiveIndices.size(), mSlaveInactiveIndices.size());     /// The active slave-inactive slave block
         SparseMatrixType KSISA(mSlaveInactiveIndices.size(), mSlaveActiveIndices.size());     /// The inactive slave-active slave block
-        SparseMatrixType KSALMI(mSlaveActiveIndices.size(), mLMInactiveIndices.size());       /// The active slave-inactive LM block (this is the big block of D) 
+//         SparseMatrixType KSALMI(mSlaveActiveIndices.size(), mLMInactiveIndices.size());       /// The active slave-inactive LM block (this is the big block of D) // NOTE: Not necessary, you can fix the value directly 
         SparseMatrixType KSALMA(mSlaveActiveIndices.size(), mLMActiveIndices.size());         /// The active slave-active LM block (this is the big block of D, diagonal) 
-        SparseMatrixType KSILMI(mSlaveInactiveIndices.size(), mLMInactiveIndices.size());     /// The inactive slave-inactive LM block (this is the big block of D, diagonal) 
+        
+//         SparseMatrixType KSILMI(mSlaveInactiveIndices.size(), mLMInactiveIndices.size());     /// The inactive slave-inactive LM block (this is the big block of D, diagonal) // NOTE: Not necessary, you can fix the value directly
         SparseMatrixType KSILMA(mSlaveInactiveIndices.size(), mLMActiveIndices.size());       /// The inactive slave-active LM block (this is the big block of D) 
-        SparseMatrixType KSASA(mSlaveActiveIndices.size(), mSlaveActiveIndices.size());       /// The active slave-slave active block
         SparseMatrixType KLMAM(mLMActiveIndices.size(), mMasterIndices.size());               /// The active LM-master block (this is the contact contribution, which gives the quadratic convergence)
-        SparseMatrixType KLMASI(mLMActiveIndices.size(), mSlaveInactiveIndices.size());       /// The active LM-inactive slave block (this is the contact contribution, which gives the quadratic convergence)
+        SparseMatrixType KLMASI(mLMActiveIndices.size(), mSlaveInactiveIndices.size());       /// The active LM-inactive slave block (this is the contact contribution, which gives the quadratic convergence) 
         SparseMatrixType KLMASA(mLMActiveIndices.size(), mSlaveActiveIndices.size());         /// The active LM-active slave block (this is the contact contribution, which gives the quadratic convergence)
-        SparseMatrixType KLMILMI(mLMInactiveIndices.size(), mLMInactiveIndices.size());       /// The inactive LM- inactive LM block (diagonal)
+//         SparseMatrixType KLMILMI(mLMInactiveIndices.size(), mLMInactiveIndices.size());       /// The inactive LM- inactive LM block (diagonal) // NOTE: Not necessary, you can fix the value directly
         
         if (NeedAllocation)
             AllocateBlocks();
@@ -622,7 +645,7 @@ protected:
                     else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)    // KMLMI block
                         KMLMI.push_back ( local_row_id, local_col_id, value);
                     else                                                               // KMLMA block
-                        KMLMA.push_back ( local_row_id, local_col_id, value);
+                        mKMLMA.push_back ( local_row_id, local_col_id, value);
                 }
             } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA or KSILM
                 for (unsigned int j=row_begin; j<row_end; j++) {
@@ -637,9 +660,7 @@ protected:
                         KSISI.push_back ( local_row_id, local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE)   // KSISA block
                         KSISA.push_back ( local_row_id, local_col_id, value);
-                    else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)   // KSILMI block (diagonal)
-                        KSILMI.push_back ( local_row_id, local_col_id, value);
-                    else                                                              // KSILMA block
+                    else if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE)     // KSILMA block
                         KSILMA.push_back ( local_row_id, local_col_id, value);
                 }
             } else if ( mWhichBlockType[i] == BlockType::SLAVE_ACTIVE) { //either KSAN or KSAM or KSASA or KSASA or KSALM
@@ -647,28 +668,26 @@ protected:
                     unsigned int col_index = index2[j];
                     double value = values[j];
                     unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
-                    if (mWhichBlockType[col_index] == BlockType::OTHER)              // KSAN block
-                        KSAN.push_back ( local_row_id, local_col_id, value);
-                    else if (mWhichBlockType[col_index] == BlockType::MASTER)        // KSAM block
-                        KSAM.push_back ( local_row_id, local_col_id, value);
+                    if (mWhichBlockType[col_index] == BlockType::OTHER)               // KSAN block
+                        mKSAN.push_back ( local_row_id, local_col_id, value);
+                    else if (mWhichBlockType[col_index] == BlockType::MASTER)         // KSAM block
+                        mKSAM.push_back ( local_row_id, local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) // KSASI block
-                        KSASI.push_back ( local_row_id, local_col_id, value); 
+                        mKSASI.push_back ( local_row_id, local_col_id, value); 
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE)   // KSASA block
-                        KSASA.push_back ( local_row_id, local_col_id, value);
-                    else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)   // KSALMI block
-                        KSALMI.push_back ( local_row_id, local_col_id, value);
-                    else                                                              // KSALMA block (diagonal)
+                        mKSASA.push_back ( local_row_id, local_col_id, value);
+                    else if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE)     // KSALMA block (diagonal)
                         KSALMA.push_back ( local_row_id, local_col_id, value);
                 }
-            } else if ( mWhichBlockType[i] == BlockType::LM_INACTIVE) { // KLMILMI
-                for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
-                    if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) // KLMILMI block (diagonal)
-                        KLMILMI.push_back ( local_row_id, local_col_id, value);
-                }
-            } else { //either KLMAM or KLMASI or KLMASA
+//             } else if ( mWhichBlockType[i] == BlockType::LM_INACTIVE) { // KLMILMI
+//                 for (unsigned int j=row_begin; j<row_end; j++) {
+//                     unsigned int col_index = index2[j];
+//                     double value = values[j];
+//                     unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+//                     if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) // KLMILMI block (diagonal)
+//                         KLMILMI.push_back ( local_row_id, local_col_id, value);
+//                 }
+            } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                 for (unsigned int j=row_begin; j<row_end; j++) {
                     unsigned int col_index = index2[j];
                     double value = values[j];
@@ -679,18 +698,22 @@ protected:
                         KLMASI.push_back ( local_row_id, local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE)   // KLMSA block
                         KLMASA.push_back ( local_row_id, local_col_id, value);
+                    else if (mWhichBlockType[col_index] == BlockType::LM_ACTIVE)      // KLMALMA block
+                        mKLMALMA.push_back ( local_row_id, local_col_id, value);
                 }
             }
         }
-
-//         // Allocate the schur complement
-//         ConstructSystemMatrix(mKDispModified, mKLMAModified);
-// 
-//         Vector diagK (mOtherIndices.size() );
-//         ComputeDiagonalByLumping (K,diagK);
-// 
-//         // Fill the shur complement
-//         CalculateShurComplement(S,K,G,D,L,diagK);
+        
+        // We compute directly the inverse of the KSALMA matrix 
+        // KSALMA it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
+        // (NOTE: technically it is not a stiffness matrix, we give that name)
+        for (std::size_t i = 0; i < mKLMAModified.size1(); ++i) {
+            const double value = KSALMA(i, i);
+            if (value > 0.0)
+                mKLMAModified.push_back(i, i, 1.0/value);
+            else // Auxiliar value
+                mKLMAModified.push_back(i, i, 1.0);
+        }
 
         KRATOS_CATCH ("")
     }
@@ -713,29 +736,33 @@ private:
     ///@{
     
     LinearSolverPointerType mpSolverDispBlock; /// The pointer to the displacement linear solver 
-    LinearSolverPointerType mpSolverLMBlock;   /// The pointer to the LM linear solver
      
-    std::size_t mKrylovSpaceDimension; /// The Krylov space dimension
-    bool mBlocksAreAllocated;          /// The flag that indicates if the blocks are allocated
-    bool mIsInitialized;               /// The flag that indicates if the solution is mIsInitialized
+    bool mBlocksAreAllocated; /// The flag that indicates if the blocks are allocated
+    bool mIsInitialized;      /// The flag that indicates if the solution is mIsInitialized
     
     IndexVectorType mMasterIndices;         /// The vector storing the indices of the master nodes in contact
     IndexVectorType mSlaveInactiveIndices;  /// The vector storing the indices of the slave nodes in contact (Inactive)
     IndexVectorType mSlaveActiveIndices;    /// The vector storing the indices of the slave nodes in contact (Active)
     IndexVectorType mLMInactiveIndices;     /// The vector storing the indices of the LM (Inactive)
-    IndexVectorType mLMActiveIndices;     /// The vector storing the indices of the LM (Active)
+    IndexVectorType mLMActiveIndices;       /// The vector storing the indices of the LM (Active)
     IndexVectorType mOtherIndices;          /// The vector containing the indices for other DoF
     IndexVectorType mGlobalToLocalIndexing; /// This vector stores the correspondance between the local and global
     std::vector<BlockType> mWhichBlockType; /// This vector stores the LM block belongings
     
-    SparseMatrixType mKDispModified; /// The modified displacement block
-    SparseMatrixType mKLMAModified;   /// The modified LM block (diagonal)
+    SparseMatrixType mKDispModified;  /// The modified displacement block
+    SparseMatrixType mKLMAModified;   /// The modified LM block (inverted diagonal)
     
-    Vector mResidualLM;     /// The residual of the lagrange multipliers
-    Vector mResidualDisp;   /// The residual of the rest of displacements
+    SparseMatrixType mKSAN;    /// The slave active-displacement block
+    SparseMatrixType mKSAM;    /// The active slave-master block
+    SparseMatrixType mKSASI;   /// The active slave-inactive slave block
+    SparseMatrixType mKSASA;   /// The inactive slave-active slave block
+    SparseMatrixType mKMLMA;   /// The master-active LM block (this is the big block of M) 
+    SparseMatrixType mKLMALMA; /// The active LM-active LM block
     
-    Vector mLM;             /// The solution of the lagrange multiplies
-    Vector mDisp;           /// The solution of the rest of displacements
+    VectorType mResidualLM;   /// The residual of the lagrange multipliers
+    VectorType mResidualDisp; /// The residual of the rest of displacements
+    VectorType mLM;           /// The solution of the lagrange multiplies
+    VectorType mDisp;         /// The solution of the rest of displacements
         
     ///@}
     ///@name Private Operators
@@ -756,8 +783,14 @@ private:
 
         // We do the allocation
         const SizeType total_size = mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + mSlaveActiveIndices.size();
-        mKDispModified.resize(total_size, total_size);             /// The modified displacement block
-        mKLMAModified.resize(mLMActiveIndices.size(), mLMActiveIndices.size()); /// The modified LM block (diagonal)
+        mKDispModified.resize(total_size, total_size);                           /// The modified displacement block
+        mKLMAModified.resize(mLMActiveIndices.size(), mLMActiveIndices.size());  /// The modified LM block (diagonal)
+        mKSAN.resize(mSlaveActiveIndices.size(), mOtherIndices.size());          /// The slave active-displacement block        
+        mKSAM.resize(mSlaveActiveIndices.size(), mMasterIndices.size());         /// The active slave-master block
+        mKSASI.resize(mSlaveActiveIndices.size(), mSlaveInactiveIndices.size()); /// The active slave-inactive slave block
+        mKSASA.resize(mSlaveActiveIndices.size(), mSlaveActiveIndices.size());   /// The active slave-slave active block
+        mKMLMA.resize(mLMActiveIndices.size(), mLMActiveIndices.size());         /// The master-active LM block (this is the big block of M) 
+        mKLMALMA.resize(mLMActiveIndices.size(), mLMActiveIndices.size());       /// The active LM-active LM block
         
         mResidualLM.resize(mLMActiveIndices.size() );
         mResidualDisp.resize(total_size );
@@ -800,19 +833,53 @@ private:
     /**
      * @brief This function extracts from a vector which has the size of the overall r, the part that corresponds to lm-dofs
      * @param rTotalResidual The total residual of the problem 
-     * @param ResidualLM The vector containing the residual relative to the LM
+     * @param rResidualLM The vector containing the residual relative to the LM
      */
     inline void GetLMPart (
         const VectorType& rTotalResidual, 
-        VectorType& ResidualLM
+        VectorType& rResidualLM
         )
     {
-        if (ResidualLM.size() != mLMInactiveIndices.size() )
-            ResidualLM.resize (mLMActiveIndices.size(), false);
+        // We get the displacement residual of the active slave nodes
+        if (rResidualLM.size() != mSlaveActiveIndices.size() )
+            rResidualLM.resize (mSlaveActiveIndices.size(), false);
         
         #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(ResidualLM.size()); i++)
-            ResidualLM[i] = rTotalResidual[mLMActiveIndices[i]];
+        for (int i = 0; i<static_cast<int>(rResidualLM.size()); i++)
+            rResidualLM[i] = rTotalResidual[mSlaveActiveIndices[i]];
+        
+        // From the computed displacements we get the components of the displacements for each block
+        VectorType disp_N(mOtherIndices.size());
+        VectorType disp_M(mMasterIndices.size());
+        VectorType disp_SI(mSlaveInactiveIndices.size());
+        VectorType disp_SA(mSlaveActiveIndices.size());
+        
+        #pragma omp parallel for
+        for (int i = 0; i<static_cast<int>(mOtherIndices.size()); i++)
+            disp_N[i] = mDisp[i];
+        
+        #pragma omp parallel for
+        for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
+            disp_M[i] = mDisp[mOtherIndices.size() + i];
+        
+        #pragma omp parallel for
+        for (int i = 0; i<static_cast<int>(mSlaveInactiveIndices.size()); i++)
+            disp_SI[i] = mDisp[mOtherIndices.size() + mMasterIndices.size() + i];
+        
+        #pragma omp parallel for
+        for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
+            disp_SI[i] = mDisp[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i];
+        
+        // We add the other 
+        VectorType aux_mult;
+        TSparseSpaceType::Mult(mKSAN, disp_N, aux_mult);
+        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
+        TSparseSpaceType::Mult(mKSAM, disp_M, aux_mult);
+        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
+        TSparseSpaceType::Mult(mKSASI, disp_SI, aux_mult);
+        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
+        TSparseSpaceType::Mult(mKSASA, disp_SA, aux_mult);
+        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
     }
 
     /**
@@ -855,51 +922,6 @@ private:
         #pragma omp parallel for
         for (int i = 0; i< static_cast<int>(ResidualLM.size()); i++)
             rTotalResidual[mLMActiveIndices[i]] = ResidualLM[i];
-    }
-
-    /**
-     * @brief This method solves the block preconditioner
-     * @param rTotalResidual The total residual of the problem
-     * @param x The solution of the problem
-     */
-    void SolveBlockPreconditioner (
-        const VectorType& rTotalResidual, 
-        VectorType& x
-        )
-    {
-        const SizeType total_size = mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + mSlaveActiveIndices.size();
-        noalias(mLM) = ZeroVector(mLMActiveIndices.size());
-        noalias(mDisp)  = ZeroVector(total_size);
-        
-        Vector u_aux (total_size);
-        Vector lm_aux (mLMInactiveIndices.size() );
-
-        // Get the u and lm residuals
-        GetUPart (rTotalResidual, mResidualDisp);
-        GetLMPart (rTotalResidual, mResidualLM);
-
-        // Solve u block
-        mpSolverDispBlock->Solve (mKDispModified, mDisp, mResidualDisp);
-
-//         // Correct LM block
-//         // rlm -= D*u
-//         TSparseSpaceType::Mult (mKMN,mDisp,lm_aux);
-//         TSparseSpaceType::UnaliasedAdd (mResidualLM,-1.0,lm_aux);
-
-        // Solve LM
-        // LM = S⁻1*rlm
-        mpSolverLMBlock->Solve (mKLMAModified, mLM, mResidualLM);
-
-//         // Correct u block
-//         // u = G*lm
-//         TSparseSpaceType::Mult (mKNM,mLM,u_aux);
-//         #pragma omp parallel for
-//         for (int i=0; i< static_cast<int>(mDisp.size()); i++)
-//             mDisp[i] += u_aux[i]/diag_K[i];
-
-        // Write back solution
-        SetUPart (x,mDisp);
-        SetLMPart (x,mLM);
     }
 
     /**
