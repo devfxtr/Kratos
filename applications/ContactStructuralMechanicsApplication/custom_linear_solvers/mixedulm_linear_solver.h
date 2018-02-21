@@ -819,9 +819,9 @@ private:
     IndexVectorType mGlobalToLocalIndexing; /// This vector stores the correspondance between the local and global
     std::vector<BlockType> mWhichBlockType; /// This vector stores the LM block belongings
     
-    SparseMatrixType mKDispModified;  /// The modified displacement block
-    SparseMatrixType mKLMAModified;   /// The modified active LM block (inverted diagonal)
-    SparseMatrixType mKLMIModified;   /// The modified inactive LM block (inverted diagonal)
+    SparseMatrixType mKDispModified; /// The modified displacement block
+    SparseMatrixType mKLMAModified;  /// The modified active LM block (inverted diagonal)
+    SparseMatrixType mKLMIModified;  /// The modified inactive LM block (inverted diagonal)
     
     SparseMatrixType mKSAN;    /// The slave active-displacement block
     SparseMatrixType mKSAM;    /// The active slave-master block
@@ -1075,19 +1075,18 @@ private:
         CMatrix& rC, 
         bool Sort = false
         ) 
-    {
-        
+    {        
     #ifdef _OPENMP
         const int nt = omp_get_max_threads();
     #else
         const int nt = 1;
     #endif
 
-        if (nt > 16) {
-            amgcl::backend::spgemm_rmerge(rA, rB, rC);
-        } else {
-            amgcl::backend::spgemm_saad(rA, rB, rC, Sort);
-        }
+//         if (nt > 16) {
+//             amgcl::backend::spgemm_rmerge(rA, rB, rC);
+//         } else {
+//             amgcl::backend::spgemm_saad(rA, rB, rC, Sort);
+//         }
     }
     
     /**
