@@ -19,9 +19,6 @@
 #include <cstddef>
 
 // External includes
-#include <amgcl/amg.hpp>
-#include <amgcl/adapter/ublas.hpp>
-#include <amgcl/detail/spgemm.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
 // Project includes
@@ -32,6 +29,7 @@
 #include "solving_strategies/builder_and_solvers/builder_and_solver.h"
 #include "utilities/openmp_utils.h"
 #include "contact_structural_mechanics_application_variables.h"
+#include "custom_utilities/sparse_matrix_multiplication_utility.h"
 
 namespace Kratos
 {
@@ -1072,8 +1070,7 @@ private:
     void MatrixMatrixProd(
         const AMatrix& rA, 
         const BMatrix& rB, 
-        CMatrix& rC, 
-        bool Sort = false
+        CMatrix& rC
         ) 
     {        
     #ifdef _OPENMP
@@ -1082,11 +1079,12 @@ private:
         const int nt = 1;
     #endif
 
-//         if (nt > 16) {
-//             amgcl::backend::spgemm_rmerge(rA, rB, rC);
-//         } else {
-//             amgcl::backend::spgemm_saad(rA, rB, rC, Sort);
-//         }
+        if (nt > 16) {
+//             SparseMatrixMultiplicationUtility::MatrixMultiplicationRMerge(rA, rB, rC); // TODO: change to MatrixMultiplicationRMerge when working!!!!
+            SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad(rA, rB, rC);
+        } else {
+            SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad(rA, rB, rC);
+        }
     }
     
     /**
