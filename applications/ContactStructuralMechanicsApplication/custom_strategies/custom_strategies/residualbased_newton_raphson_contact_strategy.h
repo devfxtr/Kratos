@@ -69,7 +69,8 @@ class ResidualBasedNewtonRaphsonContactStrategy :
     public ResidualBasedNewtonRaphsonStrategy< TSparseSpace, TDenseSpace, TLinearSolver >
 {
 public:
-    typedef ConvergenceCriteria<TSparseSpace, TDenseSpace> TConvergenceCriteriaType;
+    ///@name Type Definitions
+    ///@{
     
     /** Counted pointer of ClassName */
     KRATOS_CLASS_POINTER_DEFINITION( ResidualBasedNewtonRaphsonContactStrategy );
@@ -77,6 +78,8 @@ public:
     typedef SolvingStrategy<TSparseSpace, TDenseSpace, TLinearSolver>            StrategyBaseType;
     
     typedef ResidualBasedNewtonRaphsonStrategy<TSparseSpace, TDenseSpace, TLinearSolver> BaseType;
+    
+    typedef ConvergenceCriteria<TSparseSpace, TDenseSpace>               TConvergenceCriteriaType;
     
     typedef typename BaseType::TBuilderAndSolverType                        TBuilderAndSolverType;
 
