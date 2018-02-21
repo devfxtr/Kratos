@@ -18,13 +18,12 @@
 #include "includes/define.h"
 #include "processes/process.h"
 #include "custom_python/add_custom_utilities_to_python.h"
-
-#include "spaces/ublas_space.h"
-#include "linear_solvers/linear_solver.h"
+#include "includes/ublas_interface.h"
 
 //Utilities
 #include "custom_utilities/tree_contact_search.h"
 #include "custom_utilities/process_factory_utility.h"
+#include "custom_utilities/sparse_matrix_multiplication_utility.h"
 
 namespace Kratos
 {
@@ -99,6 +98,11 @@ void  AddCustomUtilitiesToPython()
     .def("IsOutputStep",&ProcessFactoryUtility::IsOutputStep)
     .def("PrintOutput",&ProcessFactoryUtility::PrintOutput)
     .def("Clear",&ProcessFactoryUtility::Clear)
+    ;
+    
+    // Sparse matrix multiplication utility
+    class_<SparseMatrixMultiplicationUtility>("SparseMatrixMultiplicationUtility", init<>())
+    .def("MatrixMultiplicationSaad",&SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad<CompressedMatrix, CompressedMatrix, CompressedMatrix>)
     ;
 }
 
