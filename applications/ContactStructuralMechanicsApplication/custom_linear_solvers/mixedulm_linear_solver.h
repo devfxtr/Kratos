@@ -619,6 +619,8 @@ protected:
 //         SparseMatrixType KSILMA(slave_inactive_size, lm_active_size);   /// The inactive slave-active LM block (this is the big block of D) // NOTE: For dual LM is zero!!!
 //         SparseMatrixType KSALMI(slave_active_size, lm_inactive_size);   /// The active slave-inactive LM block (this is the big block of D)  // NOTE: For dual LM is zero!!!
         
+        SparseMatrixType KMLMA(lm_active_size, lm_active_size);         /// The master-active LM block (this is the big block of M) 
+        SparseMatrixType KLMALMA(lm_active_size, lm_active_size);       /// The active LM-active LM block
         SparseMatrixType KSALMA(slave_active_size, lm_active_size);     /// The active slave-active LM block (this is the big block of D, diagonal) 
         SparseMatrixType KLMILMI(lm_inactive_size, lm_inactive_size);   /// The inactive LM- inactive LM block (diagonal)
         
@@ -666,7 +668,7 @@ protected:
 //                     else if ( mWhichBlockType[col_index] == BlockType::LM_INACTIVE)    // KMLMI block
 //                         KMLMI.push_back ( local_row_id, local_col_id, value);
                     else if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE)      // KMLMA block
-                        mKMLMA.push_back ( local_row_id, local_col_id, value);
+                        KMLMA.push_back ( local_row_id, local_col_id, value);
                 }
             } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA or KSILM
                 for (unsigned int j=row_begin; j<row_end; j++) {
@@ -720,7 +722,7 @@ protected:
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE)   // KLMSA block
                         mKDispModified.push_back ( slave_active_dof_initial_index + local_row_id, slave_active_dof_initial_index + local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::LM_ACTIVE)      // KLMALMA block
-                        mKLMALMA.push_back ( local_row_id, local_col_id, value);
+                        KLMALMA.push_back ( local_row_id, local_col_id, value);
                 }
             }
         }
@@ -746,7 +748,43 @@ protected:
             else // Auxiliar value
                 mKLMIModified.push_back(i, i, 1.0);
         }
-
+        
+        // Compute the P and C operators
+        MatrixMatrixProd(KMLMA,   mKLMAModified, mPOperator);
+        MatrixMatrixProd(KLMALMA, mKLMAModified, mCOperator);
+        
+        // Auxiliar indexes
+        const SizeType master_initial_index = other_dof_size + master_size;
+        const SizeType aslave_initial_index = master_initial_index + slave_inactive_size;
+        
+        // We proceed with the auxiliar products for the master blocks
+        SparseMatrixType master_auxKSAN(master_size, other_dof_size); 
+        MatrixMatrixProd(mPOperator, mKSAN, master_auxKSAN);
+        AddingSparseMatrixToCondensed(master_auxKSAN, other_dof_size, 0);
+        SparseMatrixType master_auxKSAM(master_size, master_size); 
+        MatrixMatrixProd(mPOperator, mKSAM, master_auxKSAM);
+        AddingSparseMatrixToCondensed(master_auxKSAM, other_dof_size, other_dof_size);
+        SparseMatrixType master_auxKSASI(master_size, slave_inactive_size); 
+        MatrixMatrixProd(mPOperator, mKSASI, master_auxKSASI);
+        AddingSparseMatrixToCondensed(master_auxKSASI, other_dof_size, master_initial_index);
+        SparseMatrixType master_auxKSASA(master_size, slave_active_size); 
+        MatrixMatrixProd(mPOperator, mKSASA, master_auxKSASA);
+        AddingSparseMatrixToCondensed(master_auxKSASI, other_dof_size, aslave_initial_index);
+        
+        // We proceed with the auxiliar products for the active slave blocks
+        SparseMatrixType aslave_auxKSAN(slave_active_size, other_dof_size); 
+        MatrixMatrixProd(mCOperator, mKSAN, aslave_auxKSAN);
+        AddingSparseMatrixToCondensed(aslave_auxKSAN, aslave_initial_index, 0);
+        SparseMatrixType aslave_auxKSAM(slave_active_size, master_size); 
+        MatrixMatrixProd(mCOperator, mKSAM, aslave_auxKSAM);
+        AddingSparseMatrixToCondensed(aslave_auxKSAM, aslave_initial_index, other_dof_size);
+        SparseMatrixType aslave_auxKSASI(slave_active_size, slave_inactive_size); 
+        MatrixMatrixProd(mCOperator, mKSASI, aslave_auxKSASI);
+        AddingSparseMatrixToCondensed(aslave_auxKSASI, aslave_initial_index, master_initial_index);
+        SparseMatrixType aslave_auxKSASA(slave_active_size, slave_active_size); 
+        MatrixMatrixProd(mCOperator, mKSASA, aslave_auxKSASA);
+        AddingSparseMatrixToCondensed(aslave_auxKSASI, aslave_initial_index, aslave_initial_index);
+        
         KRATOS_CATCH ("")
     }
     
@@ -789,8 +827,9 @@ private:
     SparseMatrixType mKSAM;    /// The active slave-master block
     SparseMatrixType mKSASI;   /// The active slave-inactive slave block
     SparseMatrixType mKSASA;   /// The inactive slave-active slave block
-    SparseMatrixType mKMLMA;   /// The master-active LM block (this is the big block of M) 
-    SparseMatrixType mKLMALMA; /// The active LM-active LM block
+    
+    SparseMatrixType mPOperator; /// The operator used for the master blocks 
+    SparseMatrixType mCOperator; /// The operator used for the active slave block
     
     VectorType mResidualLMActive;   /// The residual of the active lagrange multipliers
     VectorType mResidualLMInactive; /// The residual of the inactive lagrange multipliers
@@ -828,15 +867,17 @@ private:
         const SizeType total_size = other_dof_size + master_size + slave_inactive_size + slave_active_size;
         
         // We do the allocation
-        mKDispModified.resize(total_size, total_size);             /// The modified displacement block
-        mKLMAModified.resize(lm_active_size, lm_active_size);      /// The modified active LM block (diagonal)
-        mKLMIModified.resize(lm_inactive_size, lm_inactive_size);  /// The modified inactve LM block (diagonal)
-        mKSAN.resize(slave_active_size, other_dof_size);           /// The slave active-displacement block        
-        mKSAM.resize(slave_active_size, master_size);              /// The active slave-master block
-        mKSASI.resize(slave_active_size, slave_inactive_size);     /// The active slave-inactive slave block
-        mKSASA.resize(slave_active_size, slave_active_size);       /// The active slave-slave active block
-        mKMLMA.resize(lm_active_size, lm_active_size);             /// The master-active LM block (this is the big block of M) 
-        mKLMALMA.resize(lm_active_size, lm_active_size);           /// The active LM-active LM block
+        mKDispModified.resize(total_size, total_size);            /// The modified displacement block
+        mKLMAModified.resize(lm_active_size, lm_active_size);     /// The modified active LM block (diagonal)
+        mKLMIModified.resize(lm_inactive_size, lm_inactive_size); /// The modified inactve LM block (diagonal)
+        
+        mKSAN.resize(slave_active_size, other_dof_size);       /// The slave active-displacement block        
+        mKSAM.resize(slave_active_size, master_size);          /// The active slave-master block
+        mKSASI.resize(slave_active_size, slave_inactive_size); /// The active slave-inactive slave block
+        mKSASA.resize(slave_active_size, slave_active_size);   /// The active slave-slave active block
+        
+        mPOperator.resize(master_size, slave_active_size);    /// The operator used for the master blocks
+        mCOperator.resize(lm_active_size, slave_active_size); /// The operator used for the active slave block 
         
         mResidualLMActive.resize(lm_active_size );     /// The residual corresponding the active LM
         mResidualLMInactive.resize(lm_inactive_size ); /// The residual corresponding the inactive LM
@@ -872,10 +913,8 @@ private:
             aux_res_active_slave[i] = rTotalResidual[mSlaveActiveIndices[i]];
         
         // We compute the complementary residual for the master dofs        
-        SparseMatrixType P_matrix(mKLMAModified.size1(), mKMLMA.size2());
-        MatrixMatrixProd(mKLMAModified, mKMLMA, P_matrix);
         VectorType aux_complement_master_residual(mMasterIndices.size());
-        TSparseSpaceType::Mult(P_matrix, aux_res_active_slave, aux_complement_master_residual);
+        TSparseSpaceType::Mult(mPOperator, aux_res_active_slave, aux_complement_master_residual);
         
         #pragma omp parallel for
         for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
@@ -886,10 +925,8 @@ private:
             ResidualU[mOtherIndices.size() + mMasterIndices.size() + i] = rTotalResidual[mSlaveInactiveIndices[i]];
         
         // We compute the complementary residual for the master dofs        
-        SparseMatrixType C_matrix(mKLMAModified.size1(), mKLMALMA.size2());
-        MatrixMatrixProd(mKLMAModified, mKLMALMA, C_matrix);
         VectorType aux_complement_active_lm_residual(mLMActiveIndices.size());
-        TSparseSpaceType::Mult(C_matrix, aux_res_active_slave, aux_complement_active_lm_residual);
+        TSparseSpaceType::Mult(mCOperator, aux_res_active_slave, aux_complement_active_lm_residual);
         
         #pragma omp parallel for
         for (int i = 0; i<static_cast<int>(mLMActiveIndices.size()); i++)
@@ -1050,6 +1087,39 @@ private:
             amgcl::backend::spgemm_rmerge(rA, rB, rC);
         } else {
             amgcl::backend::spgemm_saad(rA, rB, rC, Sort);
+        }
+    }
+    
+    /**
+     * @brief This method appends to the condensed matrix the given matrix
+     * @param rA The matrix to add
+     * @param InitialRowIndex The initial index for the row
+     * @param InitialColumIndex The initial index for the column
+     */
+    void AddingSparseMatrixToCondensed(
+        const SparseMatrixType& rA,
+        const SizeType InitialRowIndex = 0,
+        const SizeType InitialColumIndex = 0
+        ) 
+    {
+        // Get access to A data
+        const std::size_t* index1 = rA.index1_data().begin();
+        const std::size_t* index2 = rA.index2_data().begin();
+        const double* values = rA.value_data().begin();
+        
+        for (unsigned int i=0; i<rA.size1(); i++) {
+            unsigned int row_begin = index1[i];
+            unsigned int row_end   = index1[i+1];
+            
+            for (unsigned int j=row_begin; j<row_end; j++) {
+                unsigned int col_index = index2[j];
+                double value = values[j];
+                // If the element does not exist we do a push back
+                if (!mKDispModified.find_element (i + InitialRowIndex, col_index + InitialColumIndex))
+                    mKDispModified.push_back(i + InitialRowIndex, col_index + InitialColumIndex, value);
+                else
+                    mKDispModified(i + InitialRowIndex, col_index + InitialColumIndex) += value;
+            }
         }
     }
     
