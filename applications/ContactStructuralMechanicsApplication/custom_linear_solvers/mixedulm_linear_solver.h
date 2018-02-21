@@ -590,7 +590,7 @@ protected:
      * @param rA System matrix    
      * @param rX Solution vector. it's also the initial guess for iterative linear solvers.
      * @param rB Right hand side vector.
-     * @todo Update this for dual LM
+     * @todo Use push_back all the time before adding values!!!
      */
     void FillBlockMatrices (
         bool NeedAllocation, 
@@ -640,9 +640,9 @@ protected:
 
             if ( mWhichBlockType[i] == BlockType::OTHER) { //either KNN or KNM or KNSI or KNSA
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::OTHER)                // KNN block
                         mKDispModified.push_back ( other_dof_initial_index + local_row_id, other_dof_initial_index + local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::MASTER)          // KNM block
@@ -654,9 +654,9 @@ protected:
                 }
             } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::OTHER)                // KMN block
                         mKDispModified.push_back ( master_dof_initial_index + local_row_id, other_dof_initial_index + local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::MASTER)          // KNMM block
@@ -672,9 +672,9 @@ protected:
                 }
             } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA or KSILM
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::OTHER)               // KSIN block
                         mKDispModified.push_back ( slave_inactive_dof_initial_index + local_row_id, other_dof_initial_index + local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::MASTER)         // KSIMM block
@@ -688,9 +688,9 @@ protected:
                 }
             } else if ( mWhichBlockType[i] == BlockType::SLAVE_ACTIVE) { //either KSAN or KSAM or KSASA or KSASA or KSALM
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::OTHER)               // KSAN block
                         mKSAN.push_back ( local_row_id, local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::MASTER)         // KSAM block
@@ -704,17 +704,17 @@ protected:
                 }
             } else if ( mWhichBlockType[i] == BlockType::LM_INACTIVE) { // KLMILMI
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) // KLMILMI block (diagonal)
                         KLMILMI.push_back ( local_row_id, local_col_id, value);
                 }
             } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                 for (unsigned int j=row_begin; j<row_end; j++) {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mGlobalToLocalIndexing[col_index];
+                    const IndexType col_index = index2[j];
+                    const double value = values[j];
+                    const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                     if (mWhichBlockType[col_index] == BlockType::MASTER)              // KLMM block
                         mKDispModified.push_back ( slave_active_dof_initial_index + local_row_id, master_dof_initial_index + local_col_id, value);
                     else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) // KLMSI block
@@ -730,7 +730,7 @@ protected:
         // We compute directly the inverse of the KSALMA matrix 
         // KSALMA it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
-        for (std::size_t i = 0; i < mKLMAModified.size1(); ++i) {
+        for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
             const double value = KSALMA(i, i);
             if (value > 0.0)
                 mKLMAModified.push_back(i, i, 1.0/value);
@@ -741,7 +741,7 @@ protected:
         // We compute directly the inverse of the KLMILMI matrix 
         // KLMILMI it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
-        for (std::size_t i = 0; i < mKLMAModified.size1(); ++i) {
+        for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
             const double value = KLMILMI(i, i);
             if (value > 0.0)
                 mKLMIModified.push_back(i, i, 1.0/value);
@@ -1111,8 +1111,8 @@ private:
             unsigned int row_end   = index1[i+1];
             
             for (unsigned int j=row_begin; j<row_end; j++) {
-                unsigned int col_index = index2[j];
-                double value = values[j];
+                const std::size_t col_index = index2[j];
+                const double value = values[j];
                 // If the element does not exist we do a push back
                 if (!mKDispModified.find_element (i + InitialRowIndex, col_index + InitialColumIndex))
                     mKDispModified.push_back(i + InitialRowIndex, col_index + InitialColumIndex, value);
