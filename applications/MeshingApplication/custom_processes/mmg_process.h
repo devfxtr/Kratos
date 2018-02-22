@@ -26,7 +26,6 @@
 #include "includes/model_part.h"
 #include "includes/kratos_parameters.h"
 #include "containers/variables_list.h"
-#include "meshing_application.h"
 
 // NOTE: The following contains the license of the MMG library
 /* =============================================================================
@@ -100,6 +99,11 @@ namespace Kratos
     enum CondGeometries3D {Triangle3D = 0, Quadrilateral3D = 1};
     
     enum ElemGeometries3D {Tetrahedra = 0, Prism = 1};
+#endif
+    
+#if !defined(FRAMEWORK_EULER_LAGRANGE)
+#define FRAMEWORK_EULER_LAGRANGE
+    enum FrameworkEulerLagrange {Eulerian = 0, Lagrangian = 1, ALE = 2};
 #endif
     
 ///@}

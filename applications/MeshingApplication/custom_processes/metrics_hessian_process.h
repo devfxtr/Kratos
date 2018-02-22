@@ -39,6 +39,11 @@ namespace Kratos
 ///@name  Enum's
 ///@{
     
+#if !defined(INTERPOLATION_METRIC)
+#define INTERPOLATION_METRIC
+    enum Interpolation {Constant = 0, Linear = 1, Exponential = 2};
+#endif
+    
 ///@}
 ///@name  Functions
 ///@{
@@ -187,7 +192,7 @@ private:
     double mMeshConstant;                    // The mesh constant to remesh (depends of the element type)
     double mAnisotropicRatio;                // The minimal anisotropic ratio (0 < ratio < 1)
     double mBoundLayer;                      // The boundary layer limit distance
-    SizeInterpolation mSizeInterpolation;            // The interpolation type
+    Interpolation mInterpolation;            // The interpolation type
     
     ///@}
     ///@name Private Operators
@@ -221,24 +226,24 @@ private:
     /**
      * This converts the interpolation string to an enum
      * @param str The string that you want to comvert in the equivalent enum
-     * @return SizeInterpolation: The equivalent enum (this requires less memmory than a std::string)
+     * @return Interpolation: The equivalent enum (this requires less memmory than a std::string)
      */
         
-    SizeInterpolation ConvertInter(const std::string& str);
+    Interpolation ConvertInter(const std::string& str);
         
     /**
      * This calculates the anisotropic ratio
      * @param Distance Distance parameter
      * @param AnisotropicRatio The anisotropic ratio
      * @param BoundLayer The boundary layer limit
-     * @param rSizeInterpolation The type of interpolation
+     * @param rInterpolation The type of interpolation
      */
     
     double CalculateAnisotropicRatio(
         const double Distance,
         const double AnisotropicRatio,
         const double BoundLayer,
-        const SizeInterpolation rSizeInterpolation
+        const Interpolation rInterpolation
         );
     
     ///@}

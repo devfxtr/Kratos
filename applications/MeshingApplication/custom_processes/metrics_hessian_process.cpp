@@ -60,14 +60,14 @@ ComputeHessianSolMetricProcess<TDim, TVarType>::ComputeHessianSolMetricProcess(
         mMeshConstant = default_parameters["hessian_strategy_parameters"]["mesh_dependent_constant"].GetDouble();
         mAnisotropicRatio = default_parameters["anisotropy_parameters"]["hmin_over_hmax_anisotropic_ratio"].GetDouble();
         mBoundLayer = default_parameters["anisotropy_parameters"]["boundary_layer_max_distance"].GetDouble();
-        mSizeInterpolation = ConvertInter(default_parameters["anisotropy_parameters"]["interpolation"].GetString());
+        mInterpolation = ConvertInter(default_parameters["anisotropy_parameters"]["interpolation"].GetString());
     } else {
         mEstimateInterpError = ThisParameters["hessian_strategy_parameters"]["estimate_interpolation_error"].GetBool();
         mInterpError = ThisParameters["hessian_strategy_parameters"]["interpolation_error"].GetDouble();
         mMeshConstant = ThisParameters["hessian_strategy_parameters"]["mesh_dependent_constant"].GetDouble();
         mAnisotropicRatio = ThisParameters["anisotropy_parameters"]["hmin_over_hmax_anisotropic_ratio"].GetDouble();
         mBoundLayer = ThisParameters["anisotropy_parameters"]["boundary_layer_max_distance"].GetDouble();
-        mSizeInterpolation = ConvertInter(ThisParameters["anisotropy_parameters"]["interpolation"].GetString());
+        mInterpolation = ConvertInter(ThisParameters["anisotropy_parameters"]["interpolation"].GetString());
     }
 }
 
@@ -101,7 +101,7 @@ void ComputeHessianSolMetricProcess<TDim, TVarType>::Execute()
         double element_max_size = mMaxSize;
         if ((element_max_size > nodal_h) && (mEnforceCurrent == true)) element_max_size = nodal_h;
 
-        const double ratio = CalculateAnisotropicRatio(distance, mAnisotropicRatio, mBoundLayer, mSizeInterpolation);
+        const double ratio = CalculateAnisotropicRatio(distance, mAnisotropicRatio, mBoundLayer, mInterpolation);
         
         // For postprocess pourposes
         it_node->SetValue(ANISOTROPIC_RATIO, ratio); 
@@ -293,7 +293,7 @@ void ComputeHessianSolMetricProcess<TDim, TVarType>::CalculateAuxiliarHessian()
 /***********************************************************************************/
 
 template<unsigned int TDim, class TVarType>  
-SizeInterpolation ComputeHessianSolMetricProcess<TDim, TVarType>::ConvertInter(const std::string& str)
+Interpolation ComputeHessianSolMetricProcess<TDim, TVarType>::ConvertInter(const std::string& str)
 {
     if(str == "Constant") 
         return Constant;
@@ -313,18 +313,18 @@ double ComputeHessianSolMetricProcess<TDim, TVarType>::CalculateAnisotropicRatio
     const double Distance,
     const double AnisotropicRatio,
     const double BoundLayer,
-    const SizeInterpolation rSizeInterpolation
+    const Interpolation rInterpolation
     )
 {
     const double tolerance = 1.0e-12;
     double ratio = 1.0; // NOTE: Isotropic mesh
     if (AnisotropicRatio < 1.0) {                           
         if (std::abs(Distance) <= BoundLayer) {
-            if (rSizeInterpolation == Constant)
+            if (rInterpolation == Constant)
                 ratio = AnisotropicRatio;
-            else if (rSizeInterpolation == Linear)
+            else if (rInterpolation == Linear)
                 ratio = AnisotropicRatio + (std::abs(Distance)/BoundLayer) * (1.0 - AnisotropicRatio);
-            else if (rSizeInterpolation == Exponential) {
+            else if (rInterpolation == Exponential) {
                 ratio = - std::log(std::abs(Distance)/BoundLayer) * AnisotropicRatio + tolerance;
                 if (ratio > 1.0) ratio = 1.0;
             }

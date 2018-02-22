@@ -50,19 +50,6 @@ BOOST_PYTHON_MODULE(KratosMeshingApplication)
     AddCustomUtilitiesToPython();
     AddCustomStrategiesToPython();
 
-    // Adding enums
-    enum_<FrameworkEulerLagrange>("FrameworkEulerLagrange")
-    .value("Eulerian",Eulerian)
-    .value("Lagrangian",Lagrangian)
-    .value("ALE",ALE)
-    ;
-    
-    enum_<SizeInterpolation>("SizeInterpolation")
-    .value("Constant",Constant)
-    .value("Linear",Linear)
-    .value("Exponential",Exponential)
-    ;
-    
     KRATOS_REGISTER_IN_PYTHON_VARIABLE(AVERAGE_NODAL_ERROR)
     KRATOS_REGISTER_IN_PYTHON_VARIABLE(ANISOTROPIC_RATIO)
     KRATOS_REGISTER_IN_PYTHON_VARIABLE(AUXILIAR_GRADIENT)

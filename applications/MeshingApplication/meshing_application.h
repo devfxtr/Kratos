@@ -41,28 +41,23 @@ namespace Kratos
 ///@name Kratos Globals
 ///@{
 
+typedef array_1d<double,3> Vector3;
+    
+// Variables definition
+//KRATOS_DEFINE_VARIABLE(double, WEIGHT_FATHER_NODES ) // Moved to variables.h so trilinos application can use it too
+// KRATOS_DEFINE_VARIABLE(double, COUNTER)              // Already put on variables.h (warning was appearing on Windows)
+KRATOS_DEFINE_VARIABLE(double, AVERAGE_NODAL_ERROR);   // The average nodal error
+KRATOS_DEFINE_VARIABLE(double, ANISOTROPIC_RATIO);     // The anisotropic aspect ratio
+KRATOS_DEFINE_VARIABLE(Vector3, AUXILIAR_GRADIENT);    // An auxiliar gradient needed to compute the metric
+KRATOS_DEFINE_VARIABLE(Vector,  AUXILIAR_HESSIAN);     // An auxiliar hessian needed to compute the metric
+KRATOS_DEFINE_VARIABLE(Vector,  MMG_METRIC);           // The condensed metric used to remesh with MMG utility
 ///@}
 ///@name Type Definitions
 ///@{
 
-    typedef array_1d<double,3> Vector3;
-    
-    // Variables definition
-//     KRATOS_DEFINE_VARIABLE(double, WEIGHT_FATHER_NODES ) // Moved to variables.h so trilinos application can use it too
-//     KRATOS_DEFINE_VARIABLE(double, COUNTER)              // Already put on variables.h (warning was appearing on Windows)
-    KRATOS_DEFINE_VARIABLE(double, AVERAGE_NODAL_ERROR);    // The average nodal error
-    KRATOS_DEFINE_VARIABLE(double, ANISOTROPIC_RATIO);      // The anisotropic aspect ratio
-    KRATOS_DEFINE_VARIABLE(Vector3, AUXILIAR_GRADIENT);     // An auxiliar gradient needed to compute the metric
-    KRATOS_DEFINE_VARIABLE(Vector,  AUXILIAR_HESSIAN);      // An auxiliar hessian needed to compute the metric
-    KRATOS_DEFINE_VARIABLE(Vector,  MMG_METRIC);            // The condensed metric used to remesh with MMG utility
-    
 ///@}
 ///@name  Enum's
 ///@{
-
-    enum FrameworkEulerLagrange {Eulerian = 0, Lagrangian = 1, ALE = 2};
-    
-    enum SizeInterpolation {Constant = 0, Linear = 1, Exponential = 2};
 
 ///@}
 ///@name  Functions
