@@ -10,7 +10,10 @@ def GetFilePath(fileName):
 
 class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
     
-    def _sparse_matrix_multiplication(self, problem = "saad"):
+    def setUp(self):
+        pass
+    
+    def __sparse_matrix_multiplication(self, problem = "saad"):
         space = KratosMultiphysics.UblasSparseSpace()
         
         file_name = "../../../kratos/tests/A.mm"
@@ -46,10 +49,10 @@ class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
             self.assertTrue(True)
             
     def test_sparse_matrix_multiplication_saad(self):
-        self._sparse_matrix_multiplication("saad")
+        self.__sparse_matrix_multiplication("saad")
         
-    def test_sparse_matrix_multiplication_saad(self):
-        self._sparse_matrix_multiplication("rmerge")
+    def test_sparse_matrix_multiplication_rmerge(self):
+        self.__sparse_matrix_multiplication("rmerge")
   
 if __name__ == '__main__':
     KratosUnittest.main()

@@ -194,22 +194,7 @@ public:
         }
 
         // We fill the matrix
-        C = CMatrix(nrows, ncols, nonzero_values);
-        std::size_t* index1_c = C.index1_data().begin();
-        std::size_t* index2_c = C.index2_data().begin();
-        double* values_c = C.value_data().begin();
-        
-        index1_c[0] = 0;
-        for (std::size_t i = 0; i < nrows; i++)
-            index1_c[i+1] = index1_c[i] + (c_ptr[i+1] - c_ptr[i]);
-        
-        #pragma omp parallel for
-        for (std::size_t i = 0; i < nonzero_values; i++) {
-            index2_c[i] = aux_index2_c[i];
-            values_c[i] = aux_val_c[i];
-        }
-        
-        C.set_filled(nrows+1, nonzero_values);
+        CreateSolutionMatrix(C, nrows, ncols, c_ptr, aux_index2_c, aux_val_c);
     }
 
     /**
@@ -278,10 +263,6 @@ public:
             tmp_val[i].resize(2 * max_row_width);
         }
         
-        // We check the size
-        if (C.size1() != nrows || C.size2() != ncols)
-            C.resize(nrows, ncols, false);
-        
         // We create the c_ptr auxiliar variable
         std::size_t* c_ptr = new std::size_t[nrows + 1];        
         c_ptr[0] = 0;
@@ -308,7 +289,6 @@ public:
         // We initialize the sparse matrix
         std::partial_sum(c_ptr, c_ptr + nrows + 1, c_ptr);
         const std::size_t nonzero_values = c_ptr[nrows];
-        Idx* aux_index1_c = new Idx[nonzero_values];
         Idx* aux_index2_c = new Idx[nonzero_values];
         Val* aux_val_c = new Val[nonzero_values];
         
@@ -330,17 +310,11 @@ public:
 
                 ProdRow(index2_a + row_beg, index2_a + row_end, values_a + row_beg,
                         index1_b, index2_b, values_b, aux_index2_c + c_ptr[i], aux_val_c + c_ptr[i], t_col, t_val, t_col + max_row_width, t_val + max_row_width );
-                
-                for (std::size_t j = c_ptr[i]; j < c_ptr[i+1]; j++) {
-                    aux_index1_c[j] = i;
-                }
             }
         }
         
-        // We finally push back
-        for (std::size_t i = 0; i < nonzero_values; i++) {
-            C.push_back(aux_index1_c[i], aux_index2_c[i], aux_val_c[i]);
-        }
+        // We fill the matrix
+        CreateSolutionMatrix(C, nrows, ncols, c_ptr, aux_index2_c, aux_val_c);
     }
     
     ///@}
@@ -421,6 +395,37 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
+    
+    template <class CMatrix, typename Idx, typename Val>
+    static inline void CreateSolutionMatrix(
+                CMatrix& C,
+                const std::size_t NRows,
+                const std::size_t NCols,
+                const Idx* CPtr,
+                const Idx* AuxIndex2C,
+                const Val* AuxValC
+                )
+    {
+        // Auxiliar values
+        const std::size_t nonzero_values = CPtr[NRows];
+        
+        C = CMatrix(NRows, NCols, nonzero_values);
+        std::size_t* index1_c = C.index1_data().begin();
+        std::size_t* index2_c = C.index2_data().begin();
+        double* values_c = C.value_data().begin();
+        
+        index1_c[0] = 0;
+        for (std::size_t i = 0; i < NRows; i++)
+            index1_c[i+1] = index1_c[i] + (CPtr[i+1] - CPtr[i]);
+        
+        #pragma omp parallel for
+        for (std::size_t i = 0; i < nonzero_values; i++) {
+            index2_c[i] = AuxIndex2C[i];
+            values_c[i] = AuxValC[i];
+        }
+        
+        C.set_filled(NRows+1, nonzero_values);
+    }
     
     /**
      * @brief This method is designed to reorder the rows by columns
