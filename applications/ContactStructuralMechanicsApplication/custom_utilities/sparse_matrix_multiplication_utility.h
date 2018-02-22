@@ -213,7 +213,7 @@ public:
      * @param C The resulting matrix
      */
     template <class AMatrix, class BMatrix, class CMatrix>
-    void MatrixMultiplicationRMerge(
+    static void MatrixMultiplicationRMerge(
         const AMatrix &A, 
         const BMatrix &B, 
         CMatrix &C
@@ -449,7 +449,7 @@ private:
      * 
      */
     template <bool need_out, class Idx>
-    Idx* MergeRows(
+    static Idx* MergeRows(
             const Idx* col1, 
             const Idx* col1_end,
             const Idx* col2, 
@@ -492,7 +492,7 @@ private:
      *  
      */
     template <class Idx, class Val>
-    Idx* MergeRows(
+    static Idx* MergeRows(
             const Val &alpha1, 
             const Idx* col1, 
             const Idx* col1_end, 
@@ -548,7 +548,7 @@ private:
      * 
      */
     template <class Idx>
-    Idx ProdRowWidth(
+    static Idx ProdRowWidth(
             const Idx* acol, 
             const Idx* acol_end,
             const Idx* bptr, 
@@ -610,7 +610,7 @@ private:
      * 
      */
     template <class Idx, class Val>
-    void ProdRow(
+    static void ProdRow(
             const Idx* acol, 
             const Idx* acol_end, 
             const Val *aval,
