@@ -103,6 +103,7 @@ void  AddCustomUtilitiesToPython()
     // Sparse matrix multiplication utility
     class_<SparseMatrixMultiplicationUtility>("SparseMatrixMultiplicationUtility", init<>())
     .def("MatrixMultiplicationSaad",&SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad<CompressedMatrix, CompressedMatrix, CompressedMatrix>)
+    .def("MatrixMultiplicationRMerge",&SparseMatrixMultiplicationUtility::MatrixMultiplicationRMerge<CompressedMatrix, CompressedMatrix, CompressedMatrix>)
     ;
 }
 

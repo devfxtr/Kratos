@@ -10,7 +10,7 @@ def GetFilePath(fileName):
 
 class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
     
-    def _sparse_matrix_multiplication(self, type = "saad"):
+    def _sparse_matrix_multiplication(self, problem = "saad"):
         space = KratosMultiphysics.UblasSparseSpace()
         
         file_name = "../../../kratos/tests/A.mm"
@@ -34,8 +34,11 @@ class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
             A2_python = np.dot(A_python, A_python)
             
             # Solve
-            if (type == "saad"):
-                CSMA.SparseMatrixMultiplicationUtility.MatrixMultiplicationSaad(A, A, A2)
+            solver = CSMA.SparseMatrixMultiplicationUtility
+            if (problem == "saad"):
+                solver.MatrixMultiplicationSaad(A, A, A2)
+            elif (problem == "rmerge"):
+                solver.MatrixMultiplicationRMerge(A, A, A2)
                         
             for i, j in np.nditer(A2_python.nonzero()):
                 self.assertAlmostEqual(A2[int(i), int(j)], A2_python[i, j], 1e-3)
@@ -44,6 +47,9 @@ class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
             
     def test_sparse_matrix_multiplication_saad(self):
         self._sparse_matrix_multiplication("saad")
+        
+    #def test_sparse_matrix_multiplication_saad(self):
+        #self._sparse_matrix_multiplication("rmerge")
   
 if __name__ == '__main__':
     KratosUnittest.main()
