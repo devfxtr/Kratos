@@ -324,7 +324,7 @@ public:
                 ProdRow(index2_a + row_beg, index2_a + row_end, values_a + row_beg,
                         index1_b, index2_b, values_b, aux_index2_c + c_ptr[i], aux_val_c + c_ptr[i], t_col, t_val, t_col + max_row_width, t_val + max_row_width );
                 
-                for (std::size_t j = 0; j < c_ptr[i]; j++) {
+                for (std::size_t j = c_ptr[i]; j < c_ptr[i+1]; j++) {
                     aux_index1_c[j] = i;
                 }
             }

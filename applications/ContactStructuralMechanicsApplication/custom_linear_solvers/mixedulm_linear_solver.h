@@ -1080,8 +1080,7 @@ private:
     #endif
 
         if (nt > 16) {
-//             SparseMatrixMultiplicationUtility::MatrixMultiplicationRMerge(rA, rB, rC); // TODO: change to MatrixMultiplicationRMerge when working!!!!
-            SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad(rA, rB, rC);
+            SparseMatrixMultiplicationUtility::MatrixMultiplicationRMerge(rA, rB, rC);
         } else {
             SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad(rA, rB, rC);
         }

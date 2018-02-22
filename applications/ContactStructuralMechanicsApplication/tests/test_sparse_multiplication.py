@@ -39,7 +39,7 @@ class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
                 solver.MatrixMultiplicationSaad(A, A, A2)
             elif (problem == "rmerge"):
                 solver.MatrixMultiplicationRMerge(A, A, A2)
-                        
+            
             for i, j in np.nditer(A2_python.nonzero()):
                 self.assertAlmostEqual(A2[int(i), int(j)], A2_python[i, j], 1e-3)
         else:
@@ -48,8 +48,8 @@ class TestSparseMatrixMultiplication(KratosUnittest.TestCase):
     def test_sparse_matrix_multiplication_saad(self):
         self._sparse_matrix_multiplication("saad")
         
-    #def test_sparse_matrix_multiplication_saad(self):
-        #self._sparse_matrix_multiplication("rmerge")
+    def test_sparse_matrix_multiplication_saad(self):
+        self._sparse_matrix_multiplication("rmerge")
   
 if __name__ == '__main__':
     KratosUnittest.main()
