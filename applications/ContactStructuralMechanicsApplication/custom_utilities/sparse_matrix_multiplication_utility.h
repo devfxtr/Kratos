@@ -111,10 +111,6 @@ public:
         const std::size_t nrows = A.size1();
         const std::size_t ncols = B.size2();
         
-        // We check the size
-        if (C.size1() != nrows || C.size2() != ncols)
-            C.resize(nrows, ncols, false);
-        
         // Get access to A, B and C data
         const std::size_t* index1_a = A.index1_data().begin();
         const std::size_t* index2_a = A.index2_data().begin();
@@ -156,7 +152,6 @@ public:
         // We initialize the sparse matrix
         std::partial_sum(c_ptr, c_ptr + nrows + 1, c_ptr);
         const std::size_t nonzero_values = c_ptr[nrows];
-        Idx* aux_index1_c = new Idx[nonzero_values];
         Idx* aux_index2_c = new Idx[nonzero_values];
         Val* aux_val_c = new Val[nonzero_values];
         
@@ -185,7 +180,6 @@ public:
 
                         if (marker[cb] < row_beg) {
                             marker[cb] = row_end;
-                            aux_index1_c[row_end] = ia;
                             aux_index2_c[row_end] = cb;
                             aux_val_c[row_end] = va * vb;
                             ++row_end;
@@ -198,11 +192,24 @@ public:
                 SortRow(aux_index2_c + row_beg, aux_val_c + row_beg, row_end - row_beg);
             }
         }
+
+        // We fill the matrix
+        C = CMatrix(nrows, ncols, nonzero_values);
+        std::size_t* index1_c = C.index1_data().begin();
+        std::size_t* index2_c = C.index2_data().begin();
+        double* values_c = C.value_data().begin();
         
-        // We finally push back
+        index1_c[0] = 0;
+        for (std::size_t i = 0; i < nrows; i++)
+            index1_c[i+1] = index1_c[i] + (c_ptr[i+1] - c_ptr[i]);
+        
+        #pragma omp parallel for
         for (std::size_t i = 0; i < nonzero_values; i++) {
-            C.push_back(aux_index1_c[i], aux_index2_c[i], aux_val_c[i]);
+            index2_c[i] = aux_index2_c[i];
+            values_c[i] = aux_val_c[i];
         }
+        
+        C.set_filled(nrows+1, nonzero_values);
     }
 
     /**
@@ -241,7 +248,7 @@ public:
             Idx my_max = 0;
 
             #pragma omp for
-            for(int i = 0; i < static_cast<Idx>(nrows); ++i) {
+            for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
                 Idx row_beg = index1_a[i];
                 Idx row_end = index1_a[i+1];
                 
