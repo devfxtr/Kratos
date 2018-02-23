@@ -312,15 +312,30 @@ public:
      */
     void Clear() override
     {        
-        mKDispModified.clear(); /// The modified displacement block
-        mKLMAModified.clear();  /// The modified LM block (diagonal)
         mBlocksAreAllocated = false;
         mpSolverDispBlock->Clear();
-        mDisp.clear();
-        mLMActive.clear();
-        mLMInactive.clear();
-        mResidualDisp.clear();
-        mResidualLMActive.clear();
+        
+        // We clear the matrixes and vectors
+        mKDispModified.clear(); /// The modified displacement block
+        mKLMAModified.clear();  /// The modified active LM block (diagonal)
+        mKLMIModified.clear();  /// The modified inaactive LM block (diagonal)
+
+        mKSAN.clear();  /// The slave active-displacement block        
+        mKSAM.clear();  /// The active slave-master block
+        mKSASI.clear(); /// The active slave-inactive slave block
+        mKSASA.clear(); /// The active slave-slave active block
+        
+        mPOperator.clear(); /// The operator used for the master blocks
+        mCOperator.clear(); /// The operator used for the active slave block 
+        
+        mResidualLMActive.clear();   /// The residual corresponding the active LM
+        mResidualLMInactive.clear(); /// The residual corresponding the inactive LM
+        mResidualDisp.clear();       /// The residual of the displacements
+        
+        mLMActive.clear();   /// The solution of the active LM
+        mLMInactive.clear(); /// The solution of the inactive LM
+        mDisp.clear();       /// The solution of the displacement
+        
         mIsInitialized = false;
     }
 
@@ -591,7 +606,7 @@ protected:
      * @todo Use push_back all the time before adding values!!!
      */
     void FillBlockMatrices (
-        bool NeedAllocation, 
+        const bool NeedAllocation, 
         SparseMatrixType& rA,
         VectorType& rX, 
         VectorType& rB
@@ -672,13 +687,14 @@ protected:
                 }
             }
         }
-                
+               
         // We compute directly the inverse of the KSALMA matrix 
         // KSALMA it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
+        // TODO: this can be optimized in OMP
         for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
             const double value = KSALMA(i, i);
-            if (value > 0.0)
+            if (std::abs(value) > 0.0)
                 mKLMAModified.push_back(i, i, 1.0/value);
             else // Auxiliar value
                 mKLMAModified.push_back(i, i, 1.0);
@@ -687,37 +703,48 @@ protected:
         // We compute directly the inverse of the KLMILMI matrix 
         // KLMILMI it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
-        for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
+        // TODO: this can be optimized in OMP
+        for (IndexType i = 0; i < mKLMIModified.size1(); ++i) {
             const double value = KLMILMI(i, i);
-            if (value > 0.0)
+            if (std::abs(value) > 0.0)
                 mKLMIModified.push_back(i, i, 1.0/value);
             else // Auxiliar value
                 mKLMIModified.push_back(i, i, 1.0);
         }
         
         // Compute the P and C operators
-        MatrixMatrixProd(KMLMA,   mKLMAModified, mPOperator);
-        MatrixMatrixProd(KLMALMA, mKLMAModified, mCOperator);
+        if (slave_active_size > 0) {
+            MatrixMatrixProd(KMLMA,   mKLMAModified, mPOperator);
+            MatrixMatrixProd(KLMALMA, mKLMAModified, mCOperator);
+        }
         
         // We proceed with the auxiliar products for the master blocks
         SparseMatrixType master_auxKSAN(master_size, other_dof_size); 
-        MatrixMatrixProd(mPOperator, mKSAN, master_auxKSAN);
         SparseMatrixType master_auxKSAM(master_size, master_size); 
-        MatrixMatrixProd(mPOperator, mKSAM, master_auxKSAM);
         SparseMatrixType master_auxKSASI(master_size, slave_inactive_size); 
-        MatrixMatrixProd(mPOperator, mKSASI, master_auxKSASI);
         SparseMatrixType master_auxKSASA(master_size, slave_active_size); 
-        MatrixMatrixProd(mPOperator, mKSASA, master_auxKSASA);
+        
+        if (slave_active_size > 0) {
+            MatrixMatrixProd(mPOperator, mKSAN, master_auxKSAN);
+            MatrixMatrixProd(mPOperator, mKSAM, master_auxKSAM);
+            if (slave_inactive_size > 0)
+                MatrixMatrixProd(mPOperator, mKSASI, master_auxKSASI);
+            MatrixMatrixProd(mPOperator, mKSASA, master_auxKSASA);
+        }
         
         // We proceed with the auxiliar products for the active slave blocks
         SparseMatrixType aslave_auxKSAN(slave_active_size, other_dof_size); 
-        MatrixMatrixProd(mCOperator, mKSAN, aslave_auxKSAN);
         SparseMatrixType aslave_auxKSAM(slave_active_size, master_size); 
-        MatrixMatrixProd(mCOperator, mKSAM, aslave_auxKSAM);
-        SparseMatrixType aslave_auxKSASI(slave_active_size, slave_inactive_size); 
-        MatrixMatrixProd(mCOperator, mKSASI, aslave_auxKSASI);
+        SparseMatrixType aslave_auxKSASI(slave_active_size, slave_inactive_size);
         SparseMatrixType aslave_auxKSASA(slave_active_size, slave_active_size); 
-        MatrixMatrixProd(mCOperator, mKSASA, aslave_auxKSASA);
+        
+        if (slave_active_size > 0) {
+            MatrixMatrixProd(mCOperator, mKSAN, aslave_auxKSAN);
+            MatrixMatrixProd(mCOperator, mKSAM, aslave_auxKSAM);
+            if (slave_inactive_size > 0)
+                MatrixMatrixProd(mCOperator, mKSASI, aslave_auxKSASI);
+            MatrixMatrixProd(mCOperator, mKSASA, aslave_auxKSASA);
+        }
         
         // Auxiliar indexes        
         const SizeType other_dof_initial_index = 0;
@@ -814,29 +841,33 @@ protected:
                 K_disp_modified_ptr[i + 1] = K_disp_modified_cols;
             }
             
-            // Get access to master_auxKSAN data
-            ComputeNonZeroBlocks(master_auxKSAN, K_disp_modified_ptr, marker,  master_dof_initial_index, other_dof_initial_index);
-            
-            // Get access to master_auxKSAM data
-            ComputeNonZeroBlocks(master_auxKSAM, K_disp_modified_ptr, marker,  master_dof_initial_index, master_dof_initial_index);
-            
-            // Get access to master_auxKSASI data
-            ComputeNonZeroBlocks(master_auxKSASI, K_disp_modified_ptr, marker,  master_dof_initial_index, slave_inactive_dof_initial_index);
-            
-            // Get access to master_auxKSASA data
-            ComputeNonZeroBlocks(master_auxKSASA, K_disp_modified_ptr, marker,  master_dof_initial_index, assembling_slave_dof_initial_index);
-            
-            // Get access to aslave_auxKSAN data
-            ComputeNonZeroBlocks(aslave_auxKSAN, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, other_dof_initial_index);
-            
-            // Get access to aslave_auxKSAM data
-            ComputeNonZeroBlocks(aslave_auxKSAM, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, master_dof_initial_index);
-            
-            // Get access to aslave_auxKSASI data
-            ComputeNonZeroBlocks(aslave_auxKSASI, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
-            
-            // Get access to aslave_auxKSASA data
-            ComputeNonZeroBlocks(aslave_auxKSASA, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+            if (slave_active_size > 0) {
+                // Get access to master_auxKSAN data
+                ComputeNonZeroBlocks(master_auxKSAN, K_disp_modified_ptr, marker,  master_dof_initial_index, other_dof_initial_index);
+                
+                // Get access to master_auxKSAM data
+                ComputeNonZeroBlocks(master_auxKSAM, K_disp_modified_ptr, marker,  master_dof_initial_index, master_dof_initial_index);
+                
+                // Get access to master_auxKSASI data
+                if (slave_inactive_size > 0)
+                    ComputeNonZeroBlocks(master_auxKSASI, K_disp_modified_ptr, marker,  master_dof_initial_index, slave_inactive_dof_initial_index);
+                
+                // Get access to master_auxKSASA data
+                ComputeNonZeroBlocks(master_auxKSASA, K_disp_modified_ptr, marker,  master_dof_initial_index, assembling_slave_dof_initial_index);
+                
+                // Get access to aslave_auxKSAN data
+                ComputeNonZeroBlocks(aslave_auxKSAN, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, other_dof_initial_index);
+                
+                // Get access to aslave_auxKSAM data
+                ComputeNonZeroBlocks(aslave_auxKSAM, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, master_dof_initial_index);
+                
+                // Get access to aslave_auxKSASI data
+                if (slave_inactive_size > 0)
+                    ComputeNonZeroBlocks(aslave_auxKSASI, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
+                
+                // Get access to aslave_auxKSASA data
+                ComputeNonZeroBlocks(aslave_auxKSASA, K_disp_modified_ptr, marker,  assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+            }
         }
         
         // We initialize the final sparse matrix
@@ -957,33 +988,37 @@ protected:
                     }
                 }
                 
-//                 // We reorder the rows // NOTE: In theory in this first loop the rows are already ordered because I take the values from A
-//                 SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
+                // We reorder the rows // NOTE: In theory in this first loop the rows are already ordered because I take the values from A
+                SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
             }
             
-            // Get access to master_auxKSAN data
-            ComputeAuxiliarValuesBlocks(master_auxKSAN, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, other_dof_initial_index);
-            
-            // Get access to master_auxKSAM data
-            ComputeAuxiliarValuesBlocks(master_auxKSAM, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, master_dof_initial_index);
-            
-            // Get access to master_auxKSASI data
-            ComputeAuxiliarValuesBlocks(master_auxKSASI, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, slave_inactive_dof_initial_index);
-            
-            // Get access to master_auxKSASA data
-            ComputeAuxiliarValuesBlocks(master_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, assembling_slave_dof_initial_index);
-            
-            // Get access to aslave_auxKSAN data
-            ComputeAuxiliarValuesBlocks(aslave_auxKSAN, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, other_dof_initial_index);
-            
-            // Get access to aslave_auxKSAM data
-            ComputeAuxiliarValuesBlocks(aslave_auxKSAM, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, master_dof_initial_index);
-            
-            // Get access to aslave_auxKSASI data
-            ComputeAuxiliarValuesBlocks(aslave_auxKSASI, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
-            
-            // Get access to aslave_auxKSASA data
-            ComputeAuxiliarValuesBlocks(aslave_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+            if (slave_active_size > 0) {
+                // Get access to master_auxKSAN data
+                ComputeAuxiliarValuesBlocks(master_auxKSAN, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, other_dof_initial_index);
+                
+                // Get access to master_auxKSAM data
+                ComputeAuxiliarValuesBlocks(master_auxKSAM, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, master_dof_initial_index);
+                
+                // Get access to master_auxKSASI data
+                if (slave_inactive_size > 0)
+                    ComputeAuxiliarValuesBlocks(master_auxKSASI, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, slave_inactive_dof_initial_index);
+                
+                // Get access to master_auxKSASA data
+                ComputeAuxiliarValuesBlocks(master_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, master_dof_initial_index, assembling_slave_dof_initial_index);
+                
+                // Get access to aslave_auxKSAN data
+                ComputeAuxiliarValuesBlocks(aslave_auxKSAN, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, other_dof_initial_index);
+                
+                // Get access to aslave_auxKSAM data
+                ComputeAuxiliarValuesBlocks(aslave_auxKSAM, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, master_dof_initial_index);
+                
+                // Get access to aslave_auxKSASI data
+                if (slave_inactive_size > 0)
+                    ComputeAuxiliarValuesBlocks(aslave_auxKSASI, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
+                
+                // Get access to aslave_auxKSASA data
+                ComputeAuxiliarValuesBlocks(aslave_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+            }
         }
         
         // Finally we build the final matrix
@@ -1152,6 +1187,22 @@ private:
         mKLMAModified.clear();  /// The modified active LM block (diagonal)
         mKLMIModified.clear();  /// The modified inaactive LM block (diagonal)
 
+        mKSAN.clear();  /// The slave active-displacement block        
+        mKSAM.clear();  /// The active slave-master block
+        mKSASI.clear(); /// The active slave-inactive slave block
+        mKSASA.clear(); /// The active slave-slave active block
+        
+        mPOperator.clear(); /// The operator used for the master blocks
+        mCOperator.clear(); /// The operator used for the active slave block 
+        
+        mResidualLMActive.clear();   /// The residual corresponding the active LM
+        mResidualLMInactive.clear(); /// The residual corresponding the inactive LM
+        mResidualDisp.clear();       /// The residual of the displacements
+        
+        mLMActive.clear();   /// The solution of the active LM
+        mLMInactive.clear(); /// The solution of the inactive LM
+        mDisp.clear();       /// The solution of the displacement
+        
         // Auxiliar sizes
         const SizeType other_dof_size = mOtherIndices.size();
         const SizeType master_size = mMasterIndices.size();
@@ -1162,25 +1213,25 @@ private:
         const SizeType total_size = other_dof_size + master_size + slave_inactive_size + slave_active_size;
         
         // We do the allocation
-        mKDispModified.resize(total_size, total_size);            /// The modified displacement block
-        mKLMAModified.resize(lm_active_size, lm_active_size);     /// The modified active LM block (diagonal)
-        mKLMIModified.resize(lm_inactive_size, lm_inactive_size); /// The modified inactve LM block (diagonal)
+        mKDispModified.resize(total_size, total_size, false);            /// The modified displacement block
+        mKLMAModified.resize(lm_active_size, lm_active_size, false);     /// The modified active LM block (diagonal)
+        mKLMIModified.resize(lm_inactive_size, lm_inactive_size, false); /// The modified inactve LM block (diagonal)
         
-        mKSAN.resize(slave_active_size, other_dof_size);       /// The slave active-displacement block        
-        mKSAM.resize(slave_active_size, master_size);          /// The active slave-master block
-        mKSASI.resize(slave_active_size, slave_inactive_size); /// The active slave-inactive slave block
-        mKSASA.resize(slave_active_size, slave_active_size);   /// The active slave-slave active block
+        mKSAN.resize(slave_active_size, other_dof_size, false);       /// The slave active-displacement block        
+        mKSAM.resize(slave_active_size, master_size, false);          /// The active slave-master block
+        mKSASI.resize(slave_active_size, slave_inactive_size, false); /// The active slave-inactive slave block
+        mKSASA.resize(slave_active_size, slave_active_size, false);   /// The active slave-slave active block
         
-        mPOperator.resize(master_size, slave_active_size);    /// The operator used for the master blocks
-        mCOperator.resize(lm_active_size, slave_active_size); /// The operator used for the active slave block 
+        mPOperator.resize(master_size, slave_active_size, false);    /// The operator used for the master blocks
+        mCOperator.resize(lm_active_size, slave_active_size, false); /// The operator used for the active slave block 
         
-        mResidualLMActive.resize(lm_active_size );     /// The residual corresponding the active LM
-        mResidualLMInactive.resize(lm_inactive_size ); /// The residual corresponding the inactive LM
+        mResidualLMActive.resize(lm_active_size, false );     /// The residual corresponding the active LM
+        mResidualLMInactive.resize(lm_inactive_size, false ); /// The residual corresponding the inactive LM
         mResidualDisp.resize(total_size );             /// The residual of the displacements
         
-        mLMActive.resize(lm_active_size);     /// The solution of the active LM
-        mLMInactive.resize(lm_inactive_size); /// The solution of the inactive LM
-        mDisp.resize(total_size);             /// The solution of the displacement
+        mLMActive.resize(lm_active_size, false);     /// The solution of the active LM
+        mLMInactive.resize(lm_inactive_size, false); /// The solution of the inactive LM
+        mDisp.resize(total_size, false);             /// The solution of the displacement
     }
 
     /**
