@@ -46,7 +46,14 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
                 "contact_displacement_relative_tolerance": 1.0e-4,
                 "contact_displacement_absolute_tolerance": 1.0e-9,
                 "contact_residual_relative_tolerance"    : 1.0e-4,
-                "contact_residual_absolute_tolerance"    : 1.0e-9
+                "contact_residual_absolute_tolerance"    : 1.0e-9,
+                "use_mixed_ulm_solver"                   : false,
+                "mixed_ulm_solver_parameters" : 
+                {
+                    "solver_type": "MixedULMLinearSolver",
+                    "tolerance" : 1.0e-6,
+                    "max_iteration_number" : 200
+                }
             }
         }
         """)
@@ -182,6 +189,19 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
         import contact_convergence_criteria_factory
         convergence_criterion = contact_convergence_criteria_factory.convergence_criterion(conv_params)
         return convergence_criterion.mechanical_convergence_criterion
+
+    def _create_linear_solver(self):
+        linear_solver = super()._create_linear_solver()
+        if (self.contact_settings["use_mixed_ulm_solver"].GetBool() == True):
+            name_mixed_solver = self.contact_settings["use_mixed_ulm_solver"]["mixed_ulm_solver_parameters"]["solver_type"].GetString()
+            if (name_mixed_solver == "MixedULMLinearSolver"):
+                mixed_ulm_solver = CSMA.MixedULMLinearSolver(linear_solver, self.contact_settings["use_mixed_ulm_solver"]["mixed_ulm_solver_parameters"])
+                return mixed_ulm_solver
+            else:
+                self.print_on_rank_zero("::[Contact Mechanical Implicit Dynamic Solver]:: ", "Mixed solver not available: "+name_mixed_solver+". Using not mixed linear solver")
+                return linear_solver
+        else:
+            return linear_solver
 
     def _create_builder_and_solver(self):
         if  self.contact_settings["mortar_type"].GetString() != "":

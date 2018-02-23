@@ -1393,12 +1393,6 @@ private:
         Parameters default_parameters( R"(
         {
             "solver_type": "MixedULMLinearSolver",
-            "displacement_solver" : {
-                    "solver_type":"BICGSTABSolver"
-            },
-            "LM_solver" : {
-                    "solver_type":"CGSolver"
-            },
             "tolerance" : 1.0e-6,
             "max_iteration_number" : 200
         }  )" );
