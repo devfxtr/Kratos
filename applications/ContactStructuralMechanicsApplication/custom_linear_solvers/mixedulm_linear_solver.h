@@ -491,12 +491,12 @@ public:
                         mLMActiveIndices[lm_active_counter] = global_pos;
                         mGlobalToLocalIndexing[global_pos] = lm_active_counter;
                         mWhichBlockType[global_pos] = BlockType::LM_ACTIVE;
-                        lm_active_counter++;
+                        ++lm_active_counter;
                     } else {
                         mLMInactiveIndices[lm_inactive_counter] = global_pos;
                         mGlobalToLocalIndexing[global_pos] = lm_inactive_counter;
                         mWhichBlockType[global_pos] = BlockType::LM_INACTIVE;
-                        lm_inactive_counter++;
+                        ++lm_inactive_counter;
                     }
                 } else if (i_dof.GetVariable().Key() == DISPLACEMENT_X || 
                     i_dof.GetVariable().Key() == DISPLACEMENT_Y || 
@@ -506,36 +506,36 @@ public:
                             mMasterIndices[master_counter] = global_pos;
                             mGlobalToLocalIndexing[global_pos] = master_counter;
                             mWhichBlockType[global_pos] = BlockType::MASTER;
-                            master_counter++;
+                            ++master_counter;
                             
                         } else if (pnode->Is(SLAVE)) {
                             if (pnode->Is(ACTIVE)) {
                                 mSlaveActiveIndices[slave_active_counter] = global_pos;
                                 mGlobalToLocalIndexing[global_pos] = slave_active_counter;
                                 mWhichBlockType[global_pos] = BlockType::SLAVE_ACTIVE;
-                                slave_active_counter++;
+                                ++slave_active_counter;
                             } else {
                                 mSlaveInactiveIndices[slave_inactive_counter] = global_pos;
                                 mGlobalToLocalIndexing[global_pos] = slave_inactive_counter;
                                 mWhichBlockType[global_pos] = BlockType::SLAVE_INACTIVE;
-                                slave_inactive_counter++;
+                                ++slave_inactive_counter;
                             }
                         } else { // We need to consider always an else to ensure that the system size is consistent
                             mOtherIndices[other_counter] = global_pos;
                             mGlobalToLocalIndexing[global_pos] = other_counter;
-                            other_counter++;
+                            ++other_counter;
                         }
                     } else { // We need to consider always an else to ensure that the system size is consistent
                         mOtherIndices[other_counter] = global_pos;
                         mGlobalToLocalIndexing[global_pos] = other_counter;
-                        other_counter++;
+                        ++other_counter;
                     }
                 } else {
                     mOtherIndices[other_counter] = global_pos;
                     mGlobalToLocalIndexing[global_pos] = other_counter;
-                    other_counter++;
+                    ++other_counter;
                 }
-                global_pos++;
+                ++global_pos;
             }
         }
         
@@ -760,7 +760,7 @@ protected:
         const SizeType master_dof_initial_index = other_dof_size;
         const SizeType slave_inactive_dof_initial_index = master_dof_initial_index + master_size;
         const SizeType slave_active_dof_initial_index = slave_inactive_dof_initial_index + slave_inactive_size;
-        const SizeType assembling_slave_dof_initial_index = master_dof_initial_index + slave_inactive_size;
+        const SizeType assembling_slave_dof_initial_index = slave_inactive_dof_initial_index + slave_inactive_size;
         
         // The auxiliar index structure
         const SizeType nrows = mKDispModified.size1();
@@ -888,7 +888,7 @@ protected:
             }
         }
         
-        // We initialize the final sparse matrix // TODO: Debug here!!!!
+        // We initialize the final sparse matrix
         std::partial_sum(K_disp_modified_ptr, K_disp_modified_ptr + nrows + 1, K_disp_modified_ptr);
         const std::size_t nonzero_values = K_disp_modified_ptr[nrows];
         std::ptrdiff_t* aux_index2_K_disp_modified = new std::ptrdiff_t[nonzero_values];
@@ -1153,7 +1153,7 @@ private:
             
             for (IndexType j=row_begin; j<row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
-                if (Marker[col_index] != InitialIndexRow +  i) {
+                if (Marker[col_index] != static_cast<std::ptrdiff_t>(InitialIndexRow +  i)) {
                     Marker[col_index] = InitialIndexRow +  i;
                     ++K_disp_modified_cols;
                 }
