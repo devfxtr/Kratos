@@ -1127,8 +1127,8 @@ private:
             
             for (IndexType j=aux_K_row_begin; j<aux_K_row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
-                if (Marker[col_index] != InitialIndexRow +  i) {
-                    Marker[col_index] = InitialIndexRow +  i;
+                if (Marker[col_index] != row_beg) {
+                    Marker[col_index] = row_end;
                     AuxIndex2[row_end] = col_index;
                     AuxVals[row_end] = aux_values[j];
                     ++row_end;
