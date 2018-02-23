@@ -195,9 +195,9 @@ class StaticMechanicalSolver(structural_mechanics_static_solver.StaticMechanical
         mortar_type = self.contact_settings["mortar_type"].GetString()
         if (mortar_type == "ALMContactFrictional" or mortar_type == "ALMContactFrictionlessComponents"):
             if (self.contact_settings["use_mixed_ulm_solver"].GetBool() == True):
-                name_mixed_solver = self.contact_settings["use_mixed_ulm_solver"]["mixed_ulm_solver_parameters"]["solver_type"].GetString()
+                name_mixed_solver = self.contact_settings["mixed_ulm_solver_parameters"]["solver_type"].GetString()
                 if (name_mixed_solver == "MixedULMLinearSolver"):
-                    mixed_ulm_solver = CSMA.MixedULMLinearSolver(linear_solver, self.contact_settings["use_mixed_ulm_solver"]["mixed_ulm_solver_parameters"])
+                    mixed_ulm_solver = CSMA.MixedULMLinearSolver(linear_solver, self.contact_settings["mixed_ulm_solver_parameters"])
                     return mixed_ulm_solver
                 else:
                     self.print_on_rank_zero("::[Contact Mechanical Implicit Dynamic Solver]:: ", "Mixed solver not available: "+name_mixed_solver+". Using not mixed linear solver")
