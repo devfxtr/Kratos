@@ -128,17 +128,17 @@ public:
 
             #pragma omp for
             for(Idx ia = 0; ia < static_cast<Idx>(nrows); ++ia) {
-                Idx row_begin_a = index1_a[ia];
-                Idx row_end_a   = index1_a[ia+1];
+                const Idx row_begin_a = index1_a[ia];
+                const Idx row_end_a   = index1_a[ia+1];
             
                 Idx C_cols = 0;
                 for(Idx ja = row_begin_a; ja < row_end_a; ++ja) {
-                    Idx ca = index2_a[ja];
-                    Idx row_begin_b = index1_b[ca];
-                    Idx row_end_b   = index1_b[ca+1];
+                    const Idx ca = index2_a[ja];
+                    const Idx row_begin_b = index1_b[ca];
+                    const Idx row_end_b   = index1_b[ca+1];
                     
                     for(Idx jb = row_begin_b; jb < row_end_b; ++jb) {
-                        Idx cb = index2_b[jb];
+                        const Idx cb = index2_b[jb];
                         if (marker[cb] != ia) {
                             marker[cb]  = ia;
                             ++C_cols;
@@ -161,23 +161,23 @@ public:
 
             #pragma omp for
             for(Idx ia = 0; ia < static_cast<Idx>(nrows); ++ia) {
-                Idx row_begin_a = index1_a[ia];
-                Idx row_end_a   = index1_a[ia+1];
+                const Idx row_begin_a = index1_a[ia];
+                const Idx row_end_a   = index1_a[ia+1];
                 
-                Idx row_beg = c_ptr[ia];
+                const Idx row_beg = c_ptr[ia];
                 Idx row_end = row_beg;
 
                 for(Idx ja = row_begin_a; ja < row_end_a; ++ja) {
                     const Idx ca = index2_a[ja];
                     const Val va = values_a[ja];
                     
-                    Idx row_begin_b = index1_b[ca];
-                    Idx row_end_b   = index1_b[ca+1];
+                    const Idx row_begin_b = index1_b[ca];
+                    const Idx row_end_b   = index1_b[ca+1];
 
                     for(Idx jb = row_begin_b; jb < row_end_b; ++jb) {
                         const Idx cb = index2_b[jb];
                         const Val vb = values_b[jb];
-
+                        
                         if (marker[cb] < row_beg) {
                             marker[cb] = row_end;
                             aux_index2_c[row_end] = cb;
@@ -234,12 +234,12 @@ public:
 
             #pragma omp for
             for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
-                Idx row_beg = index1_a[i];
-                Idx row_end = index1_a[i+1];
+                const Idx row_beg = index1_a[i];
+                const Idx row_end = index1_a[i+1];
                 
                 Idx row_width = 0;
                 for(Idx j = row_beg; j < row_end; ++j) {
-                    Idx a_col = index2_a[j];
+                    const Idx a_col = index2_a[j];
                     row_width += index1_b[a_col + 1] - index1_b[a_col];
                 }
                 my_max = std::max(my_max, row_width);
@@ -279,8 +279,8 @@ public:
 
             #pragma omp for
             for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
-                Idx row_beg = index1_a[i];
-                Idx row_end = index1_a[i+1];
+                const Idx row_beg = index1_a[i];
+                const Idx row_end = index1_a[i+1];
 
                 c_ptr[i+1] = ProdRowWidth( index2_a + row_beg, index2_a + row_end, index1_b, index2_b, t_col, t_col + max_row_width, t_col + 2 * max_row_width );
             }
@@ -305,8 +305,8 @@ public:
 
             #pragma omp for
             for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
-                Idx row_beg = index1_a[i];
-                Idx row_end = index1_a[i+1];
+                const Idx row_beg = index1_a[i];
+                const Idx row_end = index1_a[i+1];
 
                 ProdRow(index2_a + row_beg, index2_a + row_end, values_a + row_beg,
                         index1_b, index2_b, values_b, aux_index2_c + c_ptr[i], aux_val_c + c_ptr[i], t_col, t_val, t_col + max_row_width, t_val + max_row_width );
