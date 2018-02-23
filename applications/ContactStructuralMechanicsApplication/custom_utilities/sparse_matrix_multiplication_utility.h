@@ -317,6 +317,76 @@ public:
         CreateSolutionMatrix(C, nrows, ncols, c_ptr, aux_index2_c, aux_val_c);
     }
     
+    /**
+     * @brief This method is designed to create the final solution sparse matrix from the auxiliar values
+     * @param C The matrix solution
+     * @param NRows The number of rows of the matrix  
+     * @param NCols The number of columns of the matrix  
+     * @param CPtr The indexes taht indicate the number of nonzero values in each column
+     *@param AuxIndex2C The indexes of the nonzero columns
+     *@param AuxValC The C array containing the values of the sparse matrix   
+     */
+    template <class CMatrix, typename Idx, typename Val>
+    static inline void CreateSolutionMatrix(
+                CMatrix& C,
+                const std::size_t NRows,
+                const std::size_t NCols,
+                const Idx* CPtr,
+                const Idx* AuxIndex2C,
+                const Val* AuxValC
+                )
+    {
+        // Auxiliar values
+        const std::size_t nonzero_values = CPtr[NRows];
+        
+        C = CMatrix(NRows, NCols, nonzero_values);
+        std::size_t* index1_c = C.index1_data().begin();
+        std::size_t* index2_c = C.index2_data().begin();
+        double* values_c = C.value_data().begin();
+        
+        index1_c[0] = 0;
+        for (std::size_t i = 0; i < NRows; i++)
+            index1_c[i+1] = index1_c[i] + (CPtr[i+1] - CPtr[i]);
+        
+        #pragma omp parallel for
+        for (std::size_t i = 0; i < nonzero_values; i++) {
+            index2_c[i] = AuxIndex2C[i];
+            values_c[i] = AuxValC[i];
+        }
+        
+        C.set_filled(NRows+1, nonzero_values);
+    }
+    
+    /**
+     * @brief This method is designed to reorder the rows by columns
+     * @param Columns The columns of the problem
+     * @param Values The values (to be ordered with the rows)
+     * @param Size The size of the colums
+     */
+    template <typename Col, typename Val>
+    static inline void SortRow(
+        Col* Columns, 
+        Val* Values, 
+        const std::size_t Size
+        ) 
+    {
+        for(std::size_t j = 1; j < Size; ++j) {
+            const Col c = Columns[j];
+            const Val v = Values[j];
+
+            std::size_t i = j - 1;
+
+            while(i >= 0 && Columns[i] > c) {
+                Columns[i + 1] = Columns[i];
+                Values[i + 1] = Values[i];
+                i--;
+            }
+
+            Columns[i + 1] = c;
+            Values[i + 1] = v;
+        }
+    }
+    
     ///@}
     ///@name Access
     ///@{
@@ -395,67 +465,6 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
-    
-    template <class CMatrix, typename Idx, typename Val>
-    static inline void CreateSolutionMatrix(
-                CMatrix& C,
-                const std::size_t NRows,
-                const std::size_t NCols,
-                const Idx* CPtr,
-                const Idx* AuxIndex2C,
-                const Val* AuxValC
-                )
-    {
-        // Auxiliar values
-        const std::size_t nonzero_values = CPtr[NRows];
-        
-        C = CMatrix(NRows, NCols, nonzero_values);
-        std::size_t* index1_c = C.index1_data().begin();
-        std::size_t* index2_c = C.index2_data().begin();
-        double* values_c = C.value_data().begin();
-        
-        index1_c[0] = 0;
-        for (std::size_t i = 0; i < NRows; i++)
-            index1_c[i+1] = index1_c[i] + (CPtr[i+1] - CPtr[i]);
-        
-        #pragma omp parallel for
-        for (std::size_t i = 0; i < nonzero_values; i++) {
-            index2_c[i] = AuxIndex2C[i];
-            values_c[i] = AuxValC[i];
-        }
-        
-        C.set_filled(NRows+1, nonzero_values);
-    }
-    
-    /**
-     * @brief This method is designed to reorder the rows by columns
-     * @param Columns The columns of the problem
-     * @param Values The values (to be ordered with the rows)
-     * @param Size The size of the colums
-     */
-    template <typename Col, typename Val>
-    static inline void SortRow(
-        Col* Columns, 
-        Val* Values, 
-        const std::size_t Size
-        ) 
-    {
-        for(std::size_t j = 1; j < Size; ++j) {
-            const Col c = Columns[j];
-            const Val v = Values[j];
-
-            std::size_t i = j - 1;
-
-            while(i >= 0 && Columns[i] > c) {
-                Columns[i + 1] = Columns[i];
-                Values[i + 1] = Values[i];
-                i--;
-            }
-
-            Columns[i + 1] = c;
-            Values[i + 1] = v;
-        }
-    }
     
     /**
      * 
