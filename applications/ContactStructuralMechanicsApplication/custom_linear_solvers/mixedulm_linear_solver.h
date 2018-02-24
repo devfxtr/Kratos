@@ -912,22 +912,22 @@ protected:
                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         const double value = values[j];
                         if (mWhichBlockType[col_index] == BlockType::OTHER) {                 // KNN block
-                            marker[local_col_id + other_dof_initial_index] = local_row_id;
+                            marker[local_col_id + other_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {         // KNM block
-                            marker[local_col_id + master_dof_initial_index] = local_row_id;
+                            marker[local_col_id + master_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KNSI block
-                            marker[local_col_id + slave_inactive_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_inactive_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {   // KNSA block
-                            marker[local_col_id + slave_active_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_active_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
@@ -942,22 +942,22 @@ protected:
                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         const double value = values[j];
                         if (mWhichBlockType[col_index] == BlockType::OTHER) {                 // KMN block
-                            marker[local_col_id + other_dof_initial_index] = local_row_id;
+                            marker[local_col_id + other_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {         // KNMM block
-                            marker[local_col_id + master_dof_initial_index] = local_row_id;
+                            marker[local_col_id + master_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KMSI block
-                            marker[local_col_id + slave_inactive_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_inactive_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {   // KMSA block
-                            marker[local_col_id + slave_active_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_active_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
@@ -972,22 +972,22 @@ protected:
                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         const double value = values[j];
                         if (mWhichBlockType[col_index] == BlockType::OTHER) {                // KSIN block
-                            marker[local_col_id + other_dof_initial_index] = local_row_id;
+                            marker[local_col_id + other_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {        // KSIM block
-                            marker[local_col_id + master_dof_initial_index] = local_row_id;
+                            marker[local_col_id + master_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KSISI block
-                            marker[local_col_id + slave_inactive_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_inactive_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {  // KSISA block
-                            marker[local_col_id + slave_active_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_active_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
@@ -1002,17 +1002,17 @@ protected:
                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         const double value = values[j];
                         if (mWhichBlockType[col_index] == BlockType::MASTER) {                // KLMAM block
-                            marker[local_col_id + master_dof_initial_index] = local_row_id;
+                            marker[local_col_id + master_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KLMASI block
-                            marker[local_col_id + slave_inactive_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_inactive_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {   // KLMASA block
-                            marker[local_col_id + slave_active_dof_initial_index] = local_row_id;
+                            marker[local_col_id + slave_active_dof_initial_index] = row_end;
                             aux_index2_K_disp_modified[row_end] = col_index;
                             aux_val_K_disp_modified[row_end] = value;
                             ++row_end;
