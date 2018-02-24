@@ -933,8 +933,6 @@ protected:
                             ++row_end;
                         }
                     }
-                    // We reorder the rows
-                    SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
                 } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + master_dof_initial_index;
                     std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
@@ -965,8 +963,6 @@ protected:
                             ++row_end;
                         }
                     }
-                    // We reorder the rows
-                    SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + slave_inactive_dof_initial_index;
                     std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
@@ -997,8 +993,6 @@ protected:
                             ++row_end;
                         }
                     }
-                    // We reorder the rows
-                    SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
                 } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + assembling_slave_dof_initial_index;
                     std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
@@ -1024,8 +1018,6 @@ protected:
                             ++row_end;
                         }
                     }
-                    // We reorder the rows
-                    SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
                 }
             }
             
@@ -1055,6 +1047,14 @@ protected:
                 
                 // Get access to aslave_auxKSASA data
                 ComputeAuxiliarValuesBlocks(aslave_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+            }
+            
+            // We reorder the rows
+            #pragma omp for
+            for (int i=0; i<static_cast<int>(nrows); i++) {
+                const std::ptrdiff_t row_beg = K_disp_modified_ptr[i];
+                const std::ptrdiff_t row_end = K_disp_modified_ptr[i + 1];
+                SparseMatrixMultiplicationUtility::SortRow(aux_index2_K_disp_modified + row_beg, aux_val_K_disp_modified + row_beg, row_end - row_beg);
             }
         }
         
@@ -1206,9 +1206,6 @@ private:
                     AuxVals[Marker[col_index]] += aux_values[j];
                 }
             }
-            
-            // We reorder the rows 
-            SparseMatrixMultiplicationUtility::SortRow(AuxIndex2 + row_beg, AuxIndex2 + row_beg, row_end - row_beg);
         }
     }
     
