@@ -773,7 +773,7 @@ protected:
             std::vector<std::ptrdiff_t> marker(ncols, -1);
 
             #pragma omp for
-            for (IndexType i=0; i<rA.size1(); i++) {
+            for (int i=0; i<static_cast<int>(rA.size1()); i++) {
                 const IndexType row_begin = index1[i];
                 const IndexType row_end   = index1[i + 1];
                 
@@ -899,7 +899,7 @@ protected:
             std::vector<std::ptrdiff_t> marker(ncols, -1);
 
             #pragma omp for
-            for (IndexType i=0; i<rA.size1(); i++) {
+            for (int i=0; i<static_cast<int>(rA.size1()); i++) {
                 const IndexType row_begin_A = index1[i];
                 const IndexType row_end_A   = index1[i + 1];
                 
@@ -1145,11 +1145,11 @@ private:
         const std::size_t* aux_K_index2 = AuxK.index2_data().begin();
         
         #pragma omp for
-        for (IndexType i=0; i<AuxK.size1(); i++) {
+        for (int i=0; i<static_cast<int>(AuxK.size1()); i++) {
             const IndexType row_begin = aux_K_index1[i];
             const IndexType row_end   = aux_K_index1[i + 1];
             
-            std::ptrdiff_t K_disp_modified_cols = 0;
+            std::ptrdiff_t& K_disp_modified_cols = KPtr[InitialIndexRow + i + 1];
             
             for (IndexType j=row_begin; j<row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
@@ -1158,8 +1158,6 @@ private:
                     ++K_disp_modified_cols;
                 }
             }
-            
-            KPtr[InitialIndexRow + i + 1] += K_disp_modified_cols;
         }
     }
     
@@ -1190,7 +1188,7 @@ private:
         const std::size_t* aux_K_index2 = AuxK.index2_data().begin();
         
         #pragma omp for
-        for (IndexType i=0; i<AuxK.size1(); i++) {
+        for (int i=0; i<static_cast<int>(AuxK.size1()); i++) {
             const IndexType aux_K_row_begin = aux_K_index1[i];
             const IndexType aux_K_row_end   = aux_K_index1[i + 1];
             
@@ -1199,7 +1197,7 @@ private:
             
             for (IndexType j=aux_K_row_begin; j<aux_K_row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
-                if (Marker[col_index] != row_beg) {
+                if (Marker[col_index] < row_beg) {
                     Marker[col_index] = row_end;
                     AuxIndex2[row_end] = col_index;
                     AuxVals[row_end] = aux_values[j];
