@@ -326,18 +326,18 @@ public:
      *@param AuxIndex2C The indexes of the nonzero columns
      *@param AuxValC The C array containing the values of the sparse matrix   
      */
-    template <class CMatrix, typename Idx, typename Val>
+    template <class CMatrix, typename TSize, typename Idx, typename Val>
     static inline void CreateSolutionMatrix(
                 CMatrix& C,
-                const std::size_t NRows,
-                const std::size_t NCols,
+                const TSize NRows,
+                const TSize NCols,
                 const Idx* CPtr,
                 const Idx* AuxIndex2C,
                 const Val* AuxValC
                 )
     {
         // Auxiliar values
-        const std::size_t nonzero_values = CPtr[NRows];
+        const TSize nonzero_values = CPtr[NRows];
         
         C = CMatrix(NRows, NCols, nonzero_values);
         std::size_t* index1_c = C.index1_data().begin();
@@ -345,11 +345,11 @@ public:
         double* values_c = C.value_data().begin();
         
         index1_c[0] = 0;
-        for (std::size_t i = 0; i < NRows; i++)
+        for (TSize i = 0; i < NRows; i++)
             index1_c[i+1] = index1_c[i] + (CPtr[i+1] - CPtr[i]);
         
         #pragma omp parallel for
-        for (std::size_t i = 0; i < nonzero_values; i++) {
+        for (TSize i = 0; i < nonzero_values; i++) {
             index2_c[i] = AuxIndex2C[i];
             values_c[i] = AuxValC[i];
         }
