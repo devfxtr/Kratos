@@ -1136,13 +1136,13 @@ private:
         const SparseMatrixType& AuxK,
         std::ptrdiff_t* KPtr,
         std::vector<std::ptrdiff_t>& Marker,
-        const std::size_t InitialIndexRow,
-        const std::size_t InitialIndexColumn
+        const SizeType InitialIndexRow,
+        const SizeType InitialIndexColumn
         )
     {
         // Get access to aux_K data
-        const std::size_t* aux_K_index1 = AuxK.index1_data().begin();
-        const std::size_t* aux_K_index2 = AuxK.index2_data().begin();
+        const IndexType* aux_K_index1 = AuxK.index1_data().begin();
+        const IndexType* aux_K_index2 = AuxK.index2_data().begin();
         
         #pragma omp for
         for (int i=0; i<static_cast<int>(AuxK.size1()); i++) {
@@ -1153,7 +1153,7 @@ private:
             
             for (IndexType j=row_begin; j<row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
-                if (Marker[col_index] != static_cast<std::ptrdiff_t>(InitialIndexRow +  i)) {
+                if (Marker[col_index] != static_cast<std::ptrdiff_t>(InitialIndexRow + i)) {
                     Marker[col_index] = InitialIndexRow +  i;
                     ++K_disp_modified_cols;
                 }
@@ -1178,14 +1178,14 @@ private:
         std::ptrdiff_t* AuxIndex2,
         double* AuxVals,
         std::vector<std::ptrdiff_t>& Marker,
-        const std::size_t InitialIndexRow,
-        const std::size_t InitialIndexColumn
+        const SizeType InitialIndexRow,
+        const SizeType InitialIndexColumn
         )
     {
         // Get access to aux_K data
         const double* aux_values = AuxK.value_data().begin();
-        const std::size_t* aux_K_index1 = AuxK.index1_data().begin();
-        const std::size_t* aux_K_index2 = AuxK.index2_data().begin();
+        const IndexType* aux_K_index1 = AuxK.index1_data().begin();
+        const IndexType* aux_K_index2 = AuxK.index2_data().begin();
         
         #pragma omp for
         for (int i=0; i<static_cast<int>(AuxK.size1()); i++) {
