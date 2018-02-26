@@ -271,6 +271,9 @@ public:
         // Get the u and lm residuals
         GetUPart (rB, mResidualDisp);
         
+        KRATOS_DETAIL("mKDispModified") << mKDispModified << std::endl;
+        KRATOS_DETAIL("mResidualDisp") << mResidualDisp << std::endl;
+        
         // Solve u block
         noalias(mDisp)  = ZeroVector(total_size);
         mpSolverDispBlock->Solve (mKDispModified, mDisp, mResidualDisp);
@@ -282,6 +285,8 @@ public:
         if (lm_active_size > 0) {
             // Now we compute the residual of the LM
             GetLMAPart (rB, mResidualLMActive);
+            KRATOS_DETAIL("mKLMAModified") << mKLMAModified << std::endl;
+            KRATOS_DETAIL("mResidualLMActive") << mResidualLMActive << std::endl;
             // LM = D⁻1*rLM
             noalias(mLMActive) = ZeroVector(mLMActiveIndices.size());
             TSparseSpaceType::Mult (mKLMAModified, mResidualLMActive, mLMActive);
@@ -292,6 +297,8 @@ public:
         if (lm_inactive_size > 0) {
             // Now we compute the residual of the LM
             GetLMIPart (rB, mResidualLMInactive);
+            KRATOS_DETAIL("mKLMIModified") << mKLMIModified << std::endl;
+            KRATOS_DETAIL("mResidualLMInactive") << mResidualLMInactive << std::endl;
             // LM = D⁻1*rLM
             noalias(mLMInactive) = ZeroVector(mLMInactiveIndices.size());
             TSparseSpaceType::Mult (mKLMIModified, mResidualLMInactive, mLMInactive);
@@ -1317,6 +1324,7 @@ private:
         const SizeType master_size = mMasterIndices.size();
         const SizeType slave_inactive_size = mSlaveInactiveIndices.size();
         const SizeType slave_active_size = mSlaveActiveIndices.size();
+        const SizeType lm_active_size = mLMActiveIndices.size();
         const SizeType total_size = other_dof_size + master_size + slave_inactive_size + slave_active_size;
         
         // Resize in case the size is not correct
@@ -1324,45 +1332,45 @@ private:
             ResidualU.resize (total_size, false);
         
         #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mOtherIndices.size()); i++)
+        for (int i = 0; i<static_cast<int>(other_dof_size); i++)
             ResidualU[i] = rTotalResidual[mOtherIndices[i]];
         
         // The corresponding residual for the active slave DoF's
-        VectorType aux_res_active_slave(mSlaveActiveIndices.size());
+        VectorType aux_res_active_slave(slave_active_size);
         #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
+        for (int i = 0; i<static_cast<int>(slave_active_size); i++)
             aux_res_active_slave[i] = rTotalResidual[mSlaveActiveIndices[i]];
         
         if (slave_active_size > 0) {
             // We compute the complementary residual for the master dofs        
-            VectorType aux_complement_master_residual(mMasterIndices.size());
+            VectorType aux_complement_master_residual(master_size);
             TSparseSpaceType::Mult(mPOperator, aux_res_active_slave, aux_complement_master_residual);
             
             #pragma omp parallel for
-            for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
-                ResidualU[mOtherIndices.size() + i] = rTotalResidual[mMasterIndices[i]] + aux_complement_master_residual[i];
+            for (int i = 0; i<static_cast<int>(master_size); i++)
+                ResidualU[other_dof_size + i] = rTotalResidual[mMasterIndices[i]] + aux_complement_master_residual[i];
         } else {
             #pragma omp parallel for
-            for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
-                ResidualU[mOtherIndices.size() + i] = rTotalResidual[mMasterIndices[i]];
+            for (int i = 0; i<static_cast<int>(master_size); i++)
+                ResidualU[other_dof_size + i] = rTotalResidual[mMasterIndices[i]];
         }
         
         #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mSlaveInactiveIndices.size()); i++)
-            ResidualU[mOtherIndices.size() + mMasterIndices.size() + i] = rTotalResidual[mSlaveInactiveIndices[i]];
+        for (int i = 0; i<static_cast<int>(slave_inactive_size); i++)
+            ResidualU[other_dof_size + master_size + i] = rTotalResidual[mSlaveInactiveIndices[i]];
         
         if (slave_active_size > 0) {
             // We compute the complementary residual for the master dofs        
-            VectorType aux_complement_active_lm_residual(mLMActiveIndices.size());
+            VectorType aux_complement_active_lm_residual(lm_active_size);
             TSparseSpaceType::Mult(mCOperator, aux_res_active_slave, aux_complement_active_lm_residual);
             
             #pragma omp parallel for
-            for (int i = 0; i<static_cast<int>(mLMActiveIndices.size()); i++)
-                ResidualU[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i] = rTotalResidual[mLMActiveIndices[i]] + aux_complement_active_lm_residual[i];
+            for (int i = 0; i<static_cast<int>(lm_active_size); i++)
+                ResidualU[other_dof_size + master_size + slave_inactive_size + i] = rTotalResidual[mLMActiveIndices[i]] + aux_complement_active_lm_residual[i];
         } else {
             #pragma omp parallel for
-            for (int i = 0; i<static_cast<int>(mLMActiveIndices.size()); i++)
-                ResidualU[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i] = rTotalResidual[mLMActiveIndices[i]];
+            for (int i = 0; i<static_cast<int>(lm_active_size); i++)
+                ResidualU[other_dof_size + master_size + slave_inactive_size + i] = rTotalResidual[mLMActiveIndices[i]];
         }
     }
 
