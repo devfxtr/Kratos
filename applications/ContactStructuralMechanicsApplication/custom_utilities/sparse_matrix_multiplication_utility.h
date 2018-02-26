@@ -127,7 +127,7 @@ public:
             std::vector<std::ptrdiff_t> marker(ncols, -1);
 
             #pragma omp for
-            for(Idx ia = 0; ia < static_cast<Idx>(nrows); ++ia) {
+            for(int ia = 0; ia < static_cast<int>(nrows); ++ia) {
                 const Idx row_begin_a = index1_a[ia];
                 const Idx row_end_a   = index1_a[ia+1];
             
@@ -160,7 +160,7 @@ public:
             std::vector<std::ptrdiff_t> marker(ncols, -1);
 
             #pragma omp for
-            for(Idx ia = 0; ia < static_cast<Idx>(nrows); ++ia) {
+            for(int ia = 0; ia < static_cast<int>(nrows); ++ia) {
                 const Idx row_begin_a = index1_a[ia];
                 const Idx row_end_a   = index1_a[ia+1];
                 
@@ -233,7 +233,7 @@ public:
             Idx my_max = 0;
 
             #pragma omp for
-            for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
+            for(int i = 0; i < static_cast<int>(nrows); ++i) {
                 const Idx row_beg = index1_a[i];
                 const Idx row_end = index1_a[i+1];
                 
@@ -278,7 +278,7 @@ public:
             Idx* t_col = &tmp_col[tid][0];
 
             #pragma omp for
-            for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
+            for(int i = 0; i < static_cast<int>(nrows); ++i) {
                 const Idx row_beg = index1_a[i];
                 const Idx row_end = index1_a[i+1];
 
@@ -304,7 +304,7 @@ public:
             Val *t_val = tmp_val[tid].data();
 
             #pragma omp for
-            for(Idx i = 0; i < static_cast<Idx>(nrows); ++i) {
+            for(int i = 0; i < static_cast<int>(nrows); ++i) {
                 const Idx row_beg = index1_a[i];
                 const Idx row_end = index1_a[i+1];
 
@@ -349,7 +349,7 @@ public:
             index1_c[i+1] = index1_c[i] + (CPtr[i+1] - CPtr[i]);
         
         #pragma omp parallel for
-        for (TSize i = 0; i < nonzero_values; i++) {
+        for (int i = 0; i < static_cast<int>(nonzero_values); i++) {
             index2_c[i] = AuxIndex2C[i];
             values_c[i] = AuxValC[i];
         }
