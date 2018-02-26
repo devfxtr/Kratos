@@ -36,7 +36,8 @@ void  AddCustomLinearSolversToPython()
 
     using namespace boost::python;
 
-    class_<MixedULMLinearSolverType, MixedULMLinearSolverType::Pointer, bases<IterativeSolverType>, boost::noncopyable >("MixedULMLinearSolver",init<LinearSolverType::Pointer ,double, unsigned  int >())
+    class_<MixedULMLinearSolverType, MixedULMLinearSolverType::Pointer, bases<IterativeSolverType>, boost::noncopyable >("MixedULMLinearSolver",init<LinearSolverType::Pointer>())
+    .def(init<LinearSolverType::Pointer ,double, const std::size_t >())
     .def(init<LinearSolverType::Pointer, Parameters>())
     .def(self_ns::str(self))
     ;
