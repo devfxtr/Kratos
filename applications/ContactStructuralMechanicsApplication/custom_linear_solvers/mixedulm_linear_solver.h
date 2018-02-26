@@ -270,7 +270,7 @@ public:
 
         // Get the u and lm residuals
         GetUPart (rB, mResidualDisp);
-
+        
         // Solve u block
         noalias(mDisp)  = ZeroVector(total_size);
         mpSolverDispBlock->Solve (mKDispModified, mDisp, mResidualDisp);
@@ -288,6 +288,7 @@ public:
             // Write back solution
             SetLMAPart(rX, mLMActive);
         }
+        
         if (lm_inactive_size > 0) {
             // Now we compute the residual of the LM
             GetLMIPart (rB, mResidualLMInactive);
@@ -1087,7 +1088,10 @@ protected:
                 // Get access to aslave_auxKSASA data
                 ComputeAuxiliarValuesBlocks(aslave_auxKSASA, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
             }
-            
+        }
+        
+        #pragma omp parallel
+        {
             // We reorder the rows
             #pragma omp for
             for (int i=0; i<static_cast<int>(nrows); i++) {
@@ -1372,53 +1376,64 @@ private:
     /**
      * @brief This function extracts from a vector which has the size of the overall r, the part that corresponds to active lm-dofs
      * @param rTotalResidual The total residual of the problem 
-     * @param rResidualLM The vector containing the residual relative to the active LM
+     * @param rResidualLMA The vector containing the residual relative to the active LM
      */
-    inline void GetLMAPart (
+    inline void GetLMAPart(
         const VectorType& rTotalResidual, 
-        VectorType& rResidualLM
+        VectorType& rResidualLMA
         )
-    {
-        // We get the displacement residual of the active slave nodes
-        if (rResidualLM.size() != mSlaveActiveIndices.size() )
-            rResidualLM.resize (mSlaveActiveIndices.size(), false);
-        
-        #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(rResidualLM.size()); i++)
-            rResidualLM[i] = rTotalResidual[mSlaveActiveIndices[i]];
-        
-        // From the computed displacements we get the components of the displacements for each block
-        VectorType disp_N(mOtherIndices.size());
-        VectorType disp_M(mMasterIndices.size());
-        VectorType disp_SI(mSlaveInactiveIndices.size());
-        VectorType disp_SA(mSlaveActiveIndices.size());
-        
-        #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mOtherIndices.size()); i++)
-            disp_N[i] = mDisp[i];
-        
-        #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mMasterIndices.size()); i++)
-            disp_M[i] = mDisp[mOtherIndices.size() + i];
-        
-        #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mSlaveInactiveIndices.size()); i++)
-            disp_SI[i] = mDisp[mOtherIndices.size() + mMasterIndices.size() + i];
-        
-        #pragma omp parallel for
-        for (int i = 0; i<static_cast<int>(mSlaveActiveIndices.size()); i++)
-            disp_SI[i] = mDisp[mOtherIndices.size() + mMasterIndices.size() + mSlaveInactiveIndices.size() + i];
-        
+    {        
+        // Auxiliar sizes
+        const SizeType other_dof_size = mOtherIndices.size();
+        const SizeType master_size = mMasterIndices.size();
+        const SizeType slave_inactive_size = mSlaveInactiveIndices.size();
+        const SizeType slave_active_size = mSlaveActiveIndices.size();
+            
         // We add the other 
-        VectorType aux_mult;
-        TSparseSpaceType::Mult(mKSAN, disp_N, aux_mult);
-        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
-        TSparseSpaceType::Mult(mKSAM, disp_M, aux_mult);
-        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
-        TSparseSpaceType::Mult(mKSASI, disp_SI, aux_mult);
-        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
-        TSparseSpaceType::Mult(mKSASA, disp_SA, aux_mult);
-        TSparseSpaceType::UnaliasedAdd (rResidualLM, -1.0, aux_mult);
+        if (slave_active_size > 0) {
+            
+            // We get the displacement residual of the active slave nodes
+            if (rResidualLMA.size() != slave_active_size )
+                rResidualLMA.resize (slave_active_size, false);
+            
+            #pragma omp parallel for
+            for (int i = 0; i<static_cast<int>(rResidualLMA.size()); i++)
+                rResidualLMA[i] = rTotalResidual[mSlaveActiveIndices[i]];
+            
+            // From the computed displacements we get the components of the displacements for each block
+            VectorType disp_N(other_dof_size);
+            VectorType disp_M(master_size);
+            VectorType disp_SI(slave_inactive_size);
+            VectorType disp_SA(slave_active_size);
+            
+            #pragma omp parallel for
+            for (int i = 0; i<static_cast<int>(other_dof_size); i++)
+                disp_N[i] = mDisp[i];
+            
+            #pragma omp parallel for
+            for (int i = 0; i<static_cast<int>(master_size); i++)
+                disp_M[i] = mDisp[other_dof_size + i];
+            
+            #pragma omp parallel for
+            for (int i = 0; i<static_cast<int>(slave_inactive_size); i++)
+                disp_SI[i] = mDisp[other_dof_size + master_size + i];
+            
+            #pragma omp parallel for
+            for (int i = 0; i<static_cast<int>(slave_active_size); i++)
+                disp_SA[i] = mDisp[other_dof_size + master_size + slave_inactive_size + i];
+        
+            VectorType aux_mult(slave_active_size);
+            TSparseSpaceType::Mult(mKSAN, disp_N, aux_mult);
+            TSparseSpaceType::UnaliasedAdd (rResidualLMA, -1.0, aux_mult);
+            TSparseSpaceType::Mult(mKSAM, disp_M, aux_mult);
+            TSparseSpaceType::UnaliasedAdd (rResidualLMA, -1.0, aux_mult);
+            if (slave_inactive_size > 0) {
+                TSparseSpaceType::Mult(mKSASI, disp_SI, aux_mult);
+                TSparseSpaceType::UnaliasedAdd (rResidualLMA, -1.0, aux_mult);
+            }
+            TSparseSpaceType::Mult(mKSASA, disp_SA, aux_mult);
+            TSparseSpaceType::UnaliasedAdd (rResidualLMA, -1.0, aux_mult);
+        }
     }
     
     /**
