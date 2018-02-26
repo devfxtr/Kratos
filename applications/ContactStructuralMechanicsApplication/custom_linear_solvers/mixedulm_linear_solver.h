@@ -1166,7 +1166,7 @@ private:
             for (IndexType j=row_begin; j<row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
                 const IndexType index_marker = NRows * (i + InitialIndexRow) + col_index;
-                if (Marker[index_marker] > -1) {
+                if (Marker[index_marker] < 0) {
                     Marker[index_marker] = 0;
                     ++K_disp_modified_cols;
                 }
