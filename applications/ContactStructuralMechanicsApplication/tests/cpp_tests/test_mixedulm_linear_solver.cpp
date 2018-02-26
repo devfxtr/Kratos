@@ -28,6 +28,7 @@
 #include "linear_solvers/direct_solver.h"
 #include "linear_solvers/linear_solver.h"
 #include "linear_solvers/skyline_lu_factorization_solver.h"
+#include "linear_solvers/amgcl_solver.h"
 #include "custom_linear_solvers/mixedulm_linear_solver.h"
 
 namespace Kratos 
@@ -35,8 +36,6 @@ namespace Kratos
     namespace Testing 
     {
         /// Tests
-        // NOTE: The strategies test many things simulataneously
-        // TODO: Create test for the other components
         typedef Node<3> NodeType;
         typedef Geometry<NodeType> GeometryType;
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
@@ -46,6 +45,7 @@ namespace Kratos
         typedef Reorderer<SparseSpaceType,  LocalSpaceType > ReordererType;
         typedef DirectSolver<SparseSpaceType,  LocalSpaceType, ReordererType > DirectSolverType;
         typedef LinearSolver<SparseSpaceType,LocalSpaceType> LinearSolverType;
+        typedef AMGCLSolver<SparseSpaceType,  LocalSpaceType, ReordererType > AMGCLSolverType;
         typedef SkylineLUFactorizationSolver<SparseSpaceType,  LocalSpaceType, ReordererType > SkylineLUFactorizationSolverType;
         typedef Preconditioner<SparseSpaceType, LocalSpaceType> PreconditionerType;
         typedef MixedULMLinearSolver<SparseSpaceType,  LocalSpaceType, PreconditionerType, ReordererType> MixedULMLinearSolverType;
@@ -65,6 +65,8 @@ namespace Kratos
             ModelPart model_part("Main");
             
             LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new SkylineLUFactorizationSolverType() );
+//             Parameters empty_parameters =  Parameters(R"({})");
+//             LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new AMGCLSolverType(empty_parameters) );
             LinearSolverType::Pointer pmixed_solver = LinearSolverType::Pointer( new MixedULMLinearSolverType(psolver) );
             
             
@@ -75,7 +77,14 @@ namespace Kratos
             
             NodeType::Pointer pnode1 = model_part.CreateNewNode(1, 0.0, 0.0, 0.0);
             NodeType::Pointer pnode2 = model_part.CreateNewNode(2, 0.0, 0.0, 0.0);
+            pnode2->Set(INTERFACE, true);
+            pnode2->Set(MASTER, true);
+            pnode2->Set(SLAVE, false);
             NodeType::Pointer pnode3 = model_part.CreateNewNode(3, 0.0, 0.0, 0.0);
+            pnode3->Set(INTERFACE, true);
+            pnode3->Set(ACTIVE, true);
+            pnode3->Set(MASTER, false);
+            pnode3->Set(SLAVE, true);
             
             pnode1->AddDof(DISPLACEMENT_X);
             pnode2->AddDof(DISPLACEMENT_X);
@@ -112,7 +121,7 @@ namespace Kratos
                 for (std::size_t j = 0; j < system_size; ++j) {
                     if (((i == 0 && j == system_size - 1) || (j == 0 && i == system_size - 1)) == false) {
                         count += 1.0;
-                        A.push_back(i, j, count);
+                        A.push_back(i, j, std::sqrt(count));
                     }
                 }
             }
@@ -122,9 +131,20 @@ namespace Kratos
                 b[i] = count;
             }
             
+            // Debug
+            KRATOS_WATCH(A)
+            KRATOS_WATCH(b)
+            
+            // We solve the reference system
             psolver->Solve(A, ref_Dx, b);
+            
+            // We solve the block system
             pmixed_solver->ProvideAdditionalData(A, Dx, b, Doftemp, model_part);
             pmixed_solver->Solve(A, Dx, b);
+            
+            // Debug
+            KRATOS_WATCH(ref_Dx)
+            KRATOS_WATCH(Dx)
            
 //             for (std::size_t i = 0; i < system_size; ++i) {
 //                 KRATOS_CHECK_NEAR(ref_Dx[i], Dx[i], tolerance);
