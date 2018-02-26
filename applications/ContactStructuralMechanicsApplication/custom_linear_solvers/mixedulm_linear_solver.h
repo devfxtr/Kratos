@@ -1167,7 +1167,7 @@ private:
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
                 const IndexType index_marker = NRows * (i + InitialIndexRow) + col_index;
                 if (Marker[index_marker] < 0) {
-                    Marker[index_marker] = 0;
+                    Marker[index_marker] = 0; 
                     ++K_disp_modified_cols;
                 }
             }
@@ -1215,11 +1215,11 @@ private:
             for (IndexType j=aux_K_row_begin; j<aux_K_row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
                 const IndexType index_marker = NRows * (i + InitialIndexRow) + col_index;
-                if (Marker[index_marker] < 0) {
+                if (Marker[index_marker] == 0) {
                     AuxIndex2[row_end] = col_index;
                     AuxVals[row_end] = aux_values[j];
                     ++row_end;
-                } else {
+                } else if (Marker[index_marker] > 0)  {
                     AuxVals[Marker[index_marker]] += aux_values[j];
                 }
             }
