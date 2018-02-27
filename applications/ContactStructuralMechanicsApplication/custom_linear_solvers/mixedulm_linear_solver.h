@@ -1244,9 +1244,9 @@ private:
                 const IndexType index = Marker[NRows * (i + InitialIndexRow) + col_index] - 1; 
                 if (index >= AuxMaxIndex) {
                     AuxIndex2[index] = col_index;
-                    AuxVals[index] = aux_values[j];
+                    AuxVals[index]  = -aux_values[j];
                 } else {
-                    AuxVals[index] += aux_values[j];
+                    AuxVals[index] += -aux_values[j];
                 }
             }
         }
@@ -1348,7 +1348,7 @@ private:
             
             #pragma omp parallel for
             for (int i = 0; i<static_cast<int>(master_size); i++)
-                ResidualU[other_dof_size + i] = rTotalResidual[mMasterIndices[i]] + aux_complement_master_residual[i];
+                ResidualU[other_dof_size + i] = rTotalResidual[mMasterIndices[i]] - aux_complement_master_residual[i];
         } else {
             #pragma omp parallel for
             for (int i = 0; i<static_cast<int>(master_size); i++)
@@ -1366,7 +1366,7 @@ private:
             
             #pragma omp parallel for
             for (int i = 0; i<static_cast<int>(lm_active_size); i++)
-                ResidualU[other_dof_size + master_size + slave_inactive_size + i] = rTotalResidual[mLMActiveIndices[i]] + aux_complement_active_lm_residual[i];
+                ResidualU[other_dof_size + master_size + slave_inactive_size + i] = rTotalResidual[mLMActiveIndices[i]] - aux_complement_active_lm_residual[i];
         } else {
             #pragma omp parallel for
             for (int i = 0; i<static_cast<int>(lm_active_size); i++)

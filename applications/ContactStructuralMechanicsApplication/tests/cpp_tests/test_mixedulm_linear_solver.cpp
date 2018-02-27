@@ -57,8 +57,7 @@ namespace Kratos
          * Checks if the MixedULMLinear solver performs correctly the resolution of the system
          */
         
-        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverSimplestSystemOrdered, MixedULMLinearSolverSuite) 
-//         KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverSimplestSystem, ContactStructuralApplicationFastSuite) 
+        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverSimplestSystem, ContactStructuralApplicationFastSuite) 
         {
             constexpr double tolerance = 1e-6;
             
@@ -131,24 +130,16 @@ namespace Kratos
                 b[i] = count;
             }
             
-            // Debug
-            KRATOS_WATCH(A)
-            KRATOS_WATCH(b)
-            
             // We solve the reference system
             psolver->Solve(A, ref_Dx, b);
             
             // We solve the block system
             pmixed_solver->ProvideAdditionalData(A, Dx, b, Doftemp, model_part);
             pmixed_solver->Solve(A, Dx, b);
-            
-            // Debug
-            KRATOS_WATCH(ref_Dx)
-            KRATOS_WATCH(Dx)
            
-//             for (std::size_t i = 0; i < system_size; ++i) {
-//                 KRATOS_CHECK_NEAR(ref_Dx[i], Dx[i], tolerance);
-//             }
+            for (std::size_t i = 0; i < system_size; ++i) {
+                KRATOS_CHECK_NEAR(ref_Dx[i], Dx[i], tolerance);
+            }
         }
         
     } // namespace Testing
