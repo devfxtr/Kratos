@@ -112,7 +112,7 @@ enum LoggingLevel { none, info_warnings, system_matrices, debug };
  */
 #define TENSOR_LOG_SETTINGS \
     std::cout << CYAN;\
-    std::cout.precision(1);\
+    std::cout.precision(3);\
     std::scientific;\
 
 /*

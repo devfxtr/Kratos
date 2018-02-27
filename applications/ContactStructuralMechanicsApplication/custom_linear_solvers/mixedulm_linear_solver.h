@@ -30,6 +30,7 @@
 #include "utilities/openmp_utils.h"
 #include "contact_structural_mechanics_application_variables.h"
 #include "custom_utilities/sparse_matrix_multiplication_utility.h"
+#include "custom_utilities/logging_settings.hpp"
 
 namespace Kratos
 {
@@ -773,7 +774,9 @@ protected:
         const SizeType nrows = mKDispModified.size1();
         const SizeType ncols = mKDispModified.size2();
         std::ptrdiff_t* K_disp_modified_ptr = new std::ptrdiff_t[nrows + 1];
+        std::ptrdiff_t* K_disp_modified_ptr_before_blocks = new std::ptrdiff_t[nrows + 1];
         K_disp_modified_ptr[0] = 0;
+        K_disp_modified_ptr_before_blocks[0] = 0;
         
         // Creating a buffer for parallel vector fill
         std::vector<std::ptrdiff_t> marker(nrows * ncols, -1);
@@ -807,6 +810,7 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
+                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + master_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -827,6 +831,7 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
+                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + slave_inactive_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -847,6 +852,7 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
+                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + assembling_slave_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -864,6 +870,7 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
+                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 }
             }
         }
@@ -901,6 +908,7 @@ protected:
         
         // We initialize the final sparse matrix
         std::partial_sum(K_disp_modified_ptr, K_disp_modified_ptr + nrows + 1, K_disp_modified_ptr);
+        std::partial_sum(K_disp_modified_ptr_before_blocks, K_disp_modified_ptr_before_blocks + nrows + 1, K_disp_modified_ptr_before_blocks);
         const std::size_t nonzero_values = K_disp_modified_ptr[nrows];
         std::ptrdiff_t* aux_index2_K_disp_modified = new std::ptrdiff_t[nonzero_values];
         double* aux_val_K_disp_modified = new double[nonzero_values];
@@ -914,7 +922,7 @@ protected:
                 
                 if ( mWhichBlockType[i] == BlockType::OTHER) { //either KNN or KNM or KNSI or KNSA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + other_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -944,7 +952,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + master_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -974,7 +982,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + slave_inactive_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -1004,7 +1012,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + assembling_slave_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -1032,7 +1040,7 @@ protected:
         }
         
         // Filling the remaining marker
-        IndexType aux_max_index = *std::max_element(marker.begin(), marker.end());
+        const IndexType aux_max_index = K_disp_modified_ptr_before_blocks[nrows];
         IndexType max_index = aux_max_index;
         for (auto& mark : marker) {
             if (mark == 0) {
@@ -1100,6 +1108,9 @@ protected:
         
         // Finally we build the final matrix
         SparseMatrixMultiplicationUtility::CreateSolutionMatrix(mKDispModified, nrows, ncols, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified);
+        
+//         // DEBUG
+//         LOG_MATRIX_PRETTY(mKDispModified)
         
         KRATOS_CATCH ("")
     }
