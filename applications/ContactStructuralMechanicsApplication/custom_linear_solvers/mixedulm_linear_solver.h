@@ -774,9 +774,7 @@ protected:
         const SizeType nrows = mKDispModified.size1();
         const SizeType ncols = mKDispModified.size2();
         std::ptrdiff_t* K_disp_modified_ptr = new std::ptrdiff_t[nrows + 1];
-        std::ptrdiff_t* K_disp_modified_ptr_before_blocks = new std::ptrdiff_t[nrows + 1];
         K_disp_modified_ptr[0] = 0;
-        K_disp_modified_ptr_before_blocks[0] = 0;
         
         // Creating a buffer for parallel vector fill
         std::vector<std::ptrdiff_t> marker(nrows * ncols, -1);
@@ -810,7 +808,6 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
-                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + master_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -831,7 +828,6 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
-                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + slave_inactive_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -852,7 +848,6 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
-                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + assembling_slave_dof_initial_index;
                     for (IndexType j=row_begin; j<row_end; j++) {
@@ -870,7 +865,6 @@ protected:
                         }
                     }
                     K_disp_modified_ptr[local_row_id + 1] = K_disp_modified_cols;
-                    K_disp_modified_ptr_before_blocks[local_row_id + 1] = K_disp_modified_cols;
                 }
             }
         }
@@ -908,7 +902,6 @@ protected:
         
         // We initialize the final sparse matrix
         std::partial_sum(K_disp_modified_ptr, K_disp_modified_ptr + nrows + 1, K_disp_modified_ptr);
-        std::partial_sum(K_disp_modified_ptr_before_blocks, K_disp_modified_ptr_before_blocks + nrows + 1, K_disp_modified_ptr_before_blocks);
         const std::size_t nonzero_values = K_disp_modified_ptr[nrows];
         std::ptrdiff_t* aux_index2_K_disp_modified = new std::ptrdiff_t[nonzero_values];
         double* aux_val_K_disp_modified = new double[nonzero_values];
@@ -922,7 +915,7 @@ protected:
                 
                 if ( mWhichBlockType[i] == BlockType::OTHER) { //either KNN or KNM or KNSI or KNSA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + other_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -952,7 +945,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::MASTER) { //either KMN or KMM or KMSI or KMLM
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + master_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -982,7 +975,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_INACTIVE) { //either KSIN or KSIM or KSISI or KSISA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + slave_inactive_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -1012,7 +1005,7 @@ protected:
                     }
                 } else if ( mWhichBlockType[i] == BlockType::LM_ACTIVE) { //either KLMAM or KLMASI or KLMASA
                     const IndexType local_row_id = mGlobalToLocalIndexing[i] + assembling_slave_dof_initial_index;
-                    std::ptrdiff_t row_beg = K_disp_modified_ptr_before_blocks[local_row_id];
+                    std::ptrdiff_t row_beg = K_disp_modified_ptr[local_row_id];
                     std::ptrdiff_t row_end = row_beg;
                     for (IndexType j=row_begin_A; j<row_end_A; j++) {
                         const IndexType col_index = index2[j];
@@ -1039,13 +1032,28 @@ protected:
             }
         }
         
+        // TODO: Think about OMP
         // Filling the remaining marker
-        const IndexType aux_max_index = K_disp_modified_ptr_before_blocks[nrows];
-        IndexType max_index = aux_max_index;
-        for (auto& mark : marker) {
-            if (mark == 0) {
-                ++max_index;
-                mark = max_index;
+        std::ptrdiff_t aux_marker = 0;
+        for (std::size_t i = 0; i < nrows; i++) {
+            // Look for the maximum first
+            for (std::size_t j = 0; j < ncols; j++) {
+                const IndexType aux_index = nrows * i + j;
+                if (marker[aux_index] > -1) {
+                    if (marker[aux_index] > aux_marker)
+                        aux_marker = marker[aux_index];
+                }
+            }
+            // Assign now
+            for (std::size_t j = 0; j < ncols; j++) {
+                const IndexType aux_index = nrows * i + j;
+                if (marker[aux_index] > -1) {
+                    if (marker[aux_index] == 0) { // Case pending to assign
+                        ++aux_marker;
+                        marker[aux_index] = aux_marker;
+                        aux_index2_K_disp_modified[aux_marker - 1] = -1;
+                    }
+                }
             }
         }
         
@@ -1053,30 +1061,30 @@ protected:
         {
             if (slave_active_size > 0) {
                 // Get access to master_auxKSAN data
-                ComputeAuxiliarValuesBlocks(master_auxKSAN, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index, master_dof_initial_index, other_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(master_auxKSAN, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, master_dof_initial_index, other_dof_initial_index);
                 
                 // Get access to master_auxKSAM data
-                ComputeAuxiliarValuesBlocks(master_auxKSAM, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  master_dof_initial_index, master_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(master_auxKSAM, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  master_dof_initial_index, master_dof_initial_index);
                 
                 // Get access to master_auxKSASI data
                 if (slave_inactive_size > 0)
-                    ComputeAuxiliarValuesBlocks(master_auxKSASI, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  master_dof_initial_index, slave_inactive_dof_initial_index);
+                    ComputeAuxiliarValuesBlocks(master_auxKSASI, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  master_dof_initial_index, slave_inactive_dof_initial_index);
                 
                 // Get access to master_auxKSASA data
-                ComputeAuxiliarValuesBlocks(master_auxKSASA, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  master_dof_initial_index, assembling_slave_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(master_auxKSASA, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  master_dof_initial_index, assembling_slave_dof_initial_index);
                 
                 // Get access to aslave_auxKSAN data
-                ComputeAuxiliarValuesBlocks(aslave_auxKSAN, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  assembling_slave_dof_initial_index, other_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(aslave_auxKSAN, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  assembling_slave_dof_initial_index, other_dof_initial_index);
                 
                 // Get access to aslave_auxKSAM data
-                ComputeAuxiliarValuesBlocks(aslave_auxKSAM, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  assembling_slave_dof_initial_index, master_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(aslave_auxKSAM, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  assembling_slave_dof_initial_index, master_dof_initial_index);
                 
                 // Get access to aslave_auxKSASI data
                 if (slave_inactive_size > 0)
-                    ComputeAuxiliarValuesBlocks(aslave_auxKSASI, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
+                    ComputeAuxiliarValuesBlocks(aslave_auxKSASI, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  assembling_slave_dof_initial_index, slave_inactive_dof_initial_index);
                 
                 // Get access to aslave_auxKSASA data
-                ComputeAuxiliarValuesBlocks(aslave_auxKSASA, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows, aux_max_index,  assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
+                ComputeAuxiliarValuesBlocks(aslave_auxKSASA, aux_index2_K_disp_modified, aux_val_K_disp_modified, marker, nrows,  assembling_slave_dof_initial_index, assembling_slave_dof_initial_index);
             }
         }
         
@@ -1224,7 +1232,6 @@ private:
      * @param AuxVals The values of the final matrix
      * @param Marker A marker to check the already asigned values
      * @param NRows The total number of rows of the final matrix
-     * @param AuxMaxIndex The index of the last element that has preasigned value
      * @param InitialIndexRow The initial row index of the auxiliar block in the final matrix 
      * @param InitialIndexColumn The initial column index of the auxiliar block in the final matrix 
      * @todo Check the col_index!!!!!!
@@ -1235,7 +1242,6 @@ private:
         double* AuxVals,
         const std::vector<std::ptrdiff_t>& Marker,
         const SizeType NRows,
-        const IndexType AuxMaxIndex,
         const SizeType InitialIndexRow,
         const SizeType InitialIndexColumn
         )
@@ -1253,7 +1259,7 @@ private:
             for (IndexType j=aux_K_row_begin; j<aux_K_row_end; j++) {
                 const IndexType col_index = InitialIndexColumn + aux_K_index2[j];
                 const IndexType index = Marker[NRows * (i + InitialIndexRow) + col_index] - 1; 
-                if (index >= AuxMaxIndex) {
+                if (AuxIndex2[index] == -1) {
                     AuxIndex2[index] = col_index;
                     AuxVals[index]  = -aux_values[j];
                 } else {
