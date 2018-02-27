@@ -59,7 +59,7 @@ class SimplestPatchTestThreeDMeshTying(StructuralMechanichsTestFactory):
 
 class SimplePatchTestThreeDMeshTying(StructuralMechanichsTestFactory):
     file_name = "mesh_tying_test/simple_patch_test_3D"
-
+    
 class ALMHyperSimplePatchTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_2D/hyper_simple_patch_test"
 
@@ -101,6 +101,10 @@ class ALMThreeDPatchMatchingTestContact(StructuralMechanichsTestFactory):
 
 class ALMThreeDPatchNotMatchingTestContact(StructuralMechanichsTestFactory):
     file_name = "ALM_frictionless_contact_test_3D/3D_contact_patch_nonmatching_test"
+
+class ComponentsALMHyperSimpleTrianglePatchTestContact(StructuralMechanichsTestFactory):
+    frictionless_by_components = True
+    file_name = "ALM_frictionless_contact_test_2D/hyper_simple_triangle_patch_test"
 
 class ComponentsALMHyperSimplePatchTestContact(StructuralMechanichsTestFactory):
     frictionless_by_components = True
