@@ -798,7 +798,7 @@ protected:
                             marker[nrows * local_row_id + local_col_id + other_dof_initial_index] = 0;
                             ++K_disp_modified_cols;
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {         // KNM block
-                            marker[nrows * local_row_id + local_col_id + other_dof_initial_index] = 0;
+                            marker[nrows * local_row_id + local_col_id + master_dof_initial_index] = 0;
                             ++K_disp_modified_cols;
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KNSI block
                             marker[nrows * local_row_id + local_col_id + slave_inactive_dof_initial_index] = 0;
@@ -1119,6 +1119,7 @@ protected:
         SparseMatrixMultiplicationUtility::CreateSolutionMatrix(mKDispModified, nrows, ncols, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified);
         
 //         // DEBUG
+//         CheckMatrix(rA);
 //         LOG_MATRIX_PRETTY(rA)
 //         LOG_MATRIX_PRETTY(mKDispModified)
         
@@ -1557,6 +1558,32 @@ private:
         } else {
             SparseMatrixMultiplicationUtility::MatrixMultiplicationSaad(rA, rB, rC);
         }
+    }
+    
+    /**
+     * @brief This method is intended to use to check the matrix
+     * @param rA The matrix to be checked 
+     */
+    double CheckMatrix (const SparseMatrixType& rA)
+    {
+        // Get access to A data
+        const std::size_t* index1 = rA.index1_data().begin();
+        const std::size_t* index2 = rA.index2_data().begin();
+        const double* values = rA.value_data().begin();
+        double norm = 0.0;
+        for (std::size_t i=0; i<rA.size1(); i++) {
+            std::size_t row_begin = index1[i];
+            std::size_t row_end   = index1[i+1];
+            if (row_end - row_begin == 0)
+                KRATOS_WARNING("Checking sparse matrix") << "Line " << i << " has no elements" << std::endl;
+            
+            for (std::size_t j=row_begin; j<row_end; j++) {
+                KRATOS_ERROR_IF( index2[j] > rA.size2() ) << "Array above size of A" << std::endl;
+                norm += values[j]*values[j];
+            }
+        }
+        
+        return std::sqrt (norm);
     }
     
     /**

@@ -21,6 +21,7 @@
 #include "includes/define.h"
 #include "includes/model_part.h"
 #include "spaces/ublas_space.h"
+#include "includes/matrix_market_interface.h"
 
 // Linear solvers
 #include "linear_solvers/reorderer.h"
@@ -753,8 +754,120 @@ namespace Kratos
             }
         }
         
-     
-        
+        /** 
+         * Checks if the MixedULMLinear solver performs correctly the resolution of the system. Multiple dof Unordered case (II)
+         */
+        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverRealSystem, ContactStructuralApplicationFastSuite) 
+        {
+            constexpr double tolerance = 1e-3;
+            
+            ModelPart model_part("Main");
+            
+            LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new SkylineLUFactorizationSolverType() );
+//             Parameters empty_parameters =  Parameters(R"({})");
+//             LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new AMGCLSolverType(empty_parameters) );
+            LinearSolverType::Pointer pmixed_solver = LinearSolverType::Pointer( new MixedULMLinearSolverType(psolver) );
+            
+            model_part.SetBufferSize(3);
+            
+            model_part.AddNodalSolutionStepVariable(DISPLACEMENT);
+            model_part.AddNodalSolutionStepVariable(VECTOR_LAGRANGE_MULTIPLIER);
+            
+            NodeType::Pointer pnode1 = model_part.CreateNewNode(1, 0.0, 0.0, 0.0);
+            NodeType::Pointer pnode2 = model_part.CreateNewNode(2, 0.0, 0.0, 0.0);
+            pnode2->Set(INTERFACE, true);
+            pnode2->Set(ACTIVE, true);
+            pnode2->Set(MASTER, false);
+            pnode2->Set(SLAVE, true);
+            NodeType::Pointer pnode3 = model_part.CreateNewNode(3, 0.0, 0.0, 0.0);
+            pnode3->Set(INTERFACE, true);
+            pnode3->Set(ACTIVE, true);
+            pnode3->Set(MASTER, false);
+            pnode3->Set(SLAVE, true);
+            NodeType::Pointer pnode4 = model_part.CreateNewNode(4, 0.0, 0.0, 0.0);
+            pnode4->Set(INTERFACE, true);
+            pnode4->Set(MASTER, true);
+            pnode4->Set(SLAVE, false);
+            NodeType::Pointer pnode5 = model_part.CreateNewNode(5, 0.0, 0.0, 0.0);
+            pnode5->Set(INTERFACE, true);
+            pnode5->Set(MASTER, true);
+            pnode5->Set(SLAVE, false);
+            NodeType::Pointer pnode6 = model_part.CreateNewNode(6, 0.0, 0.0, 0.0);
+            
+            pnode1->AddDof(DISPLACEMENT_X);
+            pnode1->AddDof(DISPLACEMENT_Y);
+            pnode2->AddDof(DISPLACEMENT_X);
+            pnode2->AddDof(DISPLACEMENT_Y);
+            pnode2->AddDof(VECTOR_LAGRANGE_MULTIPLIER_X);
+            pnode2->AddDof(VECTOR_LAGRANGE_MULTIPLIER_Y);
+            pnode3->AddDof(DISPLACEMENT_X);
+            pnode3->AddDof(DISPLACEMENT_Y);
+            pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_X);
+            pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_Y);
+            pnode4->AddDof(DISPLACEMENT_X);
+            pnode4->AddDof(DISPLACEMENT_Y);
+            pnode5->AddDof(DISPLACEMENT_X);
+            pnode5->AddDof(DISPLACEMENT_Y);
+            pnode6->AddDof(DISPLACEMENT_X);
+            pnode6->AddDof(DISPLACEMENT_Y);
+            
+            std::vector< Dof<double>::Pointer > DoF;
+            DoF.reserve(16);
+            DoF.push_back(pnode1->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode1->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode2->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_X));
+            DoF.push_back(pnode2->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_Y));
+            DoF.push_back(pnode3->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode3->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode3->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_X));
+            DoF.push_back(pnode3->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_Y));
+            DoF.push_back(pnode4->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode4->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode5->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode5->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode6->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode6->pGetDof(DISPLACEMENT_Y));
+            
+            // Set initial solution
+            (pnode1->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            (pnode2->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            (pnode2->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)).clear();
+            (pnode3->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            (pnode3->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)).clear();
+            (pnode4->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            (pnode5->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            (pnode6->FastGetSolutionStepValue(DISPLACEMENT)).clear();
+            
+            DofsArrayType Doftemp;
+            Doftemp.reserve(DoF.size());
+            for (auto it= DoF.begin(); it!= DoF.end(); it++)
+                Doftemp.push_back( it->get() );
+            
+            const std::size_t system_size = 16;
+            CompressedMatrix A(system_size, system_size);
+            Vector ref_Dx = ZeroVector(system_size);
+            Vector Dx = ZeroVector(system_size);
+            Vector b = ZeroVector(system_size);
+
+            // CHANGE THIS TO ADAPT TO YOUR PROBLEM
+            const bool read_a = Kratos::ReadMatrixMarketMatrix("/home/vicente/src/Kratos/applications/ContactStructuralMechanicsApplication/tests/cpp_tests/A_testing_condensation.mm", A);
+            const bool read_b = Kratos::ReadMatrixMarketVector("/home/vicente/src/Kratos/applications/ContactStructuralMechanicsApplication/tests/cpp_tests/b_testing_condensation.rhs", b);
+            
+            if (read_a && read_b) {                
+                // We solve the reference system
+                psolver->Solve(A, ref_Dx, b);
+                
+                // We solve the block system
+                pmixed_solver->ProvideAdditionalData(A, Dx, b, Doftemp, model_part);
+                pmixed_solver->Solve(A, Dx, b);
+                
+                for (std::size_t i = 0; i < system_size; ++i) {
+                    KRATOS_CHECK_NEAR(std::abs(ref_Dx[i] - Dx[i])/std::abs(ref_Dx[i]), 0.0, tolerance);
+                }
+            }
+        }
     } // namespace Testing
 }  // namespace Kratos.
 
