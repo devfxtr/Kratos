@@ -1505,7 +1505,9 @@ private:
         // We do the allocation
         mKDispModified.resize(total_size, total_size, false);            /// The modified displacement block
         mKLMAModified.resize(lm_active_size, lm_active_size, false);     /// The modified active LM block (diagonal)
+        mKLMAModified.reserve(lm_active_size);
         mKLMIModified.resize(lm_inactive_size, lm_inactive_size, false); /// The modified inactve LM block (diagonal)
+        mKLMIModified.reserve(lm_inactive_size);
         
         mKSAN.resize(slave_active_size, other_dof_size, false);       /// The slave active-displacement block        
         mKSAM.resize(slave_active_size, master_size, false);          /// The active slave-master block
