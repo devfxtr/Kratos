@@ -239,30 +239,30 @@ def AssambleTestSuites():
             TComponentsALMHyperSimpleTrianglePatchTestContact,
             TComponentsALMHyperSimplePatchTestContact,
             TComponentsALMHyperSimpleSlopePatchTestContact,
-            TComponentsALMTwoDPatchComplexGeomTestContact,
-            TComponentsALMTwoDPatchComplexGeomSlopeTestContact,
-            TComponentsALMSimplePatchTestContact,
+            TComponentsALMTwoDPatchComplexGeomTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMTwoDPatchComplexGeomSlopeTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMSimplePatchTestContact, # FIXME: This gives problems in MixedULMSolver
             TComponentsALMSimpleSlopePatchTestContact,
-            TComponentsALMSimplePatchNotMatchingATestContact,
-            TComponentsALMSimplePatchNotMatchingBTestContact,
-            TComponentsALMThreeDSimplestPatchMatchingTestContact,
-            TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact,
+            TComponentsALMSimplePatchNotMatchingATestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMSimplePatchNotMatchingBTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMThreeDSimplestPatchMatchingTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMThreeDSimplestPatchMatchingAdaptativeTestContact,  # FIXME: This gives problems in MixedULMSolver
             TComponentsALMThreeDSimplestPatchMatchingSlopeTestContact,
-            TComponentsALMThreeDPatchComplexGeomTestContact,
-            TComponentsALMTThreeDPatchMatchingTestContact,
+            TComponentsALMThreeDPatchComplexGeomTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMTThreeDPatchMatchingTestContact,  # FIXME: This gives problems in MixedULMSolver
             TComponentsALMThreeDPatchNotMatchingTestContact,
-            ### NIGTHLY
+            #### NIGTHLY
             TALMTaylorPatchTestContact,
             TALMHertzSimpleTestContact,
             TALMHertzSimpleSphereTestContact,
-            ####TALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
-            TALMHertzCompleteTestContact,
-            TComponentsALMTaylorPatchTestContact,
-            TComponentsALMHertzSimpleTestContact,
-            TComponentsALMHertzSimpleSphereTestContact,
-            ###TComponentsALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
-            TComponentsALMHertzCompleteTestContact,
-            ### VALIDATION
+            #####TALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
+            #TALMHertzCompleteTestContact,
+            TComponentsALMTaylorPatchTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMHertzSimpleTestContact,  # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMHertzSimpleSphereTestContact,  # FIXME: This gives problems in MixedULMSolver
+            #####TComponentsALMHertzSphereTestContact,  # FIXME: This test requieres the axisymmetric to work (memmory error, correct it)
+            TComponentsALMHertzCompleteTestContact,  # FIXME: This gives problems in MixedULMSolver
+            #### VALIDATION
             TALMTaylorPatchDynamicTestContact,
             TALMMeshMovingMatchingTestContact,
             TALMMeshMovingNotMatchingTestContact,
@@ -271,11 +271,11 @@ def AssambleTestSuites():
             TLargeDisplacementPatchTestHexa,
             TALMLargeDisplacementPatchTestTetra,
             TALMLargeDisplacementPatchTestHexa,
-            TComponentsALMTaylorPatchDynamicTestContact,
-            TComponentsALMMeshMovingMatchingTestContact,
-            TComponentsALMMeshMovingNotMatchingTestContact,
-            TComponentsALMLargeDisplacementPatchTestTetra,
-            TComponentsALMLargeDisplacementPatchTestHexa,
+            TComponentsALMTaylorPatchDynamicTestContact, 
+            TComponentsALMMeshMovingMatchingTestContact,  # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMMeshMovingNotMatchingTestContact,  # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMLargeDisplacementPatchTestTetra,  # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMLargeDisplacementPatchTestHexa,  # FIXME: This gives problems in MixedULMSolver
         ])
     )
 
