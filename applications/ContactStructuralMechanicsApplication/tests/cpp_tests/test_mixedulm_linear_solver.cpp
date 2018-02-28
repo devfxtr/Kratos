@@ -491,15 +491,15 @@ namespace Kratos
          * Checks if the MixedULMLinear solver performs correctly the resolution of the system. Multiple dofs (ii)
          */
         
-        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFSystem, MixedULMLinearSolverSuite) 
+        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFSystem, ContactStructuralApplicationFastSuite) 
         {
             constexpr double tolerance = 1e-3;
             
             ModelPart model_part("Main");
             
-            LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new SkylineLUFactorizationSolverType() );
-//             Parameters empty_parameters =  Parameters(R"({})");
-//             LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new AMGCLSolverType(empty_parameters) );
+//             LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new SkylineLUFactorizationSolverType() );
+            Parameters empty_parameters =  Parameters(R"({})");
+            LinearSolverType::Pointer psolver = LinearSolverType::Pointer( new AMGCLSolverType(empty_parameters) );
             LinearSolverType::Pointer pmixed_solver = LinearSolverType::Pointer( new MixedULMLinearSolverType(psolver) );
             
             
@@ -585,14 +585,10 @@ namespace Kratos
             // We solve the block system
             pmixed_solver->ProvideAdditionalData(A, Dx, b, Doftemp, model_part);
             pmixed_solver->Solve(A, Dx, b);
-           
-//             // DEBUG
-//             KRATOS_WATCH(ref_Dx)
-//             KRATOS_WATCH(Dx)
-//             
-//             for (std::size_t i = 0; i < system_size; ++i) {
-//                 KRATOS_CHECK_NEAR(ref_Dx[i], Dx[i], tolerance);
-//             }
+            
+            for (std::size_t i = 0; i < system_size; ++i) {
+                KRATOS_CHECK_NEAR(std::abs(ref_Dx[i] - Dx[i])/std::abs(ref_Dx[i]), 0.0, tolerance);
+            }
         }
         
     } // namespace Testing
