@@ -491,7 +491,7 @@ namespace Kratos
          * Checks if the MixedULMLinear solver performs correctly the resolution of the system. Multiple dofs (ii)
          */
         
-        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFSystem, MixedULMLinearSolverSuite) 
+        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFSystem, ContactStructuralApplicationFastSuite) 
         {
             constexpr double tolerance = 1e-3;
             
@@ -533,7 +533,7 @@ namespace Kratos
             pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_Z);
             
             std::vector< Dof<double>::Pointer > DoF;
-            DoF.reserve(4);
+            DoF.reserve(12);
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_X));
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_Y));
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_Z));
@@ -594,7 +594,7 @@ namespace Kratos
         /** 
          * Checks if the MixedULMLinear solver performs correctly the resolution of the system. Multiple dof Unordered case (II)
          */
-        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFUnorderedSystem, MixedULMLinearSolverSuite) 
+        KRATOS_TEST_CASE_IN_SUITE(MixedULMLinearSolverThreeDoFUnorderedSystem, ContactStructuralApplicationFastSuite) 
         {
             constexpr double tolerance = 1e-3;
             
@@ -612,49 +612,49 @@ namespace Kratos
             model_part.AddNodalSolutionStepVariable(VECTOR_LAGRANGE_MULTIPLIER);
             
             NodeType::Pointer pnode1 = model_part.CreateNewNode(1, 0.0, 0.0, 0.0);
-            NodeType::Pointer pnode2 = model_part.CreateNewNode(2, 0.0, 0.0, 0.0);
-            pnode2->Set(INTERFACE, true);
-            pnode2->Set(MASTER, true);
-            pnode2->Set(SLAVE, false);
             NodeType::Pointer pnode3 = model_part.CreateNewNode(3, 0.0, 0.0, 0.0);
             pnode3->Set(INTERFACE, true);
             pnode3->Set(ACTIVE, true);
             pnode3->Set(MASTER, false);
             pnode3->Set(SLAVE, true);
+            NodeType::Pointer pnode2 = model_part.CreateNewNode(2, 0.0, 0.0, 0.0);
+            pnode2->Set(INTERFACE, true);
+            pnode2->Set(MASTER, true);
+            pnode2->Set(SLAVE, false);
             
             pnode1->AddDof(DISPLACEMENT_X);
             pnode1->AddDof(DISPLACEMENT_Y);
             pnode1->AddDof(DISPLACEMENT_Z);
-            pnode2->AddDof(DISPLACEMENT_X);
-            pnode2->AddDof(DISPLACEMENT_Y);
-            pnode2->AddDof(DISPLACEMENT_Z);
             pnode3->AddDof(DISPLACEMENT_X);
             pnode3->AddDof(DISPLACEMENT_Y);
             pnode3->AddDof(DISPLACEMENT_Z);
             pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_X);
             pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_Y);
             pnode3->AddDof(VECTOR_LAGRANGE_MULTIPLIER_Z);
+            pnode2->AddDof(DISPLACEMENT_X);
+            pnode2->AddDof(DISPLACEMENT_Y);
+            pnode2->AddDof(DISPLACEMENT_Z);
             
             std::vector< Dof<double>::Pointer > DoF;
-            DoF.reserve(4);
+            DoF.reserve(12);
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_X));
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_Y));
             DoF.push_back(pnode1->pGetDof(DISPLACEMENT_Z));
-            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_X));
-            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_Y));
-            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_Z));
             DoF.push_back(pnode3->pGetDof(DISPLACEMENT_X));
             DoF.push_back(pnode3->pGetDof(DISPLACEMENT_Y));
             DoF.push_back(pnode3->pGetDof(DISPLACEMENT_Z));
             DoF.push_back(pnode3->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_X));
             DoF.push_back(pnode3->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_Y));
             DoF.push_back(pnode3->pGetDof(VECTOR_LAGRANGE_MULTIPLIER_Z));
+            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_X));
+            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_Y));
+            DoF.push_back(pnode2->pGetDof(DISPLACEMENT_Z));
             
             // Set initial solution
             (pnode1->FastGetSolutionStepValue(DISPLACEMENT)).clear();
-            (pnode2->FastGetSolutionStepValue(DISPLACEMENT)).clear();
             (pnode3->FastGetSolutionStepValue(DISPLACEMENT)).clear();
             (pnode3->FastGetSolutionStepValue(VECTOR_LAGRANGE_MULTIPLIER)).clear();
+            (pnode2->FastGetSolutionStepValue(DISPLACEMENT)).clear();
             
             DofsArrayType Doftemp;
             Doftemp.reserve(DoF.size());
@@ -748,13 +748,9 @@ namespace Kratos
             pmixed_solver->ProvideAdditionalData(A, Dx, b, Doftemp, model_part);
             pmixed_solver->Solve(A, Dx, b);
             
-//             // DEBUG
-//             KRATOS_WATCH(ref_Dx)
-//             KRATOS_WATCH(Dx)
-//             
-//             for (std::size_t i = 0; i < system_size; ++i) {
-//                 KRATOS_CHECK_NEAR(std::abs(ref_Dx[i] - Dx[i])/std::abs(ref_Dx[i]), 0.0, tolerance);
-//             }
+            for (std::size_t i = 0; i < system_size; ++i) {
+                KRATOS_CHECK_NEAR(std::abs(ref_Dx[i] - Dx[i])/std::abs(ref_Dx[i]), 0.0, tolerance);
+            }
         }
         
      
