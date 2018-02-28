@@ -621,7 +621,7 @@ protected:
      * @param rA System matrix    
      * @param rX Solution vector. it's also the initial guess for iterative linear solvers.
      * @param rB Right hand side vector.
-     * @todo Use push_back all the time before adding values!!!
+     * @todo Filter zero terms (reduce size new matrix)
      */
     void FillBlockMatrices (
         const bool NeedAllocation, 
@@ -639,6 +639,7 @@ protected:
         const SizeType slave_active_size = mSlaveActiveIndices.size();
         const SizeType lm_active_size = mLMActiveIndices.size();
         const SizeType lm_inactive_size = mLMInactiveIndices.size();
+        const double tolerance = std::numeric_limits<double>::epsilon();
         
         if (NeedAllocation)
             AllocateBlocks();
@@ -712,7 +713,7 @@ protected:
         // TODO: this can be optimized in OMP
         for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
             const double value = KSALMA(i, i);
-            if (std::abs(value) > 0.0)
+            if (std::abs(value) > tolerance)
                 mKLMAModified.push_back(i, i, 1.0/value);
             else // Auxiliar value
                 mKLMAModified.push_back(i, i, 1.0);
@@ -724,7 +725,7 @@ protected:
         // TODO: this can be optimized in OMP
         for (IndexType i = 0; i < mKLMIModified.size1(); ++i) {
             const double value = KLMILMI(i, i);
-            if (std::abs(value) > 0.0)
+            if (std::abs(value) > tolerance)
                 mKLMIModified.push_back(i, i, 1.0/value);
             else // Auxiliar value
                 mKLMIModified.push_back(i, i, 1.0);
@@ -1118,6 +1119,7 @@ protected:
         SparseMatrixMultiplicationUtility::CreateSolutionMatrix(mKDispModified, nrows, ncols, K_disp_modified_ptr, aux_index2_K_disp_modified, aux_val_K_disp_modified);
         
 //         // DEBUG
+//         LOG_MATRIX_PRETTY(rA)
 //         LOG_MATRIX_PRETTY(mKDispModified)
         
         KRATOS_CATCH ("")
