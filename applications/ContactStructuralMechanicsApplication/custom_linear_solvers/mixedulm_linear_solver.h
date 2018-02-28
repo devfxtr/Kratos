@@ -905,26 +905,44 @@ protected:
         // We compute directly the inverse of the KSALMA matrix 
         // KSALMA it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
-        // TODO: this can be optimized in OMP
-        for (IndexType i = 0; i < mKLMAModified.size1(); ++i) {
+        std::ptrdiff_t* mKLMAModified_ptr = new std::ptrdiff_t[mKLMAModified.size1() + 1];
+        mKLMAModified_ptr[0] = 0;
+        std::ptrdiff_t* aux_index2_mKLMAModified = new std::ptrdiff_t[mKLMAModified.size1()];
+        double* aux_val_mKLMAModified = new double[mKLMAModified.size1()];
+        
+        #pragma omp parallel for
+        for (int i = 0; i < static_cast<int>(mKLMAModified.size1()); i++) {
+            mKLMAModified_ptr[i+1] = i+1;
+            aux_index2_mKLMAModified[i] = i;
             const double value = KSALMA(i, i);
             if (std::abs(value) > tolerance)
-                mKLMAModified.push_back(i, i, 1.0/value);
+                aux_val_mKLMAModified[i] = 1.0/value;
             else // Auxiliar value
-                mKLMAModified.push_back(i, i, 1.0);
+                aux_val_mKLMAModified[i] = 1.0;
         }
+        
+        SparseMatrixMultiplicationUtility::CreateSolutionMatrix(mKLMAModified, mKLMAModified.size1(), mKLMAModified.size2(), mKLMAModified_ptr, aux_index2_mKLMAModified, aux_val_mKLMAModified);
         
         // We compute directly the inverse of the KLMILMI matrix 
         // KLMILMI it is supposed to be a diagonal matrix (in fact it is the key point of this formulation)
         // (NOTE: technically it is not a stiffness matrix, we give that name)
-        // TODO: this can be optimized in OMP
-        for (IndexType i = 0; i < mKLMIModified.size1(); ++i) {
+        std::ptrdiff_t* mKLMIModified_ptr = new std::ptrdiff_t[mKLMIModified.size1() + 1];
+        mKLMIModified_ptr[0] = 0;
+        std::ptrdiff_t* aux_index2_mKLMIModified = new std::ptrdiff_t[mKLMIModified.size1()];
+        double* aux_val_mKLMIModified = new double[mKLMIModified.size1()];
+        
+        #pragma omp parallel for
+        for (int i = 0; i < static_cast<int>(mKLMIModified.size1()); i++) {
+            mKLMIModified_ptr[i+1] = i+1;
+            aux_index2_mKLMIModified[i] = i;
             const double value = KLMILMI(i, i);
             if (std::abs(value) > tolerance)
-                mKLMIModified.push_back(i, i, 1.0/value);
+                aux_val_mKLMIModified[i] = 1.0/value;
             else // Auxiliar value
-                mKLMIModified.push_back(i, i, 1.0);
+                aux_val_mKLMIModified[i] = 1.0;
         }
+        
+        SparseMatrixMultiplicationUtility::CreateSolutionMatrix(mKLMIModified, mKLMIModified.size1(), mKLMIModified.size2(), mKLMIModified_ptr, aux_index2_mKLMIModified, aux_val_mKLMIModified);
         
         // Compute the P and C operators
         if (slave_active_size > 0) {
