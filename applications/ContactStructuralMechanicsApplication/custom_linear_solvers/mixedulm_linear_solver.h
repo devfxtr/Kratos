@@ -690,33 +690,35 @@ protected:
                     for (IndexType j=row_begin; j<row_end; j++) {
                         const IndexType col_index = index2[j];
                         if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE) { // KMLMA block
-//                             const double value = values[j];
-//                             const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-//                             KMLMA.push_back ( local_row_id, local_col_id, value);
-                            ++KMLMA_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++KMLMA_cols;
+                            }
                         }
                     }
                     KMLMA_ptr[local_row_id + 1] = KMLMA_cols;
                 } else if ( mWhichBlockType[i] == BlockType::SLAVE_ACTIVE) { //either KSAN or KSAM or KSASA or KSASA or KSALM
                     for (IndexType j=row_begin; j<row_end; j++) {
                         const IndexType col_index = index2[j];
-//                         const double value = values[j];
-//                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         if (mWhichBlockType[col_index] == BlockType::OTHER) {                 // KSAN block
-//                             mKSAN.push_back ( local_row_id, local_col_id, value);
-                            ++mKSAN_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++mKSAN_cols;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {         // KSAM block
-//                             mKSAM.push_back ( local_row_id, local_col_id, value);
-                            ++mKSAM_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++mKSAM_cols;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KSASI block
-//                             mKSASI.push_back ( local_row_id, local_col_id, value); 
-                            ++mKSASI_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++mKSASI_cols;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {   // KSASA block
-//                             mKSASA.push_back ( local_row_id, local_col_id, value);
-                            ++mKSASA_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++mKSASA_cols;
+                            }
                         } else if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE) {     // KSALMA block (diagonal)
-//                             KSALMA.push_back ( local_row_id, local_col_id, value);
-                            ++KSALMA_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++KSALMA_cols;
+                            }
                         }
                     }
                     mKSAN_ptr[local_row_id + 1]   = mKSAN_cols;
@@ -728,10 +730,9 @@ protected:
                     for (IndexType j=row_begin; j<row_end; j++) {
                         const IndexType col_index = index2[j];
                         if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) { // KLMILMI block (diagonal)
-//                             const double value = values[j];
-//                             const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-//                             KLMILMI.push_back ( local_row_id, local_col_id, value);
-                            ++KLMILMI_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++KLMILMI_cols;
+                            }
                         }
                     }
                     KLMILMI_ptr[local_row_id + 1] = KLMILMI_cols;
@@ -739,10 +740,9 @@ protected:
                     for (IndexType j=row_begin; j<row_end; j++) {
                         const IndexType col_index = index2[j];
                         if (mWhichBlockType[col_index] == BlockType::LM_ACTIVE) { // KLMALMA block
-//                             const double value = values[j];
-//                             const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-//                             KLMALMA.push_back ( local_row_id, local_col_id, value);
-                            ++KLMALMA_cols;
+                            if (std::abs(values[j]) > tolerance) {
+                                ++KLMALMA_cols;
+                            }
                         }
                     }
                     KLMALMA_ptr[local_row_id + 1] = KLMALMA_cols;
@@ -807,10 +807,12 @@ protected:
                         const IndexType col_index = index2[j];
                         if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE) { // KMLMA block
                             const double value = values[j];
-                            const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-                            aux_index2_KMLMA[KMLMA_row_end] = local_col_id;
-                            aux_val_KMLMA[KMLMA_row_end] = value;
-                            ++KMLMA_row_end;
+                            if (std::abs(value) > tolerance) {
+                                const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
+                                aux_index2_KMLMA[KMLMA_row_end] = local_col_id;
+                                aux_val_KMLMA[KMLMA_row_end] = value;
+                                ++KMLMA_row_end;
+                            }
                         }
                     }
                     SparseMatrixMultiplicationUtility::SortRow(aux_index2_KMLMA + KMLMA_row_beg, aux_val_KMLMA + KMLMA_row_beg, KMLMA_row_end - KMLMA_row_beg);
@@ -830,25 +832,35 @@ protected:
                         const double value = values[j];
                         const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
                         if (mWhichBlockType[col_index] == BlockType::OTHER) {                 // KSAN block
-                            aux_index2_mKSAN[mKSAN_row_end] = local_col_id;
-                            aux_val_mKSAN[mKSAN_row_end] = value;
-                            ++mKSAN_row_end;
+                            if (std::abs(value) > tolerance) {
+                                aux_index2_mKSAN[mKSAN_row_end] = local_col_id;
+                                aux_val_mKSAN[mKSAN_row_end] = value;
+                                ++mKSAN_row_end;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::MASTER) {         // KSAM block
-                            aux_index2_mKSAM[mKSAM_row_end] = local_col_id;
-                            aux_val_mKSAM[mKSAM_row_end] = value;
-                            ++mKSAM_row_end;
+                            if (std::abs(value) > tolerance) {
+                                aux_index2_mKSAM[mKSAM_row_end] = local_col_id;
+                                aux_val_mKSAM[mKSAM_row_end] = value;
+                                ++mKSAM_row_end;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_INACTIVE) { // KSASI block
-                            aux_index2_mKSASI[mKSASI_row_end] = local_col_id;
-                            aux_val_mKSASI[mKSASI_row_end] = value;
-                            ++mKSASI_row_end;
+                            if (std::abs(value) > tolerance) {
+                                aux_index2_mKSASI[mKSASI_row_end] = local_col_id;
+                                aux_val_mKSASI[mKSASI_row_end] = value;
+                                ++mKSASI_row_end;
+                            }
                         } else if (mWhichBlockType[col_index] == BlockType::SLAVE_ACTIVE) {   // KSASA block
-                            aux_index2_mKSASA[mKSASA_row_end] = local_col_id;
-                            aux_val_mKSASA[mKSASA_row_end] = value;
-                            ++mKSASA_row_end;
+                            if (std::abs(value) > tolerance) {
+                                aux_index2_mKSASA[mKSASA_row_end] = local_col_id;
+                                aux_val_mKSASA[mKSASA_row_end] = value;
+                                ++mKSASA_row_end;
+                            }
                         } else if ( mWhichBlockType[col_index] == BlockType::LM_ACTIVE) {     // KSALMA block (diagonal)
-                            aux_index2_KSALMA[KSALMA_row_end] = local_col_id;
-                            aux_val_KSALMA[KSALMA_row_end] = value;
-                            ++KSALMA_row_end;
+                            if (std::abs(value) > tolerance) {
+                                aux_index2_KSALMA[KSALMA_row_end] = local_col_id;
+                                aux_val_KSALMA[KSALMA_row_end] = value;
+                                ++KSALMA_row_end;
+                            }
                         }
                     }
                     SparseMatrixMultiplicationUtility::SortRow(aux_index2_mKSAN + mKSAN_row_beg, aux_val_mKSAN + mKSAN_row_beg, mKSAN_row_end - mKSAN_row_beg);
@@ -863,10 +875,12 @@ protected:
                         const IndexType col_index = index2[j];
                         if (mWhichBlockType[col_index] == BlockType::LM_INACTIVE) { // KLMILMI block (diagonal)
                             const double value = values[j];
-                            const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-                            aux_index2_KLMILMI[KLMILMI_row_end] = local_col_id;
-                            aux_val_KLMILMI[KLMILMI_row_end] = value;
-                            ++KLMILMI_row_end;
+                            if (std::abs(value) > tolerance) {
+                                const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
+                                aux_index2_KLMILMI[KLMILMI_row_end] = local_col_id;
+                                aux_val_KLMILMI[KLMILMI_row_end] = value;
+                                ++KLMILMI_row_end;
+                            }
                         }
                     }
                     SparseMatrixMultiplicationUtility::SortRow(aux_index2_KLMILMI + KLMILMI_row_beg, aux_val_KLMILMI + KLMILMI_row_beg, KLMILMI_row_end - KLMILMI_row_beg);
@@ -877,10 +891,12 @@ protected:
                         const IndexType col_index = index2[j];
                         if (mWhichBlockType[col_index] == BlockType::LM_ACTIVE) { // KLMALMA block
                             const double value = values[j];
-                            const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
-                            aux_index2_KLMALMA[KLMALMA_row_end] = local_col_id;
-                            aux_val_KLMALMA[KLMALMA_row_end] = value;
-                            ++KLMALMA_row_end;
+                            if (std::abs(value) > tolerance) {
+                                const IndexType local_col_id = mGlobalToLocalIndexing[col_index];
+                                aux_index2_KLMALMA[KLMALMA_row_end] = local_col_id;
+                                aux_val_KLMALMA[KLMALMA_row_end] = value;
+                                ++KLMALMA_row_end;
+                            }
                         }
                     }
                     SparseMatrixMultiplicationUtility::SortRow(aux_index2_KLMALMA + KLMALMA_row_beg, aux_val_KLMALMA + KLMALMA_row_beg, KLMALMA_row_end - KLMALMA_row_beg);
