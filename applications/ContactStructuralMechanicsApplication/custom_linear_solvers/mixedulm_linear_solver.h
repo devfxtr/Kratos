@@ -547,10 +547,6 @@ public:
                 ++global_pos;
             }
         }
-        
-        // Doing some check
-        KRATOS_ERROR_IF_NOT(lm_active_counter == slave_active_counter) << "The number of LM active DoFs and displacement active DoFs does not coincide" << std::endl;
-        KRATOS_ERROR_IF_NOT(lm_inactive_counter == slave_inactive_counter) << "The number of LM active DoFs and displacement active DoFs does not coincide" << std::endl;
     }
     
     ///@}

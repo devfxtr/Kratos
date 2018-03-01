@@ -241,7 +241,7 @@ def AssambleTestSuites():
             TComponentsALMHyperSimpleSlopePatchTestContact,
             TComponentsALMTwoDPatchComplexGeomTestContact, # FIXME: This gives problems in MixedULMSolver
             TComponentsALMTwoDPatchComplexGeomSlopeTestContact, # FIXME: This gives problems in MixedULMSolver
-            TComponentsALMSimplePatchTestContact, # FIXME: This gives problems in MixedULMSolver
+            TComponentsALMSimplePatchTestContact,
             TComponentsALMSimpleSlopePatchTestContact,
             TComponentsALMSimplePatchNotMatchingATestContact, # FIXME: This gives problems in MixedULMSolver
             TComponentsALMSimplePatchNotMatchingBTestContact, # FIXME: This gives problems in MixedULMSolver
@@ -271,7 +271,7 @@ def AssambleTestSuites():
             TLargeDisplacementPatchTestHexa,
             TALMLargeDisplacementPatchTestTetra,
             TALMLargeDisplacementPatchTestHexa,
-            TComponentsALMTaylorPatchDynamicTestContact, 
+            TComponentsALMTaylorPatchDynamicTestContact, # FIXME: This gives problems in MixedULMSolver
             TComponentsALMMeshMovingMatchingTestContact,  # FIXME: This gives problems in MixedULMSolver
             TComponentsALMMeshMovingNotMatchingTestContact,  # FIXME: This gives problems in MixedULMSolver
             TComponentsALMLargeDisplacementPatchTestTetra,  # FIXME: This gives problems in MixedULMSolver
